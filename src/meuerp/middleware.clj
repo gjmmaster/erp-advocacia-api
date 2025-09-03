@@ -1,5 +1,5 @@
 (ns meuerp.middleware
-  (:require [meuerp.db.mock :refer [new-mock-repo]]))
+  (:require [meuerp.db.mock :as db.mock]))
 
 (defn wrap-db-repo
   "Middleware para injetar o repositório de banco de dados na requisição.
@@ -13,7 +13,7 @@
   (fn [request]
     (if-let [tenant-id (get-in request [:headers "x-tenant-id"])]
       ;; Se o tenant-id foi encontrado, cria o repo e continua o fluxo.
-      (let [repo (new-mock-repo tenant-id)
+      (let [repo (db.mock/create-repository tenant-id)
             request' (assoc request :db-repo repo)]
         (handler request'))
       ;; Se não, retorna um erro 401.

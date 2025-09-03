@@ -55,5 +55,5 @@
       novo-processo-com-id)))
 
 ;; Função "construtora" para facilitar a criação de instâncias do nosso repositório.
-(defn new-mock-repo [tenant-id]
+(defn create-repository [tenant-id]
   (->MockProcessosRepository db-atom tenant-id))
