@@ -1,5 +1,5 @@
-(ns meuerp.db.mock
-  (:require [meuerp.db.protocols :refer [ProcessosRepository]]))
+(ns juridico.api.db.mock
+  (:require [juridico.api.db.protocols :refer [ProcessosRepository]]))
 
 ;; --- Banco de Dados Mock ---
 ;; Um atom global para simular um banco de dados em memória.

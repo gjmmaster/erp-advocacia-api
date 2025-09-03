@@ -1,4 +1,4 @@
-(ns meuerp.db.protocols)
+(ns juridico.api.db.protocols)
 
 (defprotocol ProcessosRepository
   "Define o contrato para o repositório de processos jurídicos.

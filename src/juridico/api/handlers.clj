@@ -1,5 +1,5 @@
-(ns meuerp.handlers
-  (:require [meuerp.db.protocols :as p]))
+(ns juridico.api.handlers
+  (:require [juridico.api.db.protocols :as p]))
 
 (defn listar-processos-handler
   "Handler para listar todos os processos do tenant."

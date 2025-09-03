@@ -1,5 +1,5 @@
-(ns meuerp.middleware
-  (:require [meuerp.db.mock :as db.mock]))
+(ns juridico.api.middleware
+  (:require [juridico.api.db.mock :as db.mock]))
 
 (defn wrap-db-repo
   "Middleware para injetar o repositório de banco de dados na requisição.

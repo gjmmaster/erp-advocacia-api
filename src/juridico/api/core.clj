@@ -1,10 +1,10 @@
-(ns meuerp.core
+(ns juridico.api.core
   (:require [ring.adapter.jetty :as jetty]
             [reitit.ring :as ring]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [muuntaja.core :as m]
-            [meuerp.handlers :as h]
-            [meuerp.middleware :as mw])
+            [juridico.api.handlers :as h]
+            [juridico.api.middleware :as mw])
   (:gen-class))
 
 ;; --- Rotas da API ---

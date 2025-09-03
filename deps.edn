@@ -5,4 +5,4 @@
          metosin/reitit {:mvn/version "0.5.18"}
          metosin/muuntaja {:mvn/version "0.6.8"}}
  :aliases
- {:run {:main-opts ["-m" "meuerp.core"]}}}
+ {:run {:main-opts ["-m" "juridico.api.core"]}}}
