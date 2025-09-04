@@ -1,6 +1,7 @@
 (ns juridico.api.handlers
   (:require [juridico.api.db.protocols :as p]
-            [clojure.spec.alpha :as s])) 
+            [clojure.spec.alpha :as s]
+            [juridico.api.specs])) 
 
 (defn listar-processos-handler
   "Handler para listar todos os processos do tenant."
