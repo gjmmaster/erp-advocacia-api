@@ -41,5 +41,6 @@
 ;; --- Ponto de Entrada ---
 ;; A função -main é o ponto de entrada para rodar a aplicação.
 (defn -main []
-  (println "Iniciando servidor na porta 3000...")
-  (jetty/run-jetty app {:port 3000 :join? false}))
+  (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
+    (println "Iniciando servidor na porta" port "...")
+    (jetty/run-jetty app {:port port :join? false})))
