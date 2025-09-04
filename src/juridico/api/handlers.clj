@@ -18,6 +18,12 @@
 (defn criar-processo-handler
   "Handler para criar um novo processo."
   [{:keys [db-repo body-params]}]
-  (let [novo-processo (p/criar-processo db-repo body-params)]
-    {:status 201
-     :body novo-processo}))
+  (if (s/valid? ::specs/create-process-payload body-params)
+    ;; Se os dados são válidos, continue com a lógica original
+    (let [novo-processo (p/criar-processo db-repo body-params)]
+      {:status 201
+       :body novo-processo})
+    ;; Se os dados são inválidos, retorne um erro 400
+    {:status 400
+     :body {:error "Dados de entrada inválidos."
+            :details (s/explain-data ::specs/create-process-payload body-params)}}))
