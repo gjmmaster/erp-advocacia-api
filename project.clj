@@ -6,7 +6,6 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [ring/ring-core "1.9.5"]
                  [ring/ring-jetty-adapter "1.9.5"]
-                 [org.clojure/spec.alpha "0.3.333"]
                  [metosin/reitit "0.5.18"]
                  [metosin/muuntaja "0.6.8"]]
   :main juridico.api.core
