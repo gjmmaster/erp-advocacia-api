@@ -10,22 +10,27 @@
 ;; --- Rotas da API ---
 (def routes
   [""
-   ;; Rota pública para o Super Admin provisionar um novo tenant.
-   ;; Não usa o middleware de tenant, pois opera antes de um tenant existir.
-   ["/admin"
-    ["/provision-tenant"
-     {:post {:handler h/provision-tenant-handler
-             :name :admin/provision}}]]
+   ;; --- INÍCIO DA CORREÇÃO ---
 
-   ;; Rota pública para autenticação de usuários.
-   ["/auth"
-    ["/login"
-     {:post {:handler h/login-handler
-             :name :auth/login}}]]
+   ;; Rotas públicas para provisionamento e autenticação.
+   ;; Usam o middleware público que não exige 'x-tenant-id'.
+   ["" {:middleware [mw/wrap-public-db-repo]}
 
-   ;; Rotas protegidas que exigem o X-Tenant-ID
+    ["/admin"
+     ["/provision-tenant"
+      {:post {:handler h/provision-tenant-handler
+              :name :admin/provision}}]]
+
+    ["/auth"
+     ["/login"
+      {:post {:handler h/login-handler
+              :name :auth/login}}]]]
+
+
+   ;; Rotas protegidas que exigem o X-Tenant-ID.
+   ;; Usam o middleware que isola por tenant.
    ["/api"
-    {:middleware [mw/wrap-db-repo]}
+    {:middleware [mw/wrap-tenant-db-repo]} ;<-- Nome do middleware corrigido
 
     ["/processos"
      {:get {:handler h/listar-processos-handler
@@ -36,6 +41,7 @@
     ["/processos/{id}"
      {:get {:handler h/obter-processo-handler
             :name :processos/get-by-id}}]]
+   ;; --- FIM DA CORREÇÃO ---
    ])
 
 ;; --- Handler Principal da Aplicação ---
