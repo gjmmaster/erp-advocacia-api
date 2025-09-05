@@ -7,6 +7,8 @@
                  [ring/ring-core "1.9.5"]
                  [ring/ring-jetty-adapter "1.9.5"]
                  [metosin/reitit "0.5.18"]
-                 [metosin/muuntaja "0.6.8"]]
+                 [metosin/muuntaja "0.6.8"]
+                 [buddy/buddy-sign "3.4.333"]
+                 [buddy/buddy-hashers "1.8.158"]]
   :main juridico.api.core
   :repl-options {:init-ns juridico.api.core})
