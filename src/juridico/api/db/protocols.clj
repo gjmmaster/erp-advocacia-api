@@ -16,3 +16,17 @@
     "Cria um novo processo para o tenant atual.
      `processo` é um mapa com os dados do novo processo.
      Retorna o processo recém-criado, possivelmente com o ID adicionado."))
+
+(defprotocol AuthRepository
+  "Define o contrato para o repositório de autenticação e provisionamento."
+
+  (encontrar-tenant-por-subdominio [this subdominio]
+    "Busca um tenant pelo seu subdomínio. Retorna o tenant ou nil.")
+
+  (encontrar-usuario-por-email [this tenant-id email]
+    "Busca um usuário pelo seu e-mail, dentro do escopo de um tenant específico.")
+
+  (criar-tenant-e-usuario-master [this dados-provisionamento]
+    "Cria um novo tenant e seu primeiro usuário (master).
+     Espera um mapa com :company_name e :master_user_email.
+     Retorna um mapa com os dados do tenant e do usuário criados."))
