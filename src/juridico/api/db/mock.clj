@@ -1,5 +1,5 @@
 (ns juridico.api.db.mock
-  (:require [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]] ; <-- Corrigido aqui
+  (:require [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]]
             [clojure.string :as str]))
 
 ;; --- Banco de Dados Mock ---
@@ -8,7 +8,7 @@
    {"tenant-1"
     {:dados {:id "tenant-1"
              :company_name "Escritório Modelo 1"
-             :subdomain "modelo1"}}
+             :subdomain "modelo1"}
      :users
      {"user-11" {:id "user-11"
                  :email "admin@modelo1.com"
@@ -24,7 +24,7 @@
     "tenant-2"
     {:dados {:id "tenant-2"
              :company_name "Advocacia Teste 2"
-             :subdomain "teste2"}}
+             :subdomain "teste2"}
      :users
      {"user-21" {:id "user-21"
                  :email "admin@teste2.com"
@@ -39,8 +39,7 @@
 (defrecord MockRepository [db tenant-id]
 
   ;; --- Implementação do Protocolo de Processos ---
-  ProcessosRepository ; <-- E corrigido aqui
-
+  ProcessosRepository
   (listar-processos [this]
     (-> @(:db this) (get (:tenant-id this)) :processos vals (or [])))
 
