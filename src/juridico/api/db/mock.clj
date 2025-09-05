@@ -1,5 +1,5 @@
 (ns juridico.api.db.mock
-  (:require [juridico.api.db.protocols :refer [ProcessoRepository AuthRepository]]
+  (:require [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]] ; <-- Corrigido aqui
             [clojure.string :as str]))
 
 ;; --- Banco de Dados Mock ---
@@ -13,7 +13,7 @@
      {"user-11" {:id "user-11"
                  :email "admin@modelo1.com"
                  :password_hash "$2a$12$..."
-                 :role "admin"}} ; <-- Atualizado para 'admin'
+                 :role "admin"}}
      :processos
      {"proc-111" {:id "proc-111"
                   :case_number "0001-2023"
@@ -29,7 +29,7 @@
      {"user-21" {:id "user-21"
                  :email "admin@teste2.com"
                  :password_hash "$2a$12$..."
-                 :role "admin"}} ; <-- Atualizado para 'admin'
+                 :role "admin"}}
      :processos
      {"proc-333" {:id "proc-333"
                   :case_number "ABC-2024"
@@ -39,7 +39,8 @@
 (defrecord MockRepository [db tenant-id]
 
   ;; --- Implementação do Protocolo de Processos ---
-  ProcessoRepository
+  ProcessosRepository ; <-- E corrigido aqui
+
   (listar-processos [this]
     (-> @(:db this) (get (:tenant-id this)) :processos vals (or [])))
 
@@ -65,14 +66,12 @@
            (filter #(= email (:email %)))
            first)))
 
-  (criar-tenant-e-usuario-master [this {:keys [company_name email]}] ;<-- Chave atualizada
+  (criar-tenant-e-usuario-master [this {:keys [company_name email]}]
     (let [new-tenant-id (str "tenant-" (rand-int 10000))
-          ;; A CORREÇÃO PRINCIPAL ESTÁ NA LINHA ABAIXO
           subdomain (-> company_name str/lower-case (str/replace #" " "-"))
           new-user-id (str "user-" (rand-int 10000))
           temp-password (str "pass" (rand-int 1000))]
 
-      ;; Atualiza o atom com o novo tenant e o novo usuário
       (swap! (:db this) assoc new-tenant-id
              {:dados {:id new-tenant-id
                       :company_name company_name
@@ -80,10 +79,9 @@
               :users {new-user-id {:id new-user-id
                                    :email email
                                    :password_hash temp-password
-                                   :role "admin"}} ; <-- Atualizado para 'admin'
+                                   :role "admin"}}
               :processos {}})
 
-      ;; Retorna os dados para o handler
       {:tenant {:id new-tenant-id :subdomain subdomain}
        :user {:email email :temp_password temp-password}})))
 
