@@ -1,9 +1,12 @@
 (ns juridico.api.handlers
   (:require [juridico.api.db.protocols :as p]
             [clojure.spec.alpha :as s]
-            [juridico.api.specs]))
+            [juridico.api.specs]
+            [buddy.sign.jwt :as jwt]
+            [buddy.hashers :as hashers]))
 
 ;; --- Handlers de Processos (Já existentes) ---
+(def jwt-secret "minha-chave-secreta-super-forte-e-longa")
 
 (defn listar-processos-handler
   "Handler para listar todos os processos do tenant."
@@ -52,12 +55,20 @@
           tenant-dados (p/encontrar-tenant-por-subdominio db-repo subdomain)
           tenant-id (get-in tenant-dados [:dados :id])]
       (if-let [user (and tenant-id (p/encontrar-usuario-por-email db-repo tenant-id email))]
-        ;; ATENÇÃO: Verificação de senha SIMPLIFICADA apenas para a PoC.
-        ;; Em um sistema real, aqui se compararia o hash da senha.
-        (if (= password (:password_hash user))
-          {:status 200
-           :body {:message (str "Usuário " email " autenticado com sucesso.")
-                  :token (str "jwt-simulado-para-" (:id user))}}
+        ;; Verificação de senha SEGURA usando buddy-hashers
+        ;; Em um sistema real, o :password_hash seria gerado com (hashers/encrypt password)
+        (if (hashers/check password (:password_hash user))
+          (let [claims {:user-id (:id user)
+                        :tenant-id tenant-id
+                        :role (:role user)
+                        ;; Adiciona uma data de expiração (ex: 1 hora)
+                        :exp (-> (java.time.Instant/now)
+                                 (.plusSeconds 3600)
+                                 (.getEpochSecond))}
+                token (jwt/sign claims jwt-secret)]
+            {:status 200
+             :body {:message (str "Usuário " email " autenticado com sucesso.")
+                    :token token}})
           {:status 401 :body {:error "Credenciais inválidas."}})
         {:status 401 :body {:error "Credenciais inválidas."}}))
     {:status 400
