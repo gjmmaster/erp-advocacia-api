@@ -10,10 +10,9 @@
 ;; --- Rotas da API ---
 (def routes
   [""
-   ;; --- INÍCIO DA CORREÇÃO ---
-
    ;; Rotas públicas para provisionamento e autenticação.
-   ;; Usam o middleware público que não exige 'x-tenant-id'.
+   ;; Usam o middleware público que não exige token, apenas injeta
+   ;; um repositório de banco de dados sem escopo de tenant.
    ["" {:middleware [mw/wrap-public-db-repo]}
 
     ["/admin"
@@ -27,10 +26,11 @@
               :name :auth/login}}]]]
 
 
-   ;; Rotas protegidas que exigem o X-Tenant-ID.
-   ;; Usam o middleware que isola por tenant.
+   ;; Rotas protegidas que exigem um JWT válido.
+   ;; Usam o novo middleware que valida o token e isola o acesso
+   ;; aos dados com base no tenant-id contido no token.
    ["/api"
-    {:middleware [mw/wrap-tenant-db-repo]} ;<-- Nome do middleware corrigido
+    {:middleware [mw/wrap-jwt-authentication]}
 
     ["/processos"
      {:get {:handler h/listar-processos-handler
@@ -40,9 +40,7 @@
 
     ["/processos/{id}"
      {:get {:handler h/obter-processo-handler
-            :name :processos/get-by-id}}]]
-   ;; --- FIM DA CORREÇÃO ---
-   ])
+            :name :processos/get-by-id}}]]])
 
 ;; --- Handler Principal da Aplicação ---
 (def app
