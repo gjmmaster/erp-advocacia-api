@@ -1,58 +1,70 @@
-### **Diário de Bordo Técnico: Prova de Conceito da Arquitetura Multi-Tenant**
+### **Diário de Bordo Técnico: Evolução da Arquitetura Multi-Tenant**
 
 **Data de Referência:** 05 de Setembro de 2025
-**Status:** Prova de Conceito (PoC) da arquitetura multi-tenant concluída e validada funcionalmente em ambiente de produção (Render).
+**Status:** Segunda fase da PoC concluída: Autenticação stateless com JWT implementada e validada.
 
-#### **1. Introdução e Objetivos da PoC**
+---
 
-Este documento detalha a implementação e validação da Prova de Conceito (PoC) para a API de um ERP Jurídico, construída sobre uma arquitetura multi-tenant em Clojure. O objetivo primordial desta fase foi validar, em um ambiente simulado porém funcional, os pilares arquitetônicos definidos nos documentos de planejamento, focando em:
+### **Etapa 1: Prova de Conceito (PoC) da Arquitetura Multi-Tenant**
 
-1.  **Isolamento de Dados:** Garantir que a lógica da aplicação possa prevenir rigorosamente o acesso a dados entre tenants distintos.
-2.  **Desacoplamento da Persistência:** Implementar uma camada de acesso a dados que seja agnóstica à sua implementação subjacente, utilizando os `protocols` do Clojure.
-3.  **Robustez dos Endpoints:** Assegurar a integridade dos dados na borda da aplicação através de um sistema de validação por contrato (`clojure.spec`).
-4.  **Ciclo de Vida do Tenant:** Validar o fluxo de ponta a ponta, desde o provisionamento de um novo tenant (simulando a ação de um **Super Admin**) até a autenticação do seu respectivo usuário **Admin**.
+Esta fase inicial validou os pilares da arquitetura, incluindo o isolamento de dados via `tenant_id`, o desacoplamento da persistência com `protocols`, a validação de contratos com `clojure.spec`, e o ciclo de vida básico do tenant.
 
-#### **2. Arquitetura Implementada**
+*   **Validação Crítica:** Demonstrou-se que um tenant não poderia acessar dados de outro, utilizando um header `X-Tenant-ID` para injetar o contexto de segurança.
+*   **Resultado:** A arquitetura base foi considerada **bem-sucedida**, abrindo caminho para a implementação de um mecanismo de autenticação robusto.
 
-A PoC materializou as seguintes decisões arquitetônicas:
+---
 
-*   **Estratégia de Isolamento de Dados:** Foi adotado o modelo de **Schema Compartilhado com Chave Estrangeira** (`tenant_id`). Para a PoC, este modelo foi simulado através de um `atom` global, cuja estrutura de dados espelha a segregação por `tenant-id`.
+### **Etapa 2: Implementação de Autenticação Stateless com JWT**
 
-* **Padrão Repository via `defprotocol`:** A interação com a camada de dados foi completamente abstraída através de `protocols`. Foram definidos dois contratos principais:
-    * **`ProcessosRepository`**: Define as operações de CRUD para entidades de negócio (e.g., `listar-processos`, `criar-processo`), com a premissa de que a implementação deve ser implicitamente ciente do contexto do tenant.
-    * **`AuthRepository`**: Define as operações globais de autenticação e provisionamento (`encontrar-tenant-por-subdominio`, `criar-tenant-e-usuario-master`), que operam fora do escopo de um único tenant.
+Nesta segunda fase, o mecanismo de autenticação simulado foi substituído por um sistema completo e seguro baseado em JSON Web Tokens (JWT), utilizando a biblioteca `buddy-auth`.
 
-* **Injeção de Contexto via Middleware (Ring):** O contexto da requisição (principalmente a identidade do tenant e o repositório de dados) é gerenciado e injetado através de um pipeline de middlewares do Ring:
-    * **`wrap-public-db-repo`**: Um middleware aplicado a rotas não autenticadas (`/admin`, `/auth`). Ele instancia o `MockRepository` sem um `tenant-id` pré-definido, permitindo que os handlers executem operações globais.
-    * **`wrap-tenant-db-repo`**: Um middleware de segurança aplicado a rotas protegidas (`/api`). Para a PoC, ele impõe a presença do header `x-tenant-id`, utiliza este valor para instanciar uma versão do `MockRepository` com escopo definido, e injeta esta instância na requisição. Falhas em encontrar o header resultam em uma resposta `401 Unauthorized`, protegendo os endpoints de negócio.
+#### **2.1. Arquitetura de Autenticação com JWT**
 
-* **Validação de Contrato com `clojure.spec`:** Para garantir a robustez e a integridade dos dados na borda da API, foi implementada uma camada de validação declarativa. Um namespace centralizado (`juridico.api.specs`) define as "formas" (`specs`) dos payloads de entrada para cada endpoint. Os handlers de requisição atuam como uma barreira de validação, utilizando `(s/valid? ...)` para verificar a conformidade do payload com a `spec` definida. Em caso de não conformidade, a requisição é imediatamente rejeitada com uma resposta `400 Bad Request`, contendo uma descrição detalhada da falha extraída via `(s/explain-data ...)`.
+*   **Geração de Token no Login:** O `login-handler` foi aprimorado. Após validar as credenciais do usuário com `buddy.hashers`, ele agora gera um token JWT assinado.
+    *   **Claims do JWT:** O payload do token (claims) é enriquecido com dados essenciais para o controle de acesso:
+        *   `:user-id`: Identificador do usuário autenticado.
+        *   `:tenant-id`: Identificador do tenant ao qual o usuário pertence. **Esta é a fonte da verdade para o isolamento de dados.**
+        *   `:role`: Papel do usuário (e.g., `:admin`, `:operador`).
+        *   `:exp`: Timestamp de expiração do token (atualmente configurado para 1 hora), garantindo que as sessões sejam automaticamente invalidadas.
 
-#### **3. Validação Funcional da PoC: Resultados dos Testes**
+*   **Novo Middleware de Autenticação (`wrap-jwt-authentication`):**
+    *   Este middleware substitui completamente o antigo `wrap-tenant-db-repo`.
+    *   Ele é responsável por inspecionar o header `Authorization: Bearer <token>` em todas as requisições para endpoints protegidos.
+    *   Utilizando `buddy.sign.jwt/unsign`, ele valida a assinatura e a expiração do token.
+    *   Se o token for válido, as *claims* são extraídas. A `claim` `:tenant-id` é usada para instanciar o repositório de dados (`db-repo`) com o escopo correto, garantindo que todas as operações de banco de dados subsequentes fiquem restritas àquele tenant.
+    *   A identidade completa do usuário (`identity`), contendo todas as claims, é injetada na requisição para uso futuro na lógica de negócios (e.g., autorização baseada em roles).
+    *   O header `X-Tenant-ID` foi **completamente removido** e não é mais necessário para acessar a API.
 
-O fluxo completo foi validado em ambiente de produção (`onrender.com`) através de uma sequência de testes de integração via `curl`.
+#### **2.2. Validação Funcional da Autenticação JWT**
 
-1.  **Provisionamento do Tenant (Endpoint: `POST /admin/provision-tenant`):**
-    * **Ação:** Requisição enviada com `company_name` e `email` para o usuário **Admin**.
-    * **Resultado:** **SUCESSO (`201 Created`)**. A API invocou corretamente o `provision-tenant-handler`, que utilizou a implementação de `criar-tenant-e-usuario-master` para atualizar o `atom` global com um novo tenant, seu subdomônio gerado e o usuário **Admin** com uma senha temporária. A resposta continha os dados necessários para o próximo passo (subdomínio e senha).
+Os testes de integração foram atualizados para refletir o novo fluxo de autenticação.
 
-2.  **Autenticação do Usuário (Endpoint: `POST /auth/login`):**
-    * **Ação:** Requisição enviada com `subdomain`, `email` e a `temp_password` obtida no passo anterior.
-    * **Resultado:** **SUCESSO (`200 OK`)**. O `login-handler` validou o payload, utilizou `encontrar-tenant-por-subdominio` para identificar o tenant correto, e subsequentemente usou `encontrar-usuario-por-email` (com o `tenant-id` já isolado) para localizar o usuário e validar a credencial. Um token JWT simulado foi retornado.
-    * **Teste de Falha:** Uma requisição com a senha incorreta resultou em **SUCESSO (`401 Unauthorized`)**, confirmando a lógica de validação de credenciais.
+1.  **Provisionamento e Login (Fluxo Inalterado):**
+    * `POST /admin/provision-tenant` e `POST /auth/login` continuam funcionando como antes.
+    * **Resultado do Login:** A resposta de um login bem-sucedido agora inclui um `token` JWT.
+      ```json
+      {
+        "message": "Usuário admin@empresa-a.com autenticado com sucesso.",
+        "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyLWlkIjoi..."
+      }
+      ```
 
-3.  **Acesso a Recursos Protegidos (Endpoint: `GET /api/processos` e derivados):**
-    * **Validação de Dados:** Uma requisição `POST /api/processos` com payload incompleto resultou em **SUCESSO (`400 Bad Request`)**, validando a barreira de proteção do `clojure.spec`.
-    * **Isolamento de Tenant (Teste Crítico de Segurança):**
-        * `GET /api/processos` com `X-Tenant-ID: tenant-1` retornou a lista de processos pertencente **apenas** ao tenant 1.
-        * `GET /api/processos` com `X-Tenant-ID: tenant-2` retornou a lista de processos pertencente **apenas** ao tenant 2.
-        * `GET /api/processos/proc-333` (recurso do tenant 2) com `X-Tenant-ID: tenant-1` resultou em **SUCESSO (`404 Not Found`)**. Este teste confirmou que a lógica de busca no repositório está corretamente encapsulando a consulta dentro do escopo do `tenant-id` injetado pelo middleware, prevenindo efetivamente o vazamento de dados entre tenants.
-    * **Validação do Middleware de Autenticação:** Uma requisição a `/api/processos` sem o header `X-Tenant-ID` resultou em **SUCESSO (`401 Unauthorized`)**, confirmando que o `wrap-tenant-db-repo` está protegendo corretamente os endpoints de negócio.
+2.  **Acesso a Recursos Protegidos com Token JWT:**
+    * **Ação:** Para acessar endpoints como `/api/processos`, o cliente agora deve incluir o token JWT no header `Authorization`.
+    * **Exemplo de Requisição (`curl`):**
+      ```bash
+      # Assumindo que a variável $JWT_TOKEN contém o token obtido no login
+      curl -X GET http://localhost:3000/api/processos \
+        -H "Authorization: Bearer $JWT_TOKEN"
+      ```
+    * **Validação do Isolamento de Tenant:** O teste crítico de segurança foi revalidado com sucesso. Um token gerado para o `tenant-1` **não permite** o acesso a recursos do `tenant-2`, resultando em um `404 Not Found`, pois o repositório instanciado pelo middleware só "enxerga" os dados do `tenant-1`.
+    * **Validação do Middleware:** Uma requisição a `/api/processos` sem o header `Authorization` (ou com um token inválido/expirado) resulta em **SUCESSO (`401 Unauthorized`)**, confirmando a robustez da camada de segurança.
 
-#### **4. Próximos Passos Arquitetônicos**
+---
 
-A PoC validou com sucesso as premissas fundamentais da arquitetura. A evolução para o produto final seguirá o plano de implementação, focando em:
+### **3. Próximos Passos Arquitetônicos**
 
-1.  **Implementação de Autenticação Stateless com JWT:** Substituir a autenticação simulada por um sistema robusto baseado em JWTs, utilizando a biblioteca `buddy-auth`. O `tenant_id` e a `role` do usuário passarão a ser *claims* dentro do payload do JWT, tornando-se a fonte da verdade para o contexto do usuário em requisições subsequentes. O header `X-Tenant-ID` será preterido em favor do `Authorization: Bearer <token>`.
-2.  **Migração da Persistência para PostgreSQL:** Substituir a implementação do `MockRepository` por uma nova que interaja com um banco de dados PostgreSQL. Graças ao desacoplamento provido pelos `protocols`, esta migração não exigirá alterações na camada de `handlers` ou na lógica de negócio.
-3.  **Identificação de Tenant por Subdomínio:** Evoluir o mecanismo de identificação de tenant para analisar o subdomínio do host da requisição, conforme definido na arquitetura final, substituindo a dependência do header `X-Tenant-ID` na fase de login.
+Com a PoC e a autenticação JWT validadas, a evolução para o produto final seguirá o plano, focando em:
+
+1.  **Migração da Persistência para PostgreSQL:** Substituir a implementação do `MockRepository` por uma nova que interaja com um banco de dados PostgreSQL. Graças ao desacoplamento provido pelos `protocols`, esta migração não exigirá alterações na camada de `handlers` ou na lógica de negócio.
+2.  **Identificação de Tenant por Subdomínio na Requisição:** Evoluir o mecanismo de identificação de tenant para analisar o subdomínio do host da requisição (e.g., `tenant-a.meuerp.com`), conforme definido na arquitetura final. Isso simplificará o processo de login, eliminando a necessidade de enviar o `subdomain` no corpo da requisição.
