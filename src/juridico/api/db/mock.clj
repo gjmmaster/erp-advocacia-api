@@ -1,6 +1,7 @@
 (ns juridico.api.db.mock
   (:require [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [buddy.hashers :as hashers]))
 
 ;; --- Banco de Dados Mock ---
 (def db-atom
@@ -12,8 +13,8 @@
      :users
      {"user-11" {:id "user-11"
                  :email "admin@modelo1.com"
-                 :password_hash "$2a$12$..."
-                 :role "admin"}}
+                 ;; ALTERE A SENHA MOCK PARA UM HASH REAL
+                 :password_hash (hashers/encrypt "password123")}}
      :processos
      {"proc-111" {:id "proc-111"
                   :case_number "0001-2023"
@@ -28,8 +29,8 @@
      :users
      {"user-21" {:id "user-21"
                  :email "admin@teste2.com"
-                 :password_hash "$2a$12$..."
-                 :role "admin"}}
+                 ;; ALTERE A SENHA MOCK PARA UM HASH REAL
+                 :password_hash (hashers/encrypt "password123")}}
      :processos
      {"proc-333" {:id "proc-333"
                   :case_number "ABC-2024"
@@ -71,20 +72,22 @@
           new-user-id (str "user-" (rand-int 10000))
           temp-password (str "pass" (rand-int 1000))]
 
-      (swap! (:db this) assoc new-tenant-id
-             {:dados {:id new-tenant-id
-                      :company_name company_name
-                      :subdomain subdomain}
-              :users {new-user-id {:id new-user-id
-                                   :email email
-                                   :password_hash temp-password
-                                   :role "admin"}}
-              :processos {}})
+      (swap!
+       (:db this) assoc new-tenant-id
+       {:dados {:id new-tenant-id
+                :company_name company_name
+                :subdomain subdomain}
+        :users {new-user-id {:id new-user-id
+                             :email email
+                             ;; AQUI ESTÁ A CORREÇÃO PRINCIPAL
+                             :password_hash (hashers/encrypt temp-password)
+                             :role "admin"}}
+        :processos {}})
 
       {:tenant {:id new-tenant-id :subdomain subdomain}
        :user {:email email :temp_password temp-password}})))
 
-;; Função "construtora" para facilitar a criação de instâncias do nosso repositório.
+
 (defn create-repository
   ([] (->MockRepository db-atom nil))
   ([tenant-id] (->MockRepository db-atom tenant-id)))
