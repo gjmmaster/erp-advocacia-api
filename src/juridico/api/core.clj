@@ -11,9 +11,11 @@
 (def routes
   [""
    ;; Rotas públicas para provisionamento e autenticação.
-   ;; Usam o middleware público que não exige token, apenas injeta
-   ;; um repositório de banco de dados sem escopo de tenant.
-   ["" {:middleware [mw/wrap-public-db-repo]}
+   ;; Usam uma cadeia de middlewares:
+   ;; 1. `wrap-public-db-repo`: Injeta um repositório de BD sem escopo de tenant.
+   ;; 2. `wrap-tenant-context`: Identifica o tenant pelo subdomínio do Host e o injeta na requisição.
+   ["" {:middleware [mw/wrap-public-db-repo
+                     mw/wrap-tenant-context]} 
 
     ["/admin"
      ["/provision-tenant"
@@ -27,7 +29,7 @@
 
 
    ;; Rotas protegidas que exigem um JWT válido.
-   ;; Usam o novo middleware que valida o token e isola o acesso
+   ;; Usam o middleware que valida o token e isola o acesso
    ;; aos dados com base no tenant-id contido no token.
    ["/api"
     {:middleware [mw/wrap-jwt-authentication]}
@@ -50,7 +52,7 @@
     {:data {:muuntaja m/instance
             :middleware [muuntaja/format-middleware]}})
    (ring/create-default-handler
-    {:not-found (constantly {:status 404, :body "Rota não encontrada."})})))
+    {:not-found (constantly {:status 404, :body "{\"error\": \"Rota não encontrada.\"}"})})))
 
 ;; --- Ponto de Entrada ---
 (defn -main []
