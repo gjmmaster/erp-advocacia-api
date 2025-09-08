@@ -17,7 +17,7 @@
 ;; Spec para a senha (mínimo de 4 caracteres para a PoC)
 (s/def ::password (s/and string? #(< 3 (count %))))
 
-;; Spec para o subdomínio
+;; Spec para o subdomínio (ainda usada no retorno do provisionamento, etc.)
 (s/def ::subdomain (s/and string? not-empty))
 
 ;; Define a estrutura do payload que o Super Admin envia para criar um novo escritório.
@@ -25,5 +25,5 @@
 (s/def ::provision-payload (s/keys :req-un [::company_name ::email]))
 
 ;; Define a estrutura do payload para a tela de login.
-;; Espera o subdomínio, o e-mail e a senha do usuário.
-(s/def ::login-payload (s/keys :req-un [::subdomain ::email ::password]))
+;; AGORA SÓ ESPERA e-mail e senha. O subdomínio é identificado pelo Host da requisição.
+(s/def ::login-payload (s/keys :req-un [::email ::password])) 
