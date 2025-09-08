@@ -5,8 +5,12 @@
             [buddy.sign.jwt :as jwt]
             [buddy.hashers :as hashers]))
 
-;; --- Handlers de Processos (Já existentes) ---
-(def jwt-secret "minha-chave-secreta-super-forte-e-longa")
+;; --- CONFIGURAÇÃO DE SEGURANÇA ---
+;; A chave secreta é lida da variável de ambiente, centralizando a configuração.
+(def jwt-secret (or (System/getenv "JWT_SECRET") "chave-padrao-para-desenvolvimento-segura"))
+
+
+;; --- HANDLERS DE PROCESSOS (Protegidos por JWT) ---
 
 (defn listar-processos-handler
   "Handler para listar todos os processos do tenant."
@@ -33,7 +37,8 @@
      :body {:error "Dados de entrada inválidos."
             :details (s/explain-data :juridico.api.specs/create-process-payload body-params)}}))
 
-;; --- Handlers de Provisionamento e Autenticação ---
+
+;; --- HANDLERS DE PROVISIONAMENTO E AUTENTICAÇÃO (Públicos) ---
 
 (defn provision-tenant-handler
   "Handler para o Super Admin criar um novo tenant e seu usuário Admin."
@@ -49,14 +54,15 @@
 
 (defn login-handler
   "Handler para autenticar um usuário (Admin ou Operador)."
-  [{:keys [db-repo body-params]}]
+  ;; A requisição agora contém a chave ':tenant', injetada pelo middleware 'wrap-tenant-context'.
+  [{:keys [db-repo body-params tenant]}]
   (if (s/valid? :juridico.api.specs/login-payload body-params)
-    (let [{:keys [subdomain email password]} body-params
-          tenant-dados (p/encontrar-tenant-por-subdominio db-repo subdomain)
-          tenant-id (get-in tenant-dados [:dados :id])]
+    ;; O subdomínio já foi validado pelo middleware, que nos entrega o 'tenant'.
+    (let [{:keys [email password]} body-params
+          tenant-dados (get tenant :dados) ; Pega os dados do tenant
+          tenant-id (get tenant-dados :id)] ; Pega o ID para a busca do usuário
       (if-let [user (and tenant-id (p/encontrar-usuario-por-email db-repo tenant-id email))]
         ;; Verificação de senha SEGURA usando buddy-hashers
-        ;; Em um sistema real, o :password_hash seria gerado com (hashers/encrypt password)
         (if (hashers/check password (:password_hash user))
           (let [claims {:user-id (:id user)
                         :tenant-id tenant-id
