@@ -7,28 +7,27 @@
             [juridico.api.middleware :as mw])
   (:gen-class))
 
-;; --- Rotas da API ---
+;; --- Rotas da API (Estrutura Corrigida) ---
 (def routes
   [""
-   ;; Rotas públicas para provisionamento e autenticação.
-   ;; Usam uma cadeia de middlewares:
-   ;; 1. `wrap-public-db-repo`: Injeta um repositório de BD sem escopo de tenant.
-   ;; 2. `wrap-tenant-context`: Identifica o tenant pelo subdomínio do Host e o injeta na requisição.
-   ["" {:middleware [mw/wrap-public-db-repo
-                     mw/wrap-tenant-context]} 
+   ;; --- ROTAS DE ADMINISTRAÇÃO (sem contexto de tenant) ---
+   ;; Esta rota só precisa do repositório público para criar um novo tenant.
+   ["/admin" {:middleware [mw/wrap-public-db-repo]}
+    ["/provision-tenant"
+     {:post {:handler h/provision-tenant-handler
+             :name :admin/provision}}]]
 
-    ["/admin"
-     ["/provision-tenant"
-      {:post {:handler h/provision-tenant-handler
-              :name :admin/provision}}]]
+   ;; --- ROTAS DE AUTENTICAÇÃO (com contexto de tenant) ---
+   ;; O Login precisa saber qual tenant o usuário está tentando acessar,
+   ;; por isso mantemos os dois middlewares aqui.
+   ["/auth" {:middleware [mw/wrap-public-db-repo
+                          mw/wrap-tenant-context]}
+    ["/login"
+     {:post {:handler h/login-handler
+             :name :auth/login}}]]
 
-    ["/auth"
-     ["/login"
-      {:post {:handler h/login-handler
-              :name :auth/login}}]]]
 
-
-   ;; Rotas protegidas que exigem um JWT válido.
+   ;; --- ROTAS PROTEGIDAS DA API (com autenticação JWT) ---
    ;; Usam o middleware que valida o token e isola o acesso
    ;; aos dados com base no tenant-id contido no token.
    ["/api"
