@@ -3,7 +3,8 @@
             [clojure.spec.alpha :as s]
             [juridico.api.specs]
             [buddy.sign.jwt :as jwt]
-            [buddy.hashers :as hashers]))
+            [buddy.hashers :as hashers]
+            [juridico.api.services.email :as email-service]))
 
 ;; --- CONFIGURAÇÃO DE SEGURANÇA ---
 ;; A chave secreta é lida da variável de ambiente, centralizando a configuração.
@@ -45,9 +46,12 @@
   [{:keys [db-repo body-params]}]
   (if (s/valid? :juridico.api.specs/provision-payload body-params)
     (let [resultado (p/criar-tenant-e-usuario-master db-repo body-params)]
+      ;; --- MODIFICAÇÃO: Dispara o e-mail de boas-vindas ---
+      (email-service/send-welcome-email (:user resultado) (:tenant resultado))
+      ;; ----------------------------------------------------
       {:status 201
        :body (assoc resultado
-                      :message "Tenant criado com sucesso. Simulação de e-mail de boas-vindas enviado.")})
+                      :message "Tenant criado com sucesso. E-mail de boas-vindas enviado.")})
     {:status 400
      :body {:error "Dados para provisionamento inválidos."
             :details (s/explain-data :juridico.api.specs/provision-payload body-params)}}))
