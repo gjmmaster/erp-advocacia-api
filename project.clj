@@ -9,6 +9,9 @@
                  [metosin/reitit "0.5.18"]
                  [metosin/muuntaja "0.6.8"]
                  [buddy/buddy-sign "3.4.333"]
-                 [buddy/buddy-hashers "1.8.158"]]
+                 [buddy/buddy-hashers "1.8.158"]
+                 [clj-http "3.12.3"]    ; Para fazer a chamada HTTP para API
+                 [cheshire "5.12.0"]    ; Para converter o payload para JSON
+                 [environ "1.2.0"]]     ; Para ler as credenciais do ambiente
   :main juridico.api.core
   :repl-options {:init-ns juridico.api.core})
