@@ -10,7 +10,13 @@
 ;; --- Rotas da API (Estrutura Corrigida) ---
 (def routes
   [""
-   ;; --- ROTAS DE ADMINISTRAÇÃO (sem contexto de tenant) ---
+   (def routes
+  [""
+   ;; --- ROTA DE DEPURAÇÃO (TEMPORÁRIA) ---
+   ["/debug"
+    ["/secret-check" {:get {:handler h/secret-check-handler}}]]
+
+   ;; --- ROTAS DE ADMINISTRAÇÃO (sem contexto de tenant) --   ...
    ;; Esta rota só precisa do repositório público para criar um novo tenant.
    ["/admin" {:middleware [mw/wrap-public-db-repo]}
     ["/provision-tenant"
