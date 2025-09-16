@@ -3,8 +3,7 @@
             [juridico.api.db.protocols :as p]
             [buddy.sign.jwt :as jwt]
             [clojure.string :as str]
-            [juridico.api.config :as config]
-            [cheshire.core :as cheshire]))
+            [juridico.api.config :as config]))
 
 (defn wrap-tenant-context
   "Middleware que identifica o tenant a partir de um cabeçalho customizado (para teste) ou do subdomínio."
@@ -54,22 +53,10 @@
         {:status 401
          :headers {"Content-Type" "application/json"}
          :body "{\"error\": \"Token de autorização não fornecido no header 'Authorization'.\"}"})
-      ;; --- MUDANÇA PRINCIPAL AQUI ---
-      ;; Captura a exceção específica de validação do Buddy
-      (catch clojure.lang.ExceptionInfo e
+      (catch Exception _
         {:status 401
          :headers {"Content-Type" "application/json"}
-         ;; Retorna a causa exata do erro (ex: :signature, :exp, :nbf)
-         :body (cheshire/generate-string
-                {:error "A validação do token JWT falhou."
-                 :reason (:cause (ex-data e))})})
-      ;; Captura outras exceções inesperadas
-      (catch Exception e
-        {:status 500
-         :headers {"Content-Type" "application/json"}
-         :body (cheshire/generate-string
-                {:error "Erro inesperado no middleware JWT."
-                 :message (.getMessage e)})}))))
+         :body "{\"error\": \"Token inválido ou expirado.\"}"}))))
 
 (defn wrap-public-db-repo
   "Middleware para injetar um repositório PÚBLICO (não isolado) na requisição."
