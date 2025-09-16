@@ -6,15 +6,16 @@
             [buddy.hashers :as hashers]
             [clojure.string :as str]))
 
-;; --- Configuração da Conexão (Forma Corrigida) ---
-;; A criação do datasource agora é feita "preguiçosamente" (lazy) usando delay.
-;; Isso garante que a conexão só seja estabelecida quando for realmente usada pela primeira vez,
-;; durante o tempo de execução, e não durante a compilação.
+;; --- Configuração da Conexão (Forma Corrigida e Robusta) ---
 (def datasource
   (delay
     (let [db-url (env :database-url)]
       (if db-url
-        (jdbc/get-datasource {:jdbcUrl db-url})
+        ;; GARANTE QUE A URL TENHA O PREFIXO JDBC CORRETO
+        (let [corrected-url (if (str/starts-with? db-url "jdbc:")
+                              db-url
+                              (str "jdbc:" db-url))]
+          (jdbc/get-datasource {:jdbcUrl corrected-url}))
         (throw (Exception. "A variável de ambiente DATABASE_URL não foi configurada."))))))
 
 ;; --- Implementação Concreta para PostgreSQL ---
@@ -53,7 +54,6 @@
          :user {:email email :temp_password temp-password}}))))
 
 ;; --- Função Construtora ---
-;; Agora, ela usa o datasource "atrasado". O '@' força a avaliação do delay.
 (defn create-repository
   ([] (->PostgresRepository @datasource nil))
   ([tenant-id] (->PostgresRepository @datasource tenant-id)))
