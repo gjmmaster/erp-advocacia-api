@@ -149,3 +149,10 @@
     (if (= 1 (:next.jdbc/update-count linhas-afetadas))
       {:status 204 :body nil}
       {:status 404 :body {:error "Operador não encontrado ou não pertence a este escritório."}})))
+
+;; --- HANDLER DE DEPURAÇÃO (TEMPORÁRIO) ---
+(defn secret-check-handler
+  "Endpoint temporário para verificar os primeiros caracteres da JWT_SECRET."
+  [request]
+  {:status 200
+   :body {:secret_start (subs jwt-secret 0 4)}})
