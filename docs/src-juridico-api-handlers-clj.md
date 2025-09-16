@@ -25,9 +25,12 @@ A maioria dos handlers segue um padrão consistente:
     - `:db-repo`: O objeto de repositório de banco de dados, injetado pelo middleware. É a "ponte" para a camada de dados.
     - `:body-params`: O corpo da requisição, já parseado (geralmente de JSON para um mapa Clojure).
     - `:path-params`: Parâmetros da URL (ex: o `{id}` em `/processos/{id}`).
-3.  **Valida os Dados (se aplicável):** Usa `(s/valid? ...)` para verificar se os `body-params` correspondem à `spec` definida. Se a validação falhar, retorna imediatamente uma resposta `400 Bad Request` com detalhes do erro extraídos de `(s/explain-data ...)`.
-4.  **Executa a Lógica:** Chama as funções do protocolo de persistência (ex: `p/criar-processo`) passando o `db-repo` e os dados necessários.
-5.  **Retorna a Resposta:** Constrói e retorna um mapa de resposta do Ring (ex: `{:status 200 :body ...}`).
+3.  **Conversão de Tipos de Dados:**
+    - **Importante:** Parâmetros de path como o ID são recebidos como *strings*. O código nos handlers que recebem um ID (`obter-processo-handler`, `atualizar-processo-handler`, etc.) realiza a conversão explícita deste ID para um número (`Long/parseLong`) antes de passá-lo para a camada de banco de dados.
+    - Esta conversão é crucial para evitar erros de tipo de dados no PostgreSQL (ex: `unsupported comparison operator: <int> = <varchar>`).
+4.  **Valida os Dados (se aplicável):** Usa `(s/valid? ...)` para verificar se os `body-params` correspondem à `spec` definida. Se a validação falhar, retorna imediatamente uma resposta `400 Bad Request` com detalhes do erro extraídos de `(s/explain-data ...)`.
+5.  **Executa a Lógica:** Chama as funções do protocolo de persistência (ex: `p/criar-processo`) passando o `db-repo` e os dados necessários.
+6.  **Retorna a Resposta:** Constrói e retorna um mapa de resposta do Ring (ex: `{:status 200 :body ...}`).
 
 ---
 
@@ -51,8 +54,8 @@ Estes handlers operam em um contexto "global", pois o `db-repo` que eles recebem
     - Retorna os dados do *tenant* criado e uma senha temporária.
 
 - `(login-handler [req])`:
-    - Valida o payload de login (`subdomain`, `email`, `password`).
-    - Primeiro, usa `p/encontrar-tenant-por-subdominio` para identificar para qual *tenant* o login se destina.
-    - Em seguida, usa `p/encontrar-usuario-por-email` (passando o `tenant-id` encontrado) para localizar o usuário dentro do escopo daquele *tenant*.
-    - **Importante:** A verificação de senha (`(= password (:password_hash user))`) é uma **simplificação para a Prova de Conceito (PoC)**. Em um ambiente de produção, esta linha seria substituída por uma verificação de hash criptográfico seguro (ex: usando uma biblioteca como `buddy-hashers`).
-    - Retorna um token JWT simulado em caso de sucesso ou `401 Unauthorized` em caso de falha.
+    - Valida o payload de login (`email`, `password`). O subdomínio do tenant é identificado antes pelo middleware `wrap-tenant-context`.
+    - Usa `p/encontrar-usuario-por-email` (passando o `tenant-id` do contexto) para localizar o usuário dentro do escopo do seu tenant.
+    - **Segurança:** A verificação de senha é feita de forma segura usando a biblioteca `buddy-hashers`, que compara a senha fornecida com o hash criptográfico armazenado no banco de dados.
+    - **Geração de Token:** Em caso de sucesso, gera um token JWT real usando `buddy.sign.jwt`. O token é assinado com a chave secreta centralizada em `src/juridico/api/config.clj`, garantindo consistência com a verificação feita no middleware.
+    - Retorna o token JWT para o cliente.
