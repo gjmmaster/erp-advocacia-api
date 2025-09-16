@@ -20,11 +20,10 @@
            :dbname   dbname
            :user     user
            :password password
-           ;; AJUSTE FINAL: Altera o modo SSL para não exigir um arquivo local.
            :sslmode  "require"})
         (throw (Exception. (str "Formato da DATABASE_URL inválido: " db-url)))))))
 
-;; --- CONFIGURAÇÃO DA CONEXÃO (ROBUSTA) ---
+;; --- CONFIGURAÇÃO DA CONEXÃO ---
 (def datasource
   (delay
     (let [db-spec (parse-db-url (env :database-url))]
@@ -56,14 +55,27 @@
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))
             temp-password (str "pass" (rand-int 10000))
-            new-tenant (sql/insert! tx :tenants {:company_name company_name :subdomain subdomain} {:return-keys true})
-            new-tenant-id (:id new-tenant)
-            new-user (sql/insert! tx :users {:tenant_id new-tenant-id
-                                             :email email
-                                             :password_hash (hashers/encrypt temp-password)
-                                             :role "master"} {:return-keys true})]
-        {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
-         :user {:email email :temp_password temp-password}}))))
+            
+            ;; CORREÇÃO: Pede explicitamente para o DB retornar a coluna "id"
+            new-tenant (sql/insert! tx :tenants 
+                                    {:company_name company_name :subdomain subdomain} 
+                                    {:return-keys ["id"]})
+            
+            ;; Pega o ID retornado pelo banco de dados
+            new-tenant-id (:id new-tenant)]
+            
+        (if-not new-tenant-id
+          (throw (Exception. (str "Falha ao obter o ID do novo tenant. Resposta do DB: " new-tenant)))
+          
+          (let [new-user (sql/insert! tx :users 
+                                      {:tenant_id new-tenant-id
+                                       :email email
+                                       :password_hash (hashers/encrypt temp-password)
+                                       :role "master"} 
+                                      {:return-keys true})]
+            ;; Retorna os dados para o handler
+            {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
+             :user {:email email :temp_password temp-password}}))))))
 
 ;; --- FUNÇÃO CONSTRUTORA ---
 (defn create-repository
