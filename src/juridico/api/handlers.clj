@@ -58,20 +58,17 @@
 
 (defn login-handler
   "Handler para autenticar um usuário (Admin ou Operador)."
-  ;; A requisição agora contém a chave ':tenant', injetada pelo middleware 'wrap-tenant-context'.
   [{:keys [db-repo body-params tenant]}]
   (if (s/valid? :juridico.api.specs/login-payload body-params)
-    ;; O subdomínio já foi validado pelo middleware, que nos entrega o 'tenant'.
     (let [{:keys [email password]} body-params
-          tenant-dados (get tenant :dados) ; Pega os dados do tenant
-          tenant-id (get tenant-dados :id)] ; Pega o ID para a busca do usuário
+          tenant-id (:tenants/id tenant)] ; CORREÇÃO: Usa a chave qualificada
       (if-let [user (and tenant-id (p/encontrar-usuario-por-email db-repo tenant-id email))]
         ;; Verificação de senha SEGURA usando buddy-hashers
-        (if (hashers/check password (:password_hash user))
-          (let [claims {:user-id (:id user)
+        ;; CORREÇÃO: Acessa o hash da senha usando a chave correta :users/password_hash
+        (if (hashers/check password (:users/password_hash user))
+          (let [claims {:user-id (:users/id user)       ; CORREÇÃO
                         :tenant-id tenant-id
-                        :role (:role user)
-                        ;; Adiciona uma data de expiração (ex: 1 hora)
+                        :role (:users/role user)         ; CORREÇÃO
                         :exp (-> (java.time.Instant/now)
                                  (.plusSeconds 3600)
                                  (.getEpochSecond))}
