@@ -20,8 +20,8 @@
            :dbname   dbname
            :user     user
            :password password
-           ;; Adiciona as opções de SSL necessárias para o CockroachDB Cloud
-           :sslmode  "verify-full"})
+           ;; AJUSTE FINAL: Altera o modo SSL para não exigir um arquivo local.
+           :sslmode  "require"})
         (throw (Exception. (str "Formato da DATABASE_URL inválido: " db-url)))))))
 
 ;; --- CONFIGURAÇÃO DA CONEXÃO (ROBUSTA) ---
