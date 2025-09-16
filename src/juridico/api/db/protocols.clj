@@ -27,6 +27,11 @@
     "Busca um usuário pelo seu e-mail, dentro do escopo de um tenant específico.")
 
   (criar-tenant-e-usuario-master [this dados-provisionamento]
-    "Cria um novo tenant e seu primeiro usuário (master).
-     Espera um mapa com :company_name e :master_user_email.
-     Retorna um mapa com os dados do tenant e do usuário criados."))
+    "Cria um novo tenant e seu primeiro usuário (master).")
+
+  ;; --- NOVAS FUNÇÕES ADICIONADAS AQUI ---
+  (listar-usuarios-do-tenant [this tenant-id]
+    "Retorna uma lista de todos os usuários de um tenant específico.")
+
+  (criar-usuario-operador [this tenant-id dados-usuario]
+    "Cria um novo usuário com a role 'operador' para um tenant específico."))
