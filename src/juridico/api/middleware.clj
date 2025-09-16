@@ -1,5 +1,5 @@
 (ns juridico.api.middleware
-  (:require [juridico.api.db.mock :as db.mock]
+  (:require [juridico.api.db.postgres :as db]
             [juridico.api.db.protocols :as p]
             [buddy.sign.jwt :as jwt]
             [clojure.string :as str]))
@@ -43,7 +43,7 @@
         (let [claims (jwt/unsign token jwt-secret)
               tenant-id (:tenant-id claims)]
           (if tenant-id
-            (let [repo (db.mock/create-repository tenant-id)
+            (let [repo (db/create-repository tenant-id)
                   request' (-> request
                                (assoc :db-repo repo)
                                (assoc :identity claims))]
@@ -63,6 +63,6 @@
   "Middleware para injetar um repositório PÚBLICO (não isolado) na requisição."
   [handler]
   (fn [request]
-    (let [repo (db.mock/create-repository)
+    (let [repo (db/create-repository)
           request' (assoc request :db-repo repo)]
       (handler request'))))
