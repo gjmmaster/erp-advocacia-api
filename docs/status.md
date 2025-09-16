@@ -68,3 +68,55 @@ Com a PoC e a autenticação JWT validadas, a evolução para o produto final se
 
 1.  **Migração da Persistência para PostgreSQL:** Substituir a implementação do `MockRepository` por uma nova que interaja com um banco de dados PostgreSQL. Graças ao desacoplamento provido pelos `protocols`, esta migração não exigirá alterações na camada de `handlers` ou na lógica de negócio.
 2.  **Identificação de Tenant por Subdomínio na Requisição:** Evoluir o mecanismo de identificação de tenant para analisar o subdomínio do host da requisição (e.g., `tenant-a.meuerp.com`), conforme definido na arquitetura final. Isso simplificará o processo de login, eliminando a necessidade de enviar o `subdomain` no corpo da requisição.
+
+---
+
+### **Etapa 3: Migração para PostgreSQL e Implementação de RBAC**
+
+**Data de Referência:** 16 de Setembro de 2025
+**Status:** Fase de produção iniciada. A persistência em memória foi substituída por um banco de dados PostgreSQL (CockroachDB) e o primeiro fluxo de autorização baseado em papéis (RBAC) foi implementado.
+
+#### **3.1. Migração da Camada de Persistência para PostgreSQL (CockroachDB)**
+
+A camada de dados, que antes utilizava um `atom` do Clojure para simulação, foi migrada para um cluster CockroachDB, compatível com o protocolo PostgreSQL, garantindo a permanência e a segurança dos dados.
+
+*   **Estrutura do Banco de Dados:**
+    *   **Tabelas Criadas:** `tenants`, `users`, `legal_cases`.
+    *   **Constraints de Integridade:** `UNIQUE` na coluna `subdomain` da tabela `tenants`, e `FOREIGN KEY` com `ON DELETE CASCADE` na coluna `tenant_id` das tabelas `users` e `legal_cases` para garantir o isolamento e a integridade referencial dos dados.
+    *   **Segurança:** `UNIQUE` na combinação de `(tenant_id, email)` na tabela `users` para impedir emails duplicados dentro do mesmo tenant.
+
+*   **Alterações na Aplicação Clojure:**
+    *   **Dependências:** Adicionadas `[com.github.seancorfield/next.jdbc "1.3.894"]` e `[org.postgresql/postgresql "42.7.3"]` ao `project.clj`.
+    *   **Nova Camada de Persistência (`postgres.clj`):** Criado o namespace `juridico.api.db.postgres` com um `defrecord PostgresRepository` que implementa os protocolos `ProcessosRepository` e `AuthRepository`, traduzindo cada função para consultas SQL.
+    *   **Lógica de Conexão Robusta:**
+        *   **Inicialização Atrasada (`delay`):** A criação do datasource foi encapsulada para evitar a tentativa de conexão durante a compilação AOT.
+        *   **Parsing da URL de Conexão:** Uma nova função `parse-db-url` foi criada para desmontar a `DATABASE_URL` via regex, resolvendo problemas de parsing do driver JDBC (`UnknownHostException`).
+        *   **Configuração de SSL:** O parâmetro `:sslmode "require"` foi adicionado para garantir a conexão segura com o cluster CockroachDB.
+        *   **Recuperação de Chaves Geradas:** O código foi ajustado para ler a chave qualificada `:tenants/id` retornada pelo `next.jdbc` após inserções, resolvendo `not-null constraint violation` na criação de usuários.
+
+#### **3.2. Implementação do Controle de Acesso Baseado em Papel (RBAC)**
+
+Com a base de dados funcional, a camada de segurança foi aprimorada para autorizar ações com base no papel do usuário.
+
+*   **Middleware de Autorização (`wrap-master-role-authorization`):**
+    *   Um novo middleware foi criado em `juridico.api.middleware`.
+    *   Ele inspeciona a `role` na identidade do token JWT. Se a `role` for `"master"`, a requisição prossegue; caso contrário, é retornada uma resposta `403 Forbidden`.
+
+*   **Proteção de Rotas:**
+    *   No arquivo `juridico.api.core.clj`, um novo aninhamento de rotas `/api/operadores` foi criado.
+    *   O middleware `wrap-master-role-authorization` foi aplicado a este aninhamento, protegendo todos os endpoints (GET, POST) e garantindo que sejam acessíveis apenas por usuários "master".
+
+#### **3.3. Funcionalidade de Gestão de Operadores (Primeira Feature RBAC)**
+
+*   **Extensão da Camada de Dados:**
+    *   O protocolo `AuthRepository` foi estendido com as funções `listar-usuarios-do-tenant` e `criar-usuario-operador`.
+    *   **Implementação em `postgres.clj`:**
+        *   `listar-usuarios-do-tenant`: Executa um `SELECT` na tabela `users` omitindo o `password_hash` por segurança.
+        *   `criar-usuario-operador`: Executa um `INSERT` na tabela `users`, criptografando a senha com `buddy.hashers` e fixando a `role` como `"operador"`.
+
+*   **Novos Handlers e Specs:**
+    *   Criados os handlers `listar-operadores-handler` e `criar-operador-handler`, que extraem o `tenant-id` diretamente da identidade do token JWT.
+    *   Definida a spec `::create-operator-payload` para validar as requisições de criação.
+
+*   **Validação em Produção:**
+    *   A funcionalidade foi validada de ponta a ponta com testes `curl`, confirmando que usuários "master" podem criar e listar operadores, e que operadores recebem um token com a `role` correta e são bloqueados pelo middleware de autorização ao tentar acessar recursos protegidos.
