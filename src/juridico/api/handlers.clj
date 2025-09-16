@@ -38,6 +38,29 @@
      :body {:error "Dados de entrada inválidos."
             :details (s/explain-data :juridico.api.specs/create-process-payload body-params)}}))
 
+;; --- ADICIONAR ESTES HANDLERS ---
+(defn atualizar-processo-handler
+  "Handler para atualizar um processo existente."
+  [{:keys [db-repo body-params path-params]}]
+  (if (s/valid? :juridico.api.specs/update-process-payload body-params)
+    (let [id (:id path-params)
+          linhas-afetadas (p/atualizar-processo db-repo id body-params)]
+      (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+        {:status 200 :body {:message "Processo atualizado com sucesso."}}
+        {:status 404 :body {:error "Processo não encontrado ou não pertence a este escritório."}}))
+    {:status 400
+     :body {:error "Dados de entrada inválidos."
+            :details (s/explain-data :juridico.api.specs/update-process-payload body-params)}}))
+
+(defn deletar-processo-handler
+  "Handler para deletar um processo."
+  [{:keys [db-repo path-params]}]
+  (let [id (:id path-params)
+        linhas-afetadas (p/deletar-processo db-repo id)]
+    (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+      {:status 204 :body nil} ; 204 No Content é a resposta padrão para delete com sucesso
+      {:status 404 :body {:error "Processo não encontrado ou não pertence a este escritório."}})))
+
 
 ;; --- HANDLERS DE PROVISIONAMENTO E AUTENTICAÇÃO (Públicos) ---
 
@@ -102,3 +125,27 @@
     {:status 400
      :body {:error "Dados de entrada para criar operador são inválidos."
             :details (s/explain-data :juridico.api.specs/create-operator-payload body-params)}}))
+
+(defn atualizar-operador-handler
+  "Handler para o 'master' atualizar um operador."
+  [{:keys [db-repo body-params path-params identity]}]
+  (if (s/valid? :juridico.api.specs/update-operador-payload body-params)
+    (let [tenant-id (:tenant-id identity)
+          user-id (:id path-params)
+          linhas-afetadas (p/atualizar-operador db-repo tenant-id user-id body-params)]
+      (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+        {:status 200 :body {:message "Operador atualizado com sucesso."}}
+        {:status 404 :body {:error "Operador não encontrado ou não pertence a este escritório."}}))
+    {:status 400
+     :body {:error "Dados de entrada inválidos."
+            :details (s/explain-data :juridico.api.specs/update-operador-payload body-params)}}))
+
+(defn deletar-operador-handler
+  "Handler para o 'master' deletar um operador."
+  [{:keys [db-repo path-params identity]}]
+  (let [tenant-id (:tenant-id identity)
+        user-id (:id path-params)
+        linhas-afetadas (p/deletar-operador db-repo tenant-id user-id)]
+    (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+      {:status 204 :body nil}
+      {:status 404 :body {:error "Operador não encontrado ou não pertence a este escritório."}})))

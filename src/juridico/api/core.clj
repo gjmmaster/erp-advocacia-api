@@ -41,7 +41,12 @@
 
     ["/processos/{id}"
      {:get {:handler h/obter-processo-handler
-            :name :processos/get-by-id}}]
+            :name :processos/get-by-id}
+      ;; --- ADICIONAR ESTAS ROTAS ---
+      :put {:handler h/atualizar-processo-handler
+            :name :processos/update}
+      :delete {:handler h/deletar-processo-handler
+               :name :processos/delete}}]
 
     ;; --- ROTAS DE GESTÃO DE OPERADORES (acessíveis apenas pelo 'master') ---
     ["/operadores"
@@ -49,7 +54,14 @@
       :get {:handler h/listar-operadores-handler
             :name :operadores/list}
       :post {:handler h/criar-operador-handler
-             :name :operadores/create}}]]])
+             :name :operadores/create}}]
+
+    ["/operadores/{id}"
+     {:middleware [mw/wrap-master-role-authorization]
+      :put {:handler h/atualizar-operador-handler
+            :name :operadores/update}
+      :delete {:handler h/deletar-operador-handler
+               :name :operadores/delete}}]]])
 
 ;; --- Handler Principal da Aplicação ---
 (def app

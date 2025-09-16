@@ -15,7 +15,13 @@
   (criar-processo [this processo]
     "Cria um novo processo para o tenant atual.
      `processo` é um mapa com os dados do novo processo.
-     Retorna o processo recém-criado, possivelmente com o ID adicionado."))
+     Retorna o processo recém-criado, possivelmente com o ID adicionado.")
+
+  (atualizar-processo [this id dados-processo]
+    "Atualiza um processo existente pelo seu ID.")
+
+  (deletar-processo [this id]
+    "Deleta um processo pelo seu ID."))
 
 (defprotocol AuthRepository
   "Define o contrato para o repositório de autenticação e provisionamento."
@@ -34,4 +40,10 @@
     "Retorna uma lista de todos os usuários de um tenant específico.")
 
   (criar-usuario-operador [this tenant-id dados-usuario]
-    "Cria um novo usuário com a role 'operador' para um tenant específico."))
+    "Cria um novo usuário com a role 'operador' para um tenant específico.")
+
+  (atualizar-operador [this tenant-id user-id dados-usuario]
+    "Atualiza os dados de um operador.")
+
+  (deletar-operador [this tenant-id user-id]
+    "Deleta um usuário operador."))

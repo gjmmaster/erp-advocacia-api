@@ -6,6 +6,9 @@
 (s/def ::jurisdiction (s/and string? not-empty))
 (s/def ::create-process-payload (s/keys :req-un [::case_number ::jurisdiction]))
 
+;; --- ADICIONAR ESTA SPEC ---
+(s/def ::update-process-payload (s/keys :opt-un [::case_number ::jurisdiction]))
+
 ;; --- Specs para Provisionamento e Login ---
 
 ;; Spec para validar um e-mail. Usamos uma expressão regular simples.
@@ -32,3 +35,5 @@
 (s/def ::full_name (s/and string? not-empty))
 
 (s/def ::create-operator-payload (s/keys :req-un [::email ::password ::full_name]))
+
+(s/def ::update-operador-payload (s/keys :opt-un [::full_name]))
