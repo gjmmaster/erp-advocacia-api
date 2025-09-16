@@ -20,9 +20,10 @@
   "Handler para obter um processo específico por ID."
   [{{:keys [id]} :path-params
     :keys [db-repo]}]
-  (if-let [processo (p/obter-processo-por-id db-repo id)]
-    {:status 200 :body processo}
-    {:status 404 :body {:error "Processo não encontrado."}}))
+  (let [process-id (Long/parseLong id)]
+    (if-let [processo (p/obter-processo-por-id db-repo process-id)]
+      {:status 200 :body processo}
+      {:status 404 :body {:error "Processo não encontrado."}})))
 
 (defn criar-processo-handler
   "Handler para criar um novo processo."
@@ -40,8 +41,8 @@
   "Handler para atualizar um processo existente."
   [{:keys [db-repo body-params path-params]}]
   (if (s/valid? :juridico.api.specs/update-process-payload body-params)
-    (let [id (:id path-params)
-          linhas-afetadas (p/atualizar-processo db-repo id body-params)]
+    (let [process-id (Long/parseLong (:id path-params))
+          linhas-afetadas (p/atualizar-processo db-repo process-id body-params)]
       (if (= 1 (:next.jdbc/update-count linhas-afetadas))
         {:status 200 :body {:message "Processo atualizado com sucesso."}}
         {:status 404 :body {:error "Processo não encontrado ou não pertence a este escritório."}}))
@@ -52,8 +53,8 @@
 (defn deletar-processo-handler
   "Handler para deletar um processo."
   [{:keys [db-repo path-params]}]
-  (let [id (:id path-params)
-        linhas-afetadas (p/deletar-processo db-repo id)]
+  (let [process-id (Long/parseLong (:id path-params))
+        linhas-afetadas (p/deletar-processo db-repo process-id)]
     (if (= 1 (:next.jdbc/update-count linhas-afetadas))
       {:status 204 :body nil} ; 204 No Content é a resposta padrão para delete com sucesso
       {:status 404 :body {:error "Processo não encontrado ou não pertence a este escritório."}})))
@@ -94,7 +95,7 @@
                                  (.getEpochSecond))}
                 token (jwt/sign claims config/jwt-secret)]
             {:status 200
-             :body {:message (str "(DEBUG V2) Usuário " email " autenticado com sucesso.")
+             :body {:message (str "Usuário " email " autenticado com sucesso.")
                     :token token}})
           {:status 401 :body {:error "Credenciais inválidas."}})
         {:status 401 :body {:error "Credenciais inválidas."}}))
@@ -128,7 +129,7 @@
   [{:keys [db-repo body-params path-params identity]}]
   (if (s/valid? :juridico.api.specs/update-operador-payload body-params)
     (let [tenant-id (:tenant-id identity)
-          user-id (:id path-params)
+          user-id (Long/parseLong (:id path-params))
           linhas-afetadas (p/atualizar-operador db-repo tenant-id user-id body-params)]
       (if (= 1 (:next.jdbc/update-count linhas-afetadas))
         {:status 200 :body {:message "Operador atualizado com sucesso."}}
@@ -141,7 +142,7 @@
   "Handler para o 'master' deletar um operador."
   [{:keys [db-repo path-params identity]}]
   (let [tenant-id (:tenant-id identity)
-        user-id (:id path-params)
+        user-id (Long/parseLong (:id path-params))
         linhas-afetadas (p/deletar-operador db-repo tenant-id user-id)]
     (if (= 1 (:next.jdbc/update-count linhas-afetadas))
       {:status 204 :body nil}
