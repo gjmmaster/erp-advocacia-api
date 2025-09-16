@@ -66,3 +66,14 @@
     (let [repo (db/create-repository)
           request' (assoc request :db-repo repo)]
       (handler request'))))
+
+(defn wrap-master-role-authorization
+  "Middleware que verifica se o usuário autenticado tem a role 'master'."
+  [handler]
+  (fn [request]
+    (let [role (get-in request [:identity :role])]
+      (if (= role "master")
+        (handler request)
+        {:status 403
+         :headers {"Content-Type" "application/json"}
+         :body "{\"error\": \"Acesso negado. Requer permissão de administrador.\"}"}))))

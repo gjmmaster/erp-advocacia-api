@@ -81,3 +81,24 @@
     {:status 400
      :body {:error "Dados de login inválidos."
             :details (s/explain-data :juridico.api.specs/login-payload body-params)}}))
+
+;; --- HANDLERS DE GESTÃO DE OPERADORES (Protegidos por Role) ---
+
+(defn listar-operadores-handler
+  "Handler para o 'master' listar todos os usuários do seu tenant."
+  [{:keys [db-repo identity]}]
+  (let [tenant-id (:tenant-id identity)]
+    {:status 200
+     :body (p/listar-usuarios-do-tenant db-repo tenant-id)}))
+
+(defn criar-operador-handler
+  "Handler para o 'master' criar um novo usuário 'operador' no seu tenant."
+  [{:keys [db-repo body-params identity]}]
+  (if (s/valid? :juridico.api.specs/create-operator-payload body-params)
+    (let [tenant-id (:tenant-id identity)
+          novo-operador (p/criar-usuario-operador db-repo tenant-id body-params)]
+      {:status 201
+       :body (dissoc novo-operador :password_hash)}) ; Remove o hash da senha da resposta
+    {:status 400
+     :body {:error "Dados de entrada para criar operador são inválidos."
+            :details (s/explain-data :juridico.api.specs/create-operator-payload body-params)}}))

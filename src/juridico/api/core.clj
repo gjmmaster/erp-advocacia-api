@@ -41,7 +41,15 @@
 
     ["/processos/{id}"
      {:get {:handler h/obter-processo-handler
-            :name :processos/get-by-id}}]]])
+            :name :processos/get-by-id}}]
+
+    ;; --- ROTAS DE GESTÃO DE OPERADORES (acessíveis apenas pelo 'master') ---
+    ["/operadores"
+     {:middleware [mw/wrap-master-role-authorization] ; <--- APLICA A PROTEÇÃO DE PAPEL AQUI
+      :get {:handler h/listar-operadores-handler
+            :name :operadores/list}
+      :post {:handler h/criar-operador-handler
+             :name :operadores/create}}]]])
 
 ;; --- Handler Principal da Aplicação ---
 (def app

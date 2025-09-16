@@ -72,9 +72,21 @@
                                        :role "master"} 
                                       {:return-keys true})]
             {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
-             :user {:email email :temp_password temp-password}}))))))
+             :user {:email email :temp_password temp-password}})))))
 
-;; --- FUNÇÃO CONSTRUTORA ---
+  ;; --- IMPLEMENTAÇÃO DAS NOVAS FUNÇÕES ---
+  (listar-usuarios-do-tenant [this tenant-id]
+    ;; Retorna todos os utilizadores, mas omite o hash da palavra-passe por segurança
+    (sql/query db-conn ["SELECT id, email, full_name, role FROM users WHERE tenant_id = ?" tenant-id]))
+
+  (criar-usuario-operador [this tenant-id {:keys [email password full_name]}]
+    (sql/insert! db-conn :users {:tenant_id     tenant-id
+                                 :email         email
+                                 :full_name     full_name
+                                 :password_hash (hashers/encrypt password)
+                                 :role          "operador"})))
+
+;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
   ([] (->PostgresRepository @datasource nil))
   ([tenant-id] (->PostgresRepository @datasource tenant-id)))

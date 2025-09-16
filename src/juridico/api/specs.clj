@@ -26,4 +26,9 @@
 
 ;; Define a estrutura do payload para a tela de login.
 ;; AGORA SÓ ESPERA e-mail e senha. O subdomínio é identificado pelo Host da requisição.
-(s/def ::login-payload (s/keys :req-un [::email ::password])) 
+(s/def ::login-payload (s/keys :req-un [::email ::password]))
+
+;; --- Specs para Gestão de Usuários ---
+(s/def ::full_name (s/and string? not-empty))
+
+(s/def ::create-operator-payload (s/keys :req-un [::email ::password ::full_name]))
