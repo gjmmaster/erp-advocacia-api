@@ -55,14 +55,12 @@
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))
             temp-password (str "pass" (rand-int 10000))
-            
-            ;; CORREÇÃO: Pede explicitamente para o DB retornar a coluna "id"
             new-tenant (sql/insert! tx :tenants 
                                     {:company_name company_name :subdomain subdomain} 
                                     {:return-keys ["id"]})
             
-            ;; Pega o ID retornado pelo banco de dados
-            new-tenant-id (:id new-tenant)]
+            ;; CORREÇÃO FINAL: Extrai o valor usando a chave correta :tenants/id
+            new-tenant-id (:tenants/id new-tenant)]
             
         (if-not new-tenant-id
           (throw (Exception. (str "Falha ao obter o ID do novo tenant. Resposta do DB: " new-tenant)))
@@ -73,7 +71,6 @@
                                        :password_hash (hashers/encrypt temp-password)
                                        :role "master"} 
                                       {:return-keys true})]
-            ;; Retorna os dados para o handler
             {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
              :user {:email email :temp_password temp-password}}))))))
 
