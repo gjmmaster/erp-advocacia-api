@@ -6,10 +6,16 @@
             [buddy.hashers :as hashers]
             [clojure.string :as str]))
 
-;; --- Configuração da Conexão ---
-;; A URL de conexão será lida da variável de ambiente DATABASE_URL
-(def db-spec {:jdbcUrl (env :database-url)})
-(def ds (jdbc/get-datasource db-spec))
+;; --- Configuração da Conexão (Forma Corrigida) ---
+;; A criação do datasource agora é feita "preguiçosamente" (lazy) usando delay.
+;; Isso garante que a conexão só seja estabelecida quando for realmente usada pela primeira vez,
+;; durante o tempo de execução, e não durante a compilação.
+(def datasource
+  (delay
+    (let [db-url (env :database-url)]
+      (if db-url
+        (jdbc/get-datasource {:jdbcUrl db-url})
+        (throw (Exception. "A variável de ambiente DATABASE_URL não foi configurada."))))))
 
 ;; --- Implementação Concreta para PostgreSQL ---
 (defrecord PostgresRepository [db-conn tenant-id]
@@ -23,7 +29,6 @@
     (first (sql/query db-conn ["SELECT * FROM legal_cases WHERE id = ? AND tenant_id = ?" id tenant-id])))
 
   (criar-processo [this processo]
-    ;; A função `insert!` do next.jdbc já retorna o registro criado
     (sql/insert! db-conn :legal_cases (assoc processo :tenant_id tenant-id)))
 
   ;; --- Implementação do Protocolo de Autenticação ---
@@ -38,23 +43,17 @@
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))
             temp-password (str "pass" (rand-int 10000))
-
-            ;; Cria o tenant e recupera o ID gerado
             new-tenant (sql/insert! tx :tenants {:company_name company_name :subdomain subdomain} {:return-keys true})
             new-tenant-id (:id new-tenant)
-
-            ;; Cria o usuário master associado ao novo tenant
             new-user (sql/insert! tx :users {:tenant_id new-tenant-id
                                              :email email
                                              :password_hash (hashers/encrypt temp-password)
                                              :role "master"} {:return-keys true})]
-
-        ;; Retorna os dados para o handler
         {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
          :user {:email email :temp_password temp-password}}))))
 
 ;; --- Função Construtora ---
-;; Esta função será chamada pelo middleware para criar o repositório
+;; Agora, ela usa o datasource "atrasado". O '@' força a avaliação do delay.
 (defn create-repository
-  ([] (->PostgresRepository ds nil))
-  ([tenant-id] (->PostgresRepository ds tenant-id)))
+  ([] (->PostgresRepository @datasource nil))
+  ([tenant-id] (->PostgresRepository @datasource tenant-id)))
