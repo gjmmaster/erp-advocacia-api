@@ -11,7 +11,7 @@
                  [buddy/buddy-sign "3.4.333"]
                  [buddy/buddy-hashers "1.8.158"]
                  [clj-http "3.12.3"]    ; Para fazer a chamada HTTP para API
-                 [seancorfield/next.jdbc "1.3.894"]      ; Biblioteca moderna para JDBC
+                 [com.github.seancorfield/next.jdbc "1.3.894"]
                  [org.postgresql/postgresql "42.7.3"]  ; O driver específico do PostgreSQL
                  [cheshire "5.12.0"]    ; Para converter o payload para JSON
                  [environ "1.2.0"]]     ; Para ler as credenciais do ambiente
