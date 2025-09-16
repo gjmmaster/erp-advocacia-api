@@ -6,19 +6,31 @@
             [buddy.hashers :as hashers]
             [clojure.string :as str]))
 
-;; --- Configuração da Conexão (Forma Corrigida e Robusta) ---
+;; --- FUNÇÃO HELPER PARA PARSE DA URL DO BANCO ---
+(defn- parse-db-url [db-url]
+  (if-not db-url
+    (throw (Exception. "A variável de ambiente DATABASE_URL não foi configurada."))
+    (let [pattern #"postgres(?:ql)?://([^:]+):([^@]+)@([^:]+):(\d+)/([^?]+)"
+          matcher (re-matcher pattern db-url)]
+      (if (.find matcher)
+        (let [[_ user password host port dbname] (re-groups matcher)]
+          {:dbtype   "postgresql"
+           :host     host
+           :port     (Integer/parseInt port)
+           :dbname   dbname
+           :user     user
+           :password password
+           ;; Adiciona as opções de SSL necessárias para o CockroachDB Cloud
+           :sslmode  "verify-full"})
+        (throw (Exception. (str "Formato da DATABASE_URL inválido: " db-url)))))))
+
+;; --- CONFIGURAÇÃO DA CONEXÃO (ROBUSTA) ---
 (def datasource
   (delay
-    (let [db-url (env :database-url)]
-      (if db-url
-        ;; GARANTE QUE A URL TENHA O PREFIXO JDBC CORRETO
-        (let [corrected-url (if (str/starts-with? db-url "jdbc:")
-                              db-url
-                              (str "jdbc:" db-url))]
-          (jdbc/get-datasource {:jdbcUrl corrected-url}))
-        (throw (Exception. "A variável de ambiente DATABASE_URL não foi configurada."))))))
+    (let [db-spec (parse-db-url (env :database-url))]
+      (jdbc/get-datasource db-spec))))
 
-;; --- Implementação Concreta para PostgreSQL ---
+;; --- IMPLEMENTAÇÃO CONCRETA PARA POSTGRESQL ---
 (defrecord PostgresRepository [db-conn tenant-id]
 
   ;; --- Implementação do Protocolo de Processos ---
@@ -53,7 +65,7 @@
         {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
          :user {:email email :temp_password temp-password}}))))
 
-;; --- Função Construtora ---
+;; --- FUNÇÃO CONSTRUTORA ---
 (defn create-repository
   ([] (->PostgresRepository @datasource nil))
   ([tenant-id] (->PostgresRepository @datasource tenant-id)))
