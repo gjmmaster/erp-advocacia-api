@@ -8,7 +8,7 @@
 
 ;; --- Configuração da Conexão ---
 ;; A URL de conexão será lida da variável de ambiente DATABASE_URL
-(def db-spec {:dbtype "postgresql" :dbname (env :database-url)})
+(def db-spec {:jdbcUrl (env :database-url)})
 (def ds (jdbc/get-datasource db-spec))
 
 ;; --- Implementação Concreta para PostgreSQL ---
