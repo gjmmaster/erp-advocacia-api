@@ -2,9 +2,8 @@
   (:require [juridico.api.db.postgres :as db]
             [juridico.api.db.protocols :as p]
             [buddy.sign.jwt :as jwt]
-            [clojure.string :as str]))
-
-(def jwt-secret (or (System/getenv "JWT_SECRET") "chave-padrao-para-desenvolvimento-segura"))
+            [clojure.string :as str]
+            [juridico.api.config :as config]))
 
 (defn wrap-tenant-context
   "Middleware que identifica o tenant a partir de um cabeçalho customizado (para teste) ou do subdomínio."
@@ -40,7 +39,7 @@
   (fn [request]
     (try
       (if-let [token (extract-token request)]
-        (let [claims (jwt/unsign token jwt-secret)
+        (let [claims (jwt/unsign token config/jwt-secret)
               tenant-id (:tenant-id claims)]
           (if tenant-id
             (let [repo (db/create-repository tenant-id)

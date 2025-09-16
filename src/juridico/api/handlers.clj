@@ -4,11 +4,8 @@
             [juridico.api.specs]
             [buddy.sign.jwt :as jwt]
             [buddy.hashers :as hashers]
-            [juridico.api.services.email :as email-service]))
-
-;; --- CONFIGURAÇÃO DE SEGURANÇA ---
-;; A chave secreta é lida da variável de ambiente, centralizando a configuração.
-(def jwt-secret (or (System/getenv "JWT_SECRET") "chave-padrao-para-desenvolvimento-segura"))
+            [juridico.api.services.email :as email-service]
+            [juridico.api.config :as config]))
 
 
 ;; --- HANDLERS DE PROCESSOS (Protegidos por JWT) ---
@@ -95,7 +92,7 @@
                         :exp (-> (java.time.Instant/now)
                                  (.plusSeconds 3600)
                                  (.getEpochSecond))}
-                token (jwt/sign claims jwt-secret)]
+                token (jwt/sign claims config/jwt-secret)]
             {:status 200
              :body {:message (str "Usuário " email " autenticado com sucesso.")
                     :token token}})
@@ -155,4 +152,4 @@
   "Endpoint temporário para verificar os primeiros caracteres da JWT_SECRET."
   [request]
   {:status 200
-   :body {:secret_start (subs jwt-secret 0 4)}})
+   :body {:secret_start (subs config/jwt-secret 0 4)}})
