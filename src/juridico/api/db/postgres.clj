@@ -43,6 +43,12 @@
   (criar-processo [this processo]
     (sql/insert! db-conn :legal_cases (assoc processo :tenant_id tenant-id)))
 
+  (atualizar-processo [this id dados-processo]
+    (sql/update! db-conn :legal_cases dados-processo {:id id :tenant_id tenant-id}))
+
+  (deletar-processo [this id]
+    (sql/delete! db-conn :legal_cases {:id id :tenant_id tenant-id}))
+
   ;; --- Implementação do Protocolo de Autenticação ---
   AuthRepository
   (encontrar-tenant-por-subdominio [this subdominio]
@@ -84,7 +90,17 @@
                                  :email         email
                                  :full_name     full_name
                                  :password_hash (hashers/encrypt password)
-                                 :role          "operador"})))
+                                 :role          "operador"}))
+
+  (atualizar-operador [this tenant-id user-id dados-usuario]
+    ;; Apenas o full_name pode ser alterado por enquanto.
+    ;; A lógica para alterar senha seria mais complexa.
+    (sql/update! db-conn :users (select-keys dados-usuario [:full_name])
+                 {:id user-id :tenant_id tenant-id :role "operador"}))
+
+  (deletar-operador [this tenant-id user-id]
+    ;; Garante que apenas operadores sejam deletados por esta função
+    (sql/delete! db-conn :users {:id user-id :tenant_id tenant-id :role "operador"})))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
