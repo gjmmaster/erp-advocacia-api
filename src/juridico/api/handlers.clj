@@ -94,7 +94,7 @@
                                  (.getEpochSecond))}
                 token (jwt/sign claims config/jwt-secret)]
             {:status 200
-             :body {:message (str "Usuário " email " autenticado com sucesso.")
+             :body {:message (str "(DEBUG V2) Usuário " email " autenticado com sucesso.")
                     :token token}})
           {:status 401 :body {:error "Credenciais inválidas."}})
         {:status 401 :body {:error "Credenciais inválidas."}}))

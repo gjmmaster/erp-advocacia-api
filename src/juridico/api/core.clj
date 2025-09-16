@@ -7,7 +7,7 @@
             [juridico.api.middleware :as mw])
   (:gen-class))
 
-;; --- Rotas da API (Estrutura Corrigida) ----
+;; --- Rotas da API (Estrutura Corrigida) ---
 (def routes
   [""
    ;; --- ROTA DE DEPURAÇÃO (TEMPORÁRIA) ---
