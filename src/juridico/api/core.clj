@@ -56,6 +56,8 @@
 
     ["/operadores/{id}"
      {:middleware [mw/wrap-master-role-authorization]
+      :get {:handler h/obter-operador-handler
+            :name :operadores/get-by-id}
       :put {:handler h/atualizar-operador-handler
             :name :operadores/update}
       :delete {:handler h/deletar-operador-handler

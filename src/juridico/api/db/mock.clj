@@ -85,7 +85,43 @@
         :processos {}})
 
       {:tenant {:id new-tenant-id :subdomain subdomain}
-       :user {:email email :temp_password temp-password}})))
+       :user {:email email :temp_password temp-password}}))
+
+  ;; --- Implementação das Funções de Operadores ---
+  (listar-usuarios-do-tenant [this tenant-id]
+    (let [usuarios (-> @(:db this) (get-in [tenant-id :users]) vals)]
+      (map #(dissoc % :password_hash) usuarios)))
+
+  (obter-operador-por-id [this tenant-id user-id]
+    (let [user (-> @(:db this) (get-in [tenant-id :users user-id]))]
+      (when user
+        (dissoc user :password_hash))))
+
+  (criar-usuario-operador [this tenant-id {:keys [email password full_name]}]
+    (let [new-user-id (str "user-" (rand-int 10000))
+          novo-operador {:id new-user-id
+                         :email email
+                         :full_name full_name
+                         :password_hash (hashers/encrypt password)
+                         :role "operador"}]
+      (swap! (:db this) assoc-in [tenant-id :users new-user-id] novo-operador)
+      (dissoc novo-operador :password_hash)))
+
+  (atualizar-operador [this tenant-id user-id dados-usuario]
+    (let [user-path [tenant-id :users user-id]]
+      (if (get-in @(:db this) user-path)
+        (do
+          (swap! (:db this) update-in user-path merge (select-keys dados-usuario [:full_name]))
+          {:next.jdbc/update-count 1})
+        {:next.jdbc/update-count 0})))
+
+  (deletar-operador [this tenant-id user-id]
+    (let [user-path [tenant-id :users user-id]]
+      (if (get-in @(:db this) user-path)
+        (do
+          (swap! (:db this) update-in [tenant-id :users] dissoc user-id)
+          {:next.jdbc/update-count 1})
+        {:next.jdbc/update-count 0})))))
 
 
 (defn create-repository
