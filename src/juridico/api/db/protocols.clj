@@ -46,4 +46,7 @@
     "Atualiza os dados de um operador.")
 
   (deletar-operador [this tenant-id user-id]
-    "Deleta um usuário operador."))
+    "Deleta um usuário operador.")
+
+  (obter-operador-por-id [this tenant-id user-id]
+    "Busca um operador específico pelo seu ID."))

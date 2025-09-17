@@ -112,6 +112,15 @@
     {:status 200
      :body (p/listar-usuarios-do-tenant db-repo tenant-id)}))
 
+(defn obter-operador-handler
+  "Handler para obter um operador específico por ID."
+  [{:keys [db-repo path-params identity]}]
+  (let [tenant-id (:tenant-id identity)
+        user-id (Long/parseLong (:id path-params))]
+    (if-let [operador (p/obter-operador-por-id db-repo tenant-id user-id)]
+      {:status 200 :body operador}
+      {:status 404 :body {:error "Operador não encontrado."}})))
+
 (defn criar-operador-handler
   "Handler para o 'master' criar um novo usuário 'operador' no seu tenant."
   [{:keys [db-repo body-params identity]}]
