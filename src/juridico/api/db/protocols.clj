@@ -49,4 +49,21 @@
     "Deleta um usuário operador.")
 
   (obter-operador-por-id [this tenant-id user-id]
-    "Busca um operador específico pelo seu ID."))
+    "Busca um operador específico pelo seu ID.")
+
+  ;; --- Funções de Gestão de Tenants (Super Admin) ---
+
+  (listar-tenants [this]
+    "Retorna uma lista de todos os tenants no sistema.")
+
+  (obter-tenant-por-id [this tenant-id]
+    "Busca um tenant específico pelo seu ID.")
+
+  (atualizar-tenant [this tenant-id dados-tenant]
+    "Atualiza os dados de um tenant específico.")
+
+  (criar-tenant [this dados-tenant]
+    "Cria um novo tenant.")
+
+  (deletar-tenant [this tenant-id]
+    "Deleta um tenant específico."))

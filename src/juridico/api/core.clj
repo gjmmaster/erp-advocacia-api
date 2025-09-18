@@ -14,11 +14,29 @@
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
 
-   ;; --- ROTAS DE ADMINISTRAÇÃO (sem contexto de tenant) ---
-   ["/admin" {:middleware [mw/wrap-public-db-repo]}
+   ;; --- ROTAS DE ADMINISTRAÇÃO (protegidas para Super Admin) ---
+   ["/admin"
+    {:middleware [mw/wrap-jwt-authentication
+                  mw/wrap-super-admin-authorization
+                  mw/wrap-public-db-repo]}
+
     ["/provision-tenant"
      {:post {:handler h/provision-tenant-handler
-             :name :admin/provision}}]]
+             :name :admin/provision}}]
+
+    ["/tenants"
+     {:get {:handler h/listar-tenants-handler
+            :name :admin/list-tenants}
+      :post {:handler h/criar-tenant-handler
+             :name :admin/create-tenant}}]
+
+    ["/tenants/{id}"
+     {:get {:handler h/obter-tenant-handler
+            :name :admin/get-tenant}
+      :put {:handler h/atualizar-tenant-handler
+            :name :admin/update-tenant}
+      :delete {:handler h/deletar-tenant-handler
+               :name :admin/delete-tenant}}]]
 
    ;; --- ROTAS DE AUTENTICAÇÃO (com contexto de tenant) ---
    ["/auth" {:middleware [mw/wrap-public-db-repo

@@ -76,3 +76,14 @@
         {:status 403
          :headers {"Content-Type" "application/json"}
          :body "{\"error\": \"Acesso negado. Requer permissão de administrador.\"}"}))))
+
+(defn wrap-super-admin-authorization
+  "Middleware que verifica se o usuário autenticado tem a role 'super-admin'."
+  [handler]
+  (fn [request]
+    (let [role (get-in request [:identity :role])]
+      (if (= role "super-admin")
+        (handler request)
+        {:status 403
+         :headers {"Content-Type" "application/json"}
+         :body "{\"error\": \"Acesso negado. Requer permissão de super administrador.\"}"}))))

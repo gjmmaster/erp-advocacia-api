@@ -37,3 +37,8 @@
 (s/def ::create-operator-payload (s/keys :req-un [::email ::password ::full_name]))
 
 (s/def ::update-operador-payload (s/keys :opt-un [::full_name]))
+
+;; --- Specs para Gestão de Tenants (Super Admin) ---
+(s/def ::operator_limit (s/and int? #(> % 0)))
+(s/def ::update-tenant-payload (s/keys :opt-un [::company_name ::operator_limit]))
+(s/def ::create-tenant-payload (s/keys :req-un [::company_name] :opt-un [::subdomain ::operator_limit]))

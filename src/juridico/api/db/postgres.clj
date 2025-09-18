@@ -89,11 +89,21 @@
     (first (sql/query db-conn ["SELECT id, email, full_name, role FROM users WHERE tenant_id = ? AND id = ?" tenant-id user-id])))
 
   (criar-usuario-operador [this tenant-id {:keys [email password full_name]}]
-    (sql/insert! db-conn :users {:tenant_id     tenant-id
-                                 :email         email
-                                 :full_name     full_name
-                                 :password_hash (hashers/encrypt password)
-                                 :role          "operador"}))
+    (jdbc/with-transaction [tx db-conn]
+      (let [tenant (first (sql/query tx ["SELECT operator_limit FROM tenants WHERE id = ?" tenant-id]))
+            operator-limit (:tenants/operator_limit tenant 10) ; Default para 10 se não estiver definido
+            current-operators (count (sql/query tx ["SELECT id FROM users WHERE tenant_id = ?" tenant-id]))]
+        (if (< current-operators operator-limit)
+          (sql/insert! tx :users {:tenant_id     tenant-id
+                                   :email         email
+                                   :full_name     full_name
+                                   :password_hash (hashers/encrypt password)
+                                   :role          "operador"})
+          (throw (ex-info "Limite de operadores atingido para este tenant."
+                          {:type :limite-excedido
+                           :tenant-id tenant-id
+                           :limit operator-limit
+                           :current current-operators}))))))
 
   (atualizar-operador [this tenant-id user-id dados-usuario]
     ;; Apenas o full_name pode ser alterado por enquanto.
@@ -103,7 +113,32 @@
 
   (deletar-operador [this tenant-id user-id]
     ;; Garante que apenas operadores sejam deletados por esta função
-    (sql/delete! db-conn :users {:id user-id :tenant_id tenant-id :role "operador"})))
+    (sql/delete! db-conn :users {:id user-id :tenant_id tenant-id :role "operador"}))
+
+  ;; --- Implementação das Funções de Gestão de Tenants ---
+
+  (listar-tenants [this]
+    (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants"]))
+
+  (obter-tenant-por-id [this tenant-id]
+    (first (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants WHERE id = ?" tenant-id])))
+
+  (atualizar-tenant [this tenant-id dados-tenant]
+    ;; Apenas company_name e operator_limit podem ser alterados
+    (sql/update! db-conn :tenants
+                 (select-keys dados-tenant [:company_name :operator_limit])
+                 {:id tenant-id}))
+
+  (criar-tenant [this {:keys [company_name subdomain operator_limit]}]
+    (let [subdomain-to-use (or subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-")))]
+      (sql/insert! db-conn :tenants
+                   {:company_name company_name
+                    :subdomain subdomain-to-use
+                    :operator_limit (or operator_limit 10)}
+                   {:return-keys true})))
+
+  (deletar-tenant [this tenant-id]
+    (sql/delete! db-conn :tenants {:id tenant-id})))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
