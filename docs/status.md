@@ -120,3 +120,20 @@ Com a base de dados funcional, a camada de segurança foi aprimorada para autori
 
 *   **Validação em Produção:**
     *   A funcionalidade foi validada de ponta a ponta com testes `curl`, confirmando que usuários "master" podem criar e listar operadores, e que operadores recebem um token com a `role` correta e são bloqueados pelo middleware de autorização ao tentar acessar recursos protegidos.
+
+---
+
+### **Etapa 4: Finalização do CRUD de Operadores e Correção de Inconsistências**
+
+**Data de Referência:** 18 de Setembro de 2025
+**Status:** CRUD de Operadores completo e funcional em produção.
+
+*   **Complemento do CRUD:**
+    *   As funcionalidades de `obter por ID`, `atualizar` e `deletar` para o recurso `/api/operadores` foram implementadas, completando o ciclo de vida da gestão de operadores.
+    *   O protocolo `AuthRepository` foi estendido para incluir as funções `obter-operador-por-id`, `atualizar-operador` e `deletar-operador`.
+    *   Novos handlers (`obter-operador-handler`, `atualizar-operador-handler`, `deletar-operador-handler`) foram adicionados.
+    *   As rotas `GET /api/operadores/{id}`, `PUT /api/operadores/{id}` e `DELETE /api/operadores/{id}` foram adicionadas e protegidas pelo middleware de autorização `wrap-master-role-authorization`.
+
+*   **Correção de Inconsistência Crítica:**
+    *   Foi identificado e corrigido um bug onde a implementação do `PostgresRepository` em `postgres.clj` não continha a função `obter-operador-por-id`, resultando em um `AbstractMethodError` em produção.
+    *   Foi descoberto que a implementação de teste `mock.clj` estava severamente desatualizada. A implementação foi completada para espelhar todas as funções do `AuthRepository`, garantindo a paridade entre os ambientes de teste e produção e melhorando a confiabilidade dos testes futuros.
