@@ -98,3 +98,12 @@ curl -i -X GET "$API_URL/api/operadores" \
 curl -i -X GET "$API_URL/api/operadores" \
   -H "Authorization: Bearer $OPERATOR_TOKEN"
 ```
+
+**4. Obter um Operador por ID (como Master)**
+*O usuário "master" busca um operador específico pelo seu ID.*
+*Deve retornar `200 OK` com os dados do operador.*
+```bash
+# Substitua {ID_DO_OPERADOR} pelo ID real
+curl -i -X GET "$API_URL/api/operadores/{ID_DO_OPERADOR}" \
+  -H "Authorization: Bearer $MASTER_TOKEN"
+```
