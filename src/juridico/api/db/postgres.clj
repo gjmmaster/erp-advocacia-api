@@ -85,6 +85,9 @@
     ;; Retorna todos os utilizadores, mas omite o hash da palavra-passe por segurança
     (sql/query db-conn ["SELECT id, email, full_name, role FROM users WHERE tenant_id = ?" tenant-id]))
 
+  (obter-operador-por-id [this tenant-id user-id]
+    (first (sql/query db-conn ["SELECT id, email, full_name, role FROM users WHERE tenant_id = ? AND id = ?" tenant-id user-id])))
+
   (criar-usuario-operador [this tenant-id {:keys [email password full_name]}]
     (sql/insert! db-conn :users {:tenant_id     tenant-id
                                  :email         email
