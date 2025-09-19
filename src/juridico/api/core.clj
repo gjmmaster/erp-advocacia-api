@@ -4,7 +4,8 @@
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [muuntaja.core :as m]
             [juridico.api.handlers :as h]
-            [juridico.api.middleware :as mw])
+            [juridico.api.middleware :as mw]
+            [ring.middleware.cors :as cors])
   (:gen-class))
 
 ;; --- Rotas da API (Estrutura Corrigida) ---
@@ -81,15 +82,20 @@
       :delete {:handler h/deletar-operador-handler
                :name :operadores/delete}}]]])
 
-;; --- Handler Principal da Aplicação ---
+;; --- Handler Principal da Aplicação (COM A ALTERAÇÃO) ---
 (def app
-  (ring/ring-handler
-   (ring/router
-    routes
-    {:data {:muuntaja m/instance
-            :middleware [muuntaja/format-middleware]}})
-   (ring/create-default-handler
-    {:not-found (constantly {:status 404, :body "{\"error\": \"Rota não encontrada.\"}"})})))
+  (-> (ring/ring-handler
+       (ring/router
+        routes
+        {:data {:muuntaja m/instance
+                :middleware [muuntaja/format-middleware]}})
+       (ring/create-default-handler
+        {:not-found (constantly {:status 404, :body "{\"error\": \"Rota não encontrada.\"}"})}))
+      (cors/wrap-cors
+        :access-control-allow-origin [#".*"]
+        :access-control-allow-methods [:get :post :put :delete]
+        :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
+
 
 ;; --- Ponto de Entrada ---
 (defn -main []

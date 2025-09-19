@@ -10,10 +10,11 @@
                  [metosin/muuntaja "0.6.8"]
                  [buddy/buddy-sign "3.4.333"]
                  [buddy/buddy-hashers "1.8.158"]
-                 [clj-http "3.12.3"]    ; Para fazer a chamada HTTP para API
+                 [clj-http "3.12.3"]
                  [com.github.seancorfield/next.jdbc "1.3.894"]
-                 [org.postgresql/postgresql "42.7.3"]  ; O driver específico do PostgreSQL
-                 [cheshire "5.12.0"]    ; Para converter o payload para JSON
-                 [environ "1.2.0"]]     ; Para ler as credenciais do ambiente
+                 [org.postgresql/postgresql "42.7.3"]
+                 [cheshire "5.12.0"]
+                 [environ "1.2.0"]
+                 [ring-cors "0.1.13"]]
   :main juridico.api.core
   :repl-options {:init-ns juridico.api.core})
