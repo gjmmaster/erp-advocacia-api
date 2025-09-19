@@ -57,12 +57,14 @@
   (encontrar-usuario-por-email [this tenant-id email]
     (first (sql/query db-conn ["SELECT * FROM users WHERE tenant_id = ? AND email = ?" tenant-id email])))
 
-  (criar-tenant-e-usuario-master [this {:keys [company_name email]}]
+  (criar-tenant-e-usuario-master [this {:keys [company_name email operator_limit]}]
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))
             temp-password (str "pass" (rand-int 10000))
-            new-tenant (sql/insert! tx :tenants 
-                                    {:company_name company_name :subdomain subdomain} 
+            new-tenant (sql/insert! tx :tenants
+                                    {:company_name company_name
+                                     :subdomain subdomain
+                                     :operator_limit (or operator_limit 4)}
                                     {:return-keys ["id"]})
             
             ;; CORREÇÃO FINAL: Extrai o valor usando a chave correta :tenants/id
@@ -91,8 +93,8 @@
   (criar-usuario-operador [this tenant-id {:keys [email password full_name]}]
     (jdbc/with-transaction [tx db-conn]
       (let [tenant (first (sql/query tx ["SELECT operator_limit FROM tenants WHERE id = ?" tenant-id]))
-            operator-limit (:tenants/operator_limit tenant 10) ; Default para 10 se não estiver definido
-            current-operators (count (sql/query tx ["SELECT id FROM users WHERE tenant_id = ?" tenant-id]))]
+            operator-limit (get tenant :tenants/operator_limit 4) ; Usa get e o novo default 4
+            current-operators (count (sql/query tx ["SELECT id FROM users WHERE tenant_id = ? AND role = 'operador'" tenant-id]))]
         (if (< current-operators operator-limit)
           (sql/insert! tx :users {:tenant_id     tenant-id
                                    :email         email
@@ -134,7 +136,7 @@
       (sql/insert! db-conn :tenants
                    {:company_name company_name
                     :subdomain subdomain-to-use
-                    :operator_limit (or operator_limit 10)}
+                    :operator_limit (or operator_limit 4)}
                    {:return-keys true})))
 
   (deletar-tenant [this tenant-id]
