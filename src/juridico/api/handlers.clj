@@ -36,7 +36,6 @@
      :body {:error "Dados de entrada inválidos."
             :details (s/explain-data :juridico.api.specs/create-process-payload body-params)}}))
 
-;; --- ADICIONAR ESTES HANDLERS ---
 (defn atualizar-processo-handler
   "Handler para atualizar um processo existente."
   [{:keys [db-repo body-params path-params]}]
@@ -56,7 +55,7 @@
   (let [process-id (Long/parseLong (:id path-params))
         linhas-afetadas (p/deletar-processo db-repo process-id)]
     (if (= 1 (:next.jdbc/update-count linhas-afetadas))
-      {:status 204 :body nil} ; 204 No Content é a resposta padrão para delete com sucesso
+      {:status 204 :body nil}
       {:status 404 :body {:error "Processo não encontrado ou não pertence a este escritório."}})))
 
 
@@ -67,9 +66,7 @@
   [{:keys [db-repo body-params]}]
   (if (s/valid? :juridico.api.specs/provision-payload body-params)
     (let [resultado (p/criar-tenant-e-usuario-master db-repo body-params)]
-      ;; --- MODIFICAÇÃO: Dispara o e-mail de boas-vindas ---
       (email-service/send-welcome-email (:user resultado) (:tenant resultado))
-      ;; ----------------------------------------------------
       {:status 201
        :body (assoc resultado
                       :message "Tenant criado com sucesso. E-mail de boas-vindas enviado.")})
@@ -82,14 +79,12 @@
   [{:keys [db-repo body-params tenant]}]
   (if (s/valid? :juridico.api.specs/login-payload body-params)
     (let [{:keys [email password]} body-params
-          tenant-id (:tenants/id tenant)] ; CORREÇÃO: Usa a chave qualificada
+          tenant-id (:tenants/id tenant)]
       (if-let [user (and tenant-id (p/encontrar-usuario-por-email db-repo tenant-id email))]
-        ;; Verificação de senha SEGURA usando buddy-hashers
-        ;; CORREÇÃO: Acessa o hash da senha usando a chave correta :users/password_hash
         (if (hashers/check password (:users/password_hash user))
-          (let [claims {:user-id (:users/id user)       ; CORREÇÃO
+          (let [claims {:user-id (:users/id user)
                         :tenant-id tenant-id
-                        :role (:users/role user)         ; CORREÇÃO
+                        :role (:users/role user)
                         :exp (-> (java.time.Instant/now)
                                  (.plusSeconds 3600)
                                  (.getEpochSecond))}
@@ -103,7 +98,8 @@
      :body {:error "Dados de login inválidos."
             :details (s/explain-data :juridico.api.specs/login-payload body-params)}}))
 
-;; --- HANDLERS DE GESTÃO DE OPERADORES (Protegidos por Role) ---
+
+;; --- HANDLERS DE GESTÃO DE OPERADORES (Protegidos por Role 'master') ---
 
 (defn listar-operadores-handler
   "Handler para o 'master' listar todos os usuários do seu tenant."
@@ -129,14 +125,13 @@
       (let [tenant-id (:tenant-id identity)
             novo-operador (p/criar-usuario-operador db-repo tenant-id body-params)]
         {:status 201
-         :body (dissoc novo-operador :users/password_hash)}) ; Garante que o hash da senha seja removido
+         :body (dissoc novo-operador :password_hash)})
       (catch clojure.lang.ExceptionInfo e
         (let [data (ex-data e)]
           (if (= (:type data) :limite-excedido)
             {:status 409 ; Conflict
              :body {:error "Limite de operadores atingido."
                     :details (str "O limite de " (:limit data) " operadores para este escritório foi atingido.")}}
-            ;; Se for outra exceção, relança
             (throw e)))))
     {:status 400
      :body {:error "Dados de entrada para criar operador são inválidos."
@@ -156,6 +151,33 @@
      :body {:error "Dados de entrada inválidos."
             :details (s/explain-data :juridico.api.specs/update-operador-payload body-params)}}))
 
+(defn deletar-operador-handler
+  "Handler para o 'master' deletar um operador."
+  [{:keys [db-repo path-params identity]}]
+  (let [tenant-id (:tenant-id identity)
+        user-id (Long/parseLong (:id path-params))
+        linhas-afetadas (p/deletar-operador db-repo tenant-id user-id)]
+    (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+      {:status 204 :body nil}
+      {:status 404 :body {:error "Operador não encontrado ou não pertence a este escritório."}})))
+
+
+;; --- HANDLERS DE GESTÃO DE TENANTS (Super Admin) ---
+
+(defn listar-tenants-handler
+  "Handler para o Super Admin listar todos os tenants."
+  [{:keys [db-repo]}]
+  {:status 200
+   :body (p/listar-tenants db-repo)})
+
+(defn obter-tenant-handler
+  "Handler para o Super Admin obter um tenant por ID."
+  [{:keys [db-repo path-params]}]
+  (let [tenant-id (Long/parseLong (:id path-params))]
+    (if-let [tenant (p/obter-tenant-por-id db-repo tenant-id)]
+      {:status 200 :body tenant}
+      {:status 404 :body {:error "Tenant não encontrado."}})))
+
 (defn criar-tenant-handler
   "Handler para o Super Admin criar um novo tenant."
   [{:keys [db-repo body-params]}]
@@ -167,6 +189,19 @@
      :body {:error "Dados de entrada inválidos."
             :details (s/explain-data :juridico.api.specs/create-tenant-payload body-params)}}))
 
+(defn atualizar-tenant-handler
+  "Handler para o Super Admin atualizar um tenant."
+  [{:keys [db-repo body-params path-params]}]
+  (if (s/valid? :juridico.api.specs/update-tenant-payload body-params)
+    (let [tenant-id (Long/parseLong (:id path-params))
+          linhas-afetadas (p/atualizar-tenant db-repo tenant-id body-params)]
+      (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+        {:status 200 :body {:message "Tenant atualizado com sucesso."}}
+        {:status 404 :body {:error "Tenant não encontrado."}}))
+    {:status 400
+     :body {:error "Dados de entrada inválidos."
+            :details (s/explain-data :juridico.api.specs/update-tenant-payload body-params)}}))
+
 (defn deletar-tenant-handler
   "Handler para o Super Admin deletar um tenant."
   [{:keys [db-repo path-params]}]
@@ -176,15 +211,6 @@
       {:status 204 :body nil}
       {:status 404 :body {:error "Tenant não encontrado."}})))
 
-(defn deletar-operador-handler
-  "Handler para o 'master' deletar um operador."
-  [{:keys [db-repo path-params identity]}]
-  (let [tenant-id (:tenant-id identity)
-        user-id (Long/parseLong (:id path-params))
-        linhas-afetadas (p/deletar-operador db-repo tenant-id user-id)]
-    (if (= 1 (:next.jdbc/update-count linhas-afetadas))
-      {:status 204 :body nil}
-      {:status 404 :body {:error "Operador não encontrado ou não pertence a este escritório."}})))
 
 ;; --- HANDLER DE DEPURAÇÃO (TEMPORÁRIO) ---
 (defn secret-check-handler
