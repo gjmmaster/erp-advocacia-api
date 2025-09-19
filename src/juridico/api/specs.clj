@@ -25,7 +25,8 @@
 
 ;; Define a estrutura do payload que o Super Admin envia para criar um novo escritório.
 ;; Espera o nome da empresa e o e-mail do futuro Admin do escritório.
-(s/def ::provision-payload (s/keys :req-un [::company_name ::email]))
+(s/def ::provision-payload (s/keys :req-un [::company_name ::email]
+                                     :opt-un [::operator_limit]))
 
 ;; Define a estrutura do payload para a tela de login.
 ;; AGORA SÓ ESPERA e-mail e senha. O subdomínio é identificado pelo Host da requisição.
