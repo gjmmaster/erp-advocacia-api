@@ -44,6 +44,16 @@ Estes handlers operam no contexto de um *tenant* específico, pois o `db-repo` q
 - `(obter-processo-handler [req])`: Busca um único processo pelo `id`. Retorna o processo se encontrado, ou um `404 Not Found` caso contrário.
 - `(criar-processo-handler [req])`: Valida o payload de criação e, se for válido, cria um novo processo para o *tenant*.
 
+#### Handlers de Administração de Tenants (Acesso Super Admin)
+
+Este conjunto de handlers implementa o CRUD (Criar, Ler, Atualizar, Deletar) completo para o recurso `tenant`. Eles são projetados para serem acessados exclusivamente por um usuário com a role `super-admin`, conforme garantido pelo middleware `wrap-super-admin-authorization`. Assim como os handlers de provisionamento, eles operam em um contexto de banco de dados público para poder gerenciar todos os tenants do sistema.
+
+- `(listar-tenants-handler [req])`: Lista todos os tenants registrados no sistema.
+- `(obter-tenant-handler [req])`: Busca e retorna os detalhes de um tenant específico pelo seu ID.
+- `(criar-tenant-handler [req])`: Cria um novo tenant. (Nota: o provisionamento completo com usuário master é feito pelo `provision-tenant-handler`).
+- `(atualizar-tenant-handler [req])`: Atualiza os dados de um tenant existente.
+- `(deletar-tenant-handler [req])`: Remove um tenant do sistema.
+
 #### Handlers de Provisionamento e Autenticação (Públicos)
 
 Estes handlers operam em um contexto "global", pois o `db-repo` que eles recebem do middleware `wrap-public-db-repo` não tem escopo de *tenant*.

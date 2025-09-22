@@ -137,3 +137,27 @@ Com a base de dados funcional, a camada de segurança foi aprimorada para autori
 *   **Correção de Inconsistência Crítica:**
     *   Foi identificado e corrigido um bug onde a implementação do `PostgresRepository` em `postgres.clj` não continha a função `obter-operador-por-id`, resultando em um `AbstractMethodError` em produção.
     *   Foi descoberto que a implementação de teste `mock.clj` estava severamente desatualizada. A implementação foi completada para espelhar todas as funções do `AuthRepository`, garantindo a paridade entre os ambientes de teste e produção e melhorando a confiabilidade dos testes futuros.
+---
+
+### **Etapa 5: Implementação e Validação das Funcionalidades de Super Administrador**
+
+**Data de Referência:** 22 de Setembro de 2025
+**Status:** Camada de administração central implementada, testada e validada em produção.
+
+Com a base da aplicação estável, esta etapa focou na criação de uma camada de administração central, controlada por um novo tipo de usuário com a role `super-admin`, capaz de gerenciar todo o ecossistema de tenants.
+
+*   **Nova Role `super-admin`:**
+    *   Foi introduzida a role `super-admin`, distinta da role `master` (que administra um único tenant).
+    *   Um novo middleware, `wrap-super-admin-authorization`, foi criado para proteger endpoints que só podem ser acessados por esta nova role.
+
+*   **CRUD Completo de Tenants:**
+    *   Foram desenvolvidos endpoints sob a rota `/admin/tenants` para permitir que o Super Admin realize operações de Criar, Ler, Atualizar e Deletar (CRUD) em qualquer tenant do sistema.
+    *   A funcionalidade foi validada de ponta a ponta, confirmando que um Super Admin pode gerenciar o ciclo de vida de todos os tenants.
+
+*   **Validação da Lógica de Negócio (Limite de Operadores):**
+    *   Foi realizado um teste de integração completo que validou com sucesso a funcionalidade de `operator_limit`.
+    *   O teste confirmou que o Super Admin pode definir um limite para um tenant, e o usuário `master` daquele tenant é corretamente bloqueado (`409 Conflict`) ao tentar exceder o limite, provando a robustez da regra de negócio.
+
+*   **Validação do Serviço de E-mail:**
+    *   O endpoint de provisionamento (`/admin/provision-tenant`) foi testado com sucesso utilizando um e-mail real (`gabriel.jmmaster@gmail.com`).
+    *   O sistema não só criou o tenant e o usuário master, mas também disparou corretamente o e-mail de boas-vindas transacional, confirmando que a integração com o serviço de e-mail está funcional.

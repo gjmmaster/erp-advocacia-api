@@ -8,6 +8,14 @@ Toda a lógica de manipulação de dados para a Prova de Conceito (PoC) reside a
 
 ---
 
+### **Aviso de Manutenção**
+
+**CRÍTICO:** A implementação mock deve ser mantida em **estrita sincronia** com as interfaces definidas em `protocols.clj`. Qualquer função adicionada ou modificada nos protocolos **deve** ser imediatamente refletida neste arquivo.
+
+A falha em manter a paridade entre a implementação mock e a implementação real (`postgres.clj`) pode levar a testes que passam com sucesso em ambiente de desenvolvimento, mas quebram em produção com erros como `AbstractMethodError`.
+
+---
+
 ## Detalhamento do Código
 
 ### O Banco de Dados em Memória (`db-atom`)

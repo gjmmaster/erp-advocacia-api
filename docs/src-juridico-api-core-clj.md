@@ -23,22 +23,22 @@ O namespace `juridico.api.core` importa várias bibliotecas e módulos internos 
 
 ### Definição das Rotas (`def routes`)
 
-A variável `routes` define a estrutura completa de todas as rotas da API de forma hierárquica. As rotas são divididas em duas seções principais, cada uma com seu próprio middleware de contexto:
+A variável `routes` define a estrutura completa de todas as rotas da API de forma hierárquica. As rotas são divididas em seções lógicas, cada uma protegida por uma cadeia de middlewares específica:
 
-1.  **Rotas Públicas (`/admin`, `/auth`)**:
-    - **Middleware:** `mw/wrap-public-db-repo`
-    - **Propósito:** Estas rotas são usadas para operações que não pertencem a um *tenant* específico, como o provisionamento de um novo *tenant* ou a autenticação inicial para obter um token. O middleware `wrap-public-db-repo` fornece um contexto de banco de dados "global" para essas operações.
-    - **Endpoints:**
-        - `POST /admin/provision-tenant`: Provisiona uma nova conta de *tenant*.
-        - `POST /auth/login`: Autentica um usuário.
+1.  **Rotas de Super Administração (`/admin`)**:
+    - **Middleware:** `mw/wrap-jwt-authentication`, `mw/wrap-super-admin-authorization`, `mw/wrap-public-db-repo`.
+    - **Propósito:** Estas rotas são usadas para o gerenciamento global do sistema e só podem ser acessadas por um usuário com a role `super-admin`. Elas incluem o provisionamento de novos tenants e o CRUD completo para gerenciar tenants existentes.
 
-2.  **Rotas Protegidas (`/api`)**:
-    - **Middleware:** `mw/wrap-tenant-db-repo`
-    - **Propósito:** Estas são as rotas de negócio da aplicação, que manipulam dados pertencentes a um *tenant* específico. O middleware `mw/wrap-tenant-db-repo` é um ponto de segurança crítico: ele exige a presença do header `x-tenant-id` na requisição, validando-o e injetando um contexto de banco de dados que isola todas as operações àquele *tenant*. Se o header estiver ausente ou for inválido, o acesso é bloqueado.
-    - **Endpoints:**
-        - `GET /api/processos`: Lista todos os processos do *tenant*.
-        - `POST /api/processos`: Cria um novo processo para o *tenant*.
-        - `GET /api/processos/{id}`: Obtém um processo específico pelo seu ID, dentro do escopo do *tenant*.
+2.  **Rotas de Autenticação (`/auth`)**:
+    - **Middleware:** `mw/wrap-public-db-repo`, `mw/wrap-tenant-context`.
+    - **Propósito:** Rota pública para que usuários de um tenant específico (identificado pelo subdomínio) possam se autenticar e obter um token JWT.
+
+3.  **Rotas Protegidas da API (`/api`)**:
+    - **Middleware:** `mw/wrap-jwt-authentication`.
+    - **Propósito:** Estas são as rotas de negócio da aplicação, que manipulam dados pertencentes a um tenant específico. O acesso é validado via token JWT.
+    - **Sub-rotas de Gestão de Operadores (`/api/operadores`)**:
+        - **Middleware Adicional:** `mw/wrap-master-role-authorization`.
+        - **Propósito:** Protege especificamente as rotas de gestão de operadores, garantindo que apenas o usuário `master` do tenant possa criar, listar, atualizar ou deletar outros usuários.
 
 ### Handler Principal da Aplicação (`def app`)
 
