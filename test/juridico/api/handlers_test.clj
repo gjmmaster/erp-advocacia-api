@@ -104,7 +104,7 @@
             response (h/deletar-processo-handler request)]
         (is (= 204 (:status response)))
         (let [processo-deletado (h/obter-processo-handler {:db-repo db-repo :path-params {:id "2"}})]
-          (is (= 404 (:status processo-deletado)))))))
+          (is (= 404 (:status processo-deletado)))))))))
 
 (deftest operadores-handlers-test
   (let [operador1 {:users/id 20, :users/tenant_id 1, :users/email "op1@acme.com"}
