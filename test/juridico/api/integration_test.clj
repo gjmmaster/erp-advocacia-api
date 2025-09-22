@@ -5,6 +5,7 @@
             [juridico.api.test-utils :as tu]
             [juridico.api.config :as config]
             [ring.mock.request :as mock]
+            [juridico.api.db.postgres]
             [cheshire.core :as json]
             [buddy.hashers :as hashers]))
 
