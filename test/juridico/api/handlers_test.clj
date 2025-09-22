@@ -97,8 +97,8 @@
           (is (= 200 (:status response)))
           (is (= {:message "Processo atualizado com sucesso."} (:body response)))
           (let [processo-atualizado (:body (h/obter-processo-handler {:db-repo db-repo :path-params {:id "1"}}))]
-            (is (= "Processo 1 Atualizado" (:descricao processo-atualizado)))))))
-
+          (is (= "Processo 1 Atualizado" (:descricao processo-atualizado))))))
+             
     (testing "Deletar processo com sucesso"
       (let [request {:db-repo db-repo :path-params {:id "2"}}
             response (h/deletar-processo-handler request)]
