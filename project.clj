@@ -17,4 +17,6 @@
                  [environ "1.2.0"]
                  [ring-cors "0.1.13"]]
   :main juridico.api.core
-  :repl-options {:init-ns juridico.api.core})
+  :repl-options {:init-ns juridico.api.core}
+  :test-paths ["test"]
+  :profiles {:test {:dependencies [[ring/ring-mock "0.4.0"]]}})
