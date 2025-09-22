@@ -52,8 +52,7 @@
 (deftest processos-handlers-test
   (let [processo1 {:id 1, :numero "001", :descricao "Processo 1"}
         processo2 {:id 2, :numero "002", :descricao "Processo 2"}
-        db-repo (mock-db/->MockDb (atom [processo1 processo2]))
-        identity {:user-id 10 :tenant-id 1 :role "master"}]
+        db-repo (mock-db/->MockDb (atom [processo1 processo2]))]
 
     (testing "Listar processos"
       (let [request {:db-repo db-repo}
@@ -97,14 +96,14 @@
           (is (= 200 (:status response)))
           (is (= {:message "Processo atualizado com sucesso."} (:body response)))
           (let [processo-atualizado (:body (h/obter-processo-handler {:db-repo db-repo :path-params {:id "1"}}))]
-          (is (= "Processo 1 Atualizado" (:descricao processo-atualizado))))))
-             
+            (is (= "Processo 1 Atualizado" (:descricao processo-atualizado)))))))
+
     (testing "Deletar processo com sucesso"
       (let [request {:db-repo db-repo :path-params {:id "2"}}
             response (h/deletar-processo-handler request)]
         (is (= 204 (:status response)))
         (let [processo-deletado (h/obter-processo-handler {:db-repo db-repo :path-params {:id "2"}})]
-          (is (= 404 (:status processo-deletado)))))))))
+          (is (= 404 (:status processo-deletado))))))))
 
 (deftest operadores-handlers-test
   (let [operador1 {:users/id 20, :users/tenant_id 1, :users/email "op1@acme.com"}
@@ -148,6 +147,6 @@
               request {:db-repo db-repo :identity identity :body-params dados-provisionamento}
               response (h/provision-tenant-handler request)]
           (is (= 201 (:status response)))
-          (let [tenants-after @(:state db-repo)
+          (let [tenants-after @(.state db-repo)
                 new-tenant-exists? (some #(= "newcorp" (:tenants/subdomain %)) (:tenants tenants-after))]
             (is (true? new-tenant-exists?))))))))
