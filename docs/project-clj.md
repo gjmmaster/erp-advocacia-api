@@ -40,6 +40,8 @@ As dependências deste projeto são:
 -   `[ring/ring-jetty-adapter "1.9.5"]`: Um "adaptador" que permite que uma aplicação Ring seja executada em um servidor web Jetty.
 -   `[metosin/reitit "0.5.18"]`: Uma biblioteca moderna e performática para roteamento de requisições. É usada em `core.clj` para definir todas as rotas da API.
 -   `[metosin/muuntaja "0.6.8"]`: Uma biblioteca para negociação de formato de conteúdo. Ela é responsável por, por exemplo, converter automaticamente o corpo de uma requisição JSON em um mapa Clojure e vice-versa.
+-   `[ring-cors "0.1.13"]`: Um middleware Ring para adicionar headers de Cross-Origin Resource Sharing (CORS) às respostas. Isso é crucial para permitir que aplicações de frontend (servidas de um domínio diferente) possam fazer requisições à API.
+-   `[environ "1.2.0"]`: Uma biblioteca para gerenciar configurações a partir de variáveis de ambiente, facilitando a configuração da aplicação em diferentes ambientes (desenvolvimento, produção) sem modificar o código.
 
 ### `:main juridico.api.core`
 

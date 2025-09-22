@@ -67,3 +67,13 @@ Um middleware de autorização para proteger endpoints que só devem ser acedido
     1.  Assume que `wrap-jwt-authentication` já foi executado e injetou a `:identity` do usuário.
     2.  Verifica se o campo `:role` dentro de `:identity` é igual a `"master"`.
     3.  Se for, permite o acesso. Caso contrário, retorna `403 Forbidden`.
+
+#### `(wrap-super-admin-authorization [handler])`
+
+Este é o middleware de autorização de mais alto nível, protegendo os endpoints de administração global do sistema.
+
+- **Função:** Garantir que o acesso seja restrito apenas a usuários com a role "super-admin".
+- **Mecanismo:**
+    1.  Opera de forma similar ao `wrap-master-role-authorization`, dependendo da `:identity` injetada pelo middleware de autenticação.
+    2.  Verifica se o campo `:role` na identidade do usuário é estritamente igual a `"super-admin"`.
+    3.  Se a verificação for positiva, a requisição continua. Caso contrário, é imediatamente bloqueada com uma resposta `403 Forbidden`, impedindo qualquer acesso não autorizado às rotas de gerenciamento de tenants.

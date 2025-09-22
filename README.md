@@ -40,70 +40,57 @@ O projeto está organizado da seguinte forma:
 *   [Leiningen](https://leiningen.org/)
 *   Acesso a um cluster PostgreSQL / CockroachDB.
 
-**Configuração:**
-1.  Crie uma variável de ambiente `DATABASE_URL` com a string de conexão para o seu banco de dados.
-    *Exemplo:*
-    ```bash
-    export DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
-    ```
+**Configuração de Ambiente:**
+O projeto utiliza variáveis de ambiente para configurar suas conexões e segredos. É crucial que todas as variáveis abaixo estejam definidas no ambiente de execução para o pleno funcionamento da aplicação.
 
-Com os pré-requisitos instalados e a variável de ambiente configurada, inicie o servidor:
+- `DATABASE_URL`: String de conexão com o banco de dados PostgreSQL / CockroachDB.
+- `JWT_SECRET`: Chave secreta para assinar os tokens JWT. Essencial para a segurança em produção.
+- `EMAIL_API_URL`: URL da API do serviço de e-mail transacional.
+- `EMAIL_API_TOKEN`: Token de autenticação para a API de e-mail.
+- `EMAIL_API_USER`: Usuário para a API de e-mail, se necessário pelo provedor.
+- `PORT`: Porta na qual o servidor web irá escutar. O padrão é `3000`.
+
+Com os pré-requisitos instalados e as variáveis de ambiente configuradas, inicie o servidor:
 
 ```bash
 lein run
 ```
 
-O servidor será iniciado na porta `3000` por padrão, ou na porta definida pela variável de ambiente `PORT`.
+O servidor será iniciado na porta definida pela variável `PORT` (padrão: 3000).
 
 ## Como Testar a API
 
-Use `curl` ou uma ferramenta de sua preferência para fazer requisições à API. O fluxo abaixo demonstra a criação e gestão de usuários "operadores" por um usuário "master".
+A API possui diferentes níveis de acesso baseados em papéis (`super-admin`, `master`, `operador`). Recomenda-se o uso de ferramentas como Postman ou `curl`.
 
-**Variáveis de Ambiente (Exemplo):**
+### Testes de Super Administrador (requer token de `super-admin`)
+
+**Listar todos os Tenants**
 ```bash
-# URL da API
-API_URL="http://localhost:3000"
-
-# Token do usuário "master" (obtido após o login)
-MASTER_TOKEN="SEU_TOKEN_DE_MASTER_AQUI"
-
-# Token do usuário "operador" (obtido após o login com as credenciais do operador criado)
-OPERATOR_TOKEN="SEU_TOKEN_DE_OPERADOR_AQUI"
+curl -X GET https://[URL_DA_API]/admin/tenants \
+  -H "Authorization: Bearer $SUPER_ADMIN_TOKEN"
 ```
 
-### Testes de Gestão de Operadores (RBAC)
-
-**1. Criar um novo Operador (como Master)**
-*Um usuário "master" cria um novo usuário com a role "operador" dentro do seu próprio tenant.*
-*Deve retornar `201 Created`.*
+**Provisionar um novo Tenant e seu usuário Master**
 ```bash
-curl -i -X POST "$API_URL/api/operadores" \
+curl -X POST https://[URL_DA_API]/admin/provision-tenant \
+  -H "Authorization: Bearer $SUPER_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"company_name": "Novo Escritório", "email": "admin@novo.com"}'
+```
+
+### Testes de Administrador de Tenant (requer token de `master`)
+
+**Listar Operadores do seu Tenant**
+```bash
+curl -X GET https://[URL_DA_API]/api/operadores \
+  -H "Authorization: Bearer $MASTER_TOKEN"
+```
+
+**Criar um novo Operador**
+*Esta ação será bloqueada com `409 Conflict` se o `operator_limit` do tenant for atingido.*
+```bash
+curl -X POST https://[URL_DA_API]/api/operadores \
   -H "Authorization: Bearer $MASTER_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"full_name": "Fulano de Tal", "email": "fulano@operador.com", "password": "uma_senha_forte"}'
-```
-
-**2. Listar Operadores (como Master)**
-*O usuário "master" lista todos os usuários do seu tenant. A resposta deve incluir o próprio master e o operador recém-criado.*
-*Deve retornar `200 OK`.*
-```bash
-curl -i -X GET "$API_URL/api/operadores" \
-  -H "Authorization: Bearer $MASTER_TOKEN"
-```
-
-**3. Tentar Listar Operadores (como Operador)**
-*Um usuário "operador" tenta acessar a mesma rota de listagem.*
-*Deve retornar `403 Forbidden`, confirmando que o middleware de autorização está funcionando.*
-```bash
-curl -i -X GET "$API_URL/api/operadores" \
-  -H "Authorization: Bearer $OPERATOR_TOKEN"
-```
-
-**4. Obter um Operador por ID (como Master)**
-*O usuário "master" busca um operador específico pelo seu ID.*
-*Deve retornar `200 OK` com os dados do operador.*
-```bash
-# Substitua {ID_DO_OPERADOR} pelo ID real
-curl -i -X GET "$API_URL/api/operadores/{ID_DO_OPERADOR}" \
-  -H "Authorization: Bearer $MASTER_TOKEN"
+  -d '{"full_name": "Novo Operador", "email": "operador@exemplo.com", "password": "senha"}'
 ```
