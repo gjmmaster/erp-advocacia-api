@@ -1,5 +1,26 @@
-# Etapa 1: Build - Use a imagem oficial do Leiningen para compilar o projeto
-FROM clojure:lein-2.9.1 as builder
+# --- Estágio 1: Build do Frontend ---
+# Usamos uma imagem oficial do Node.js para construir a aplicação React.
+FROM node:18-alpine as frontend-builder
+
+# Definimos o diretório de trabalho para o código do frontend.
+WORKDIR /app/frontend
+
+# Copiamos os arquivos de gerenciamento de pacotes primeiro para aproveitar o cache.
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Instalamos as dependências do frontend.
+RUN npm install
+
+# Copiamos o restante do código-fonte do frontend.
+COPY frontend/ ./
+
+# Executamos o build de produção do React.
+RUN npm run build
+
+
+# --- Estágio 2: Build do Backend (O seu estágio original) ---
+# Use a imagem oficial do Leiningen para compilar o projeto
+FROM clojure:lein-2.9.1 as backend-builder
 
 # Defina o diretório de trabalho dentro do contêiner
 WORKDIR /app
@@ -15,14 +36,21 @@ COPY src ./src
 # Compile a aplicação em um uberjar (JAR auto-suficiente)
 RUN lein uberjar
 
-# Etapa 2: Execução - Use uma imagem leve com apenas o Java Runtime Environment (JRE)
+
+# --- Estágio 3: Imagem Final de Execução (Unificada) ---
+# Use uma imagem leve com apenas o Java Runtime Environment (JRE)
 FROM openjdk:11-jre-slim
 
 # Defina o diretório de trabalho
 WORKDIR /app
 
-# Copie o uberjar da etapa de build para a imagem final
-COPY --from=builder /app/target/juridico-api-0.1.0-SNAPSHOT-standalone.jar ./app.jar
+# 1. Copie o uberjar da etapa de build do backend para a imagem final
+COPY --from=backend-builder /app/target/juridico-api-0.1.0-SNAPSHOT-standalone.jar ./app.jar
+
+# 2. Copie os arquivos estáticos da etapa de build do frontend para uma pasta 'public'
+# O servidor Clojure foi configurado para servir arquivos desta pasta.
+COPY --from=frontend-builder /app/frontend/dist ./public
+# Nota: Se o seu build do React gerar uma pasta 'build' em vez de 'dist', troque 'dist' por 'build' na linha acima.
 
 # Defina as variáveis de ambiente
 ENV PORT="3000"
