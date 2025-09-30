@@ -92,11 +92,11 @@
                 :middleware [muuntaja/format-middleware]}})
        ;; Handler Padrão para Servir o Frontend
        (ring/routes
-        ;; 1. Tenta servir arquivos estáticos da raiz do classpath (ex: /assets/index.js)
+        ;; 1. Tenta servir arquivos estáticos da pasta 'public' dentro do classpath
         (ring/create-resource-handler {:path "/"})
-        ;; 2. Se não for um arquivo estático, serve o 'index.html' da raiz.
+        ;; 2. Se não for um arquivo estático, serve o 'index.html' da pasta 'public'.
         (fn [_request]
-          (-> (resp/resource-response "index.html")
+          (-> (resp/resource-response "index.html" {:root "public"})
               (resp/content-type "text/html")))))
 
       ;; Middleware de CORS
