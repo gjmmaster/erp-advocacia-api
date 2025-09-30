@@ -6,17 +6,17 @@
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
             [ring.middleware.cors :as cors]
-            [ring.util.response :as resp])
+            [ring.middleware.resource :as resource]
+            [ring.util.response :as resp]
+            [clojure.string :as str]))
   (:gen-class))
 
 ;; --- Rotas da API (Estrutura Inalterada) ---
-(def routes
+(def api-routes
   [""
-   ;; --- ROTA DE DEPURAÇÃO (TEMPORÁRIA) ---
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
 
-   ;; --- ROTAS DE ADMINISTRAÇÃO (protegidas para Super Admin) ---
    ["/admin"
     {:middleware [mw/wrap-jwt-authentication
                   mw/wrap-super-admin-authorization
@@ -40,15 +40,12 @@
       :delete {:handler h/deletar-tenant-handler
                :name :admin/delete-tenant}}]]
 
-   ;; --- ROTAS DE AUTENTICAÇÃO (com contexto de tenant) ---
    ["/auth" {:middleware [mw/wrap-public-db-repo
                           mw/wrap-tenant-context]}
     ["/login"
      {:post {:handler h/login-handler
              :name :auth/login}}]]
 
-
-   ;; --- ROTAS PROTEGIDAS DA API (com autenticação JWT) ---
    ["/api"
     {:middleware [mw/wrap-jwt-authentication]}
 
@@ -65,8 +62,7 @@
             :name :processos/update}
       :delete {:handler h/deletar-processo-handler
                :name :processos/delete}}]
-
-    ;; --- ROTAS DE GESTÃO DE OPERADORES (acessíveis apenas pelo 'master') ---
+    
     ["/operadores"
      {:middleware [mw/wrap-master-role-authorization]
       :get {:handler h/listar-operadores-handler
@@ -83,28 +79,36 @@
       :delete {:handler h/deletar-operador-handler
                :name :operadores/delete}}]]])
 
-;; --- Handler Principal da Aplicação (VERSÃO FINAL) ---
-(def app
-  (-> (ring/ring-handler
-       (ring/router
-        routes
-        {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}})
-       ;; Handler Padrão para Servir o Frontend
-       (ring/routes
-        ;; 1. Tenta servir arquivos estáticos da pasta 'public' dentro do classpath
-        (ring/create-resource-handler {:path "/"})
-        ;; 2. Se não for um arquivo estático, serve o 'index.html' da pasta 'public'.
-        (fn [_request]
-          (-> (resp/resource-response "index.html" {:root "public"})
-              (resp/content-type "text/html")))))
+;; --- Handler que serve o index.html para rotas do frontend ---
+(defn spa-handler [_request]
+  (-> (resp/resource-response "index.html" {:root "public"})
+      (resp/content-type "text/html")))
 
+;; --- Handler principal que decide entre API e Frontend ---
+(def main-handler
+  (ring/router
+   ;; As rotas de API têm prioridade
+   api-routes
+   {:data {:muuntaja m/instance
+           :middleware [muuntaja/format-middleware]}}))
+
+;; --- Aplicação final com todos os middlewares ---
+(def app
+  (-> (fn [request]
+        ;; Se a rota não for encontrada no roteador da API,
+        ;; entrega o controle para o handler do frontend.
+        (or (main-handler request)
+            (spa-handler request)))
+      ;; O wrap-resource é crucial. Ele roda ANTES de tudo.
+      ;; Se a requisição for para um arquivo estático (ex: /assets/index.js),
+      ;; ele o serve e a requisição termina aqui.
+      ;; Se não, ele passa a requisição para a função acima.
+      (resource/wrap-resource "public")
       ;; Middleware de CORS
       (cors/wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :post :put :delete]
        :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
-
 
 ;; --- Ponto de Entrada (Inalterado) ---
 (defn -main []
