@@ -53,11 +53,12 @@
         api-routes
         {:data {:muuntaja m/instance
                 :middleware [muuntaja/format-middleware]}})
-       ;; --- Handlers de Fallback ---
+       ;; --- Handlers de Fallback (para o que não for API) ---
        (ring/routes
-        ;; 1. Tenta servir um arquivo estático da pasta 'public'
+        ;; 1. Tenta servir um arquivo estático da pasta 'public'.
+        ;;    Isso lida com /assets/index.js, /vite.svg, etc.
         (ring/create-resource-handler {:path "/"})
-        ;; 2. Se não for um arquivo e não for uma rota da API, serve o index.html
+        ;; 2. Se não for um arquivo estático, serve o 'index.html' para o React Router.
         (ring/create-default-handler
          {:not-found (constantly (-> (resp/resource-response "index.html" {:root "public"})
                                      (resp/content-type "text/html")))})))
