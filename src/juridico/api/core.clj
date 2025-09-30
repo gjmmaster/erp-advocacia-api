@@ -6,16 +6,12 @@
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
             [ring.middleware.cors :as cors]
-            [ring.middleware.resource :as resource]
-            [ring.util.response :as resp]
-            [clojure.string :as str])
+            [ring.util.response :as resp])
   (:gen-class))
 
-;; --- Rotas da API (Definidas separadamente) ---
+;; --- Rotas da API (Estrutura Inalterada) ---
 (def api-routes
   [""
-   {:middleware [muuntaja/format-middleware]} ; Aplica middleware de formato a todas as rotas da API
-
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
 
@@ -50,28 +46,22 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Handler APENAS para a API ---
-(def api-handler
-  (ring/ring-handler
-   (ring/router api-routes {:data {:muuntaja m/instance}})
-   (ring/create-default-handler))) ; Handler para rotas de API não encontradas (404)
-
-;; --- Handler que serve o index.html para QUALQUER rota do frontend ---
-(defn spa-handler [_request]
-  (-> (resp/resource-response "index.html" {:root "public"})
-      (resp/content-type "text/html")))
-
-;; --- Aplicação final com todos os middlewares ---
+;; --- Aplicação final com a lógica correta para SPA ---
 (def app
-  (-> (fn [request]
-        ;; Se a URI começa com /api, /admin, ou /auth, usa o handler da API.
-        (if (re-find #"^/(api|admin|auth|debug)" (:uri request))
-          (api-handler request)
-          ;; Senão, é uma rota do frontend, então serve o SPA.
-          (spa-handler request)))
-      ;; 1. O wrap-resource roda PRIMEIRO. Se for um arquivo estático (JS/CSS), ele é servido.
-      (resource/wrap-resource "public")
-      ;; 2. O wrap-cors roda em seguida para todas as requisições.
+  (-> (ring/ring-handler
+       (ring/router
+        api-routes
+        {:data {:muuntaja m/instance
+                :middleware [muuntaja/format-middleware]}})
+       ;; --- Handlers de Fallback ---
+       (ring/routes
+        ;; 1. Tenta servir um arquivo estático da pasta 'public'
+        (ring/create-resource-handler {:path "/"})
+        ;; 2. Se não for um arquivo e não for uma rota da API, serve o index.html
+        (ring/create-default-handler
+         {:not-found (constantly (-> (resp/resource-response "index.html" {:root "public"})
+                                     (resp/content-type "text/html")))})))
+      ;; Middleware de CORS aplicado a TUDO
       (cors/wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :post :put :delete]
