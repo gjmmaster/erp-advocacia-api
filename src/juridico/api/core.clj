@@ -9,11 +9,13 @@
             [ring.middleware.resource :as resource]
             [ring.util.response :as resp]
             [clojure.string :as str])
-  (:gen-class)) ; <--- CORRIGIDO: Agora dentro da declaração 'ns'
+  (:gen-class))
 
-;; --- Rotas da API (Estrutura Inalterada) ---
+;; --- Rotas da API (Definidas separadamente) ---
 (def api-routes
   [""
+   {:middleware [muuntaja/format-middleware]} ; Aplica middleware de formato a todas as rotas da API
+
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
 
@@ -21,90 +23,55 @@
     {:middleware [mw/wrap-jwt-authentication
                   mw/wrap-super-admin-authorization
                   mw/wrap-public-db-repo]}
+    ["/provision-tenant" {:post {:handler h/provision-tenant-handler}}]
+    ["/tenants" {:get {:handler h/listar-tenants-handler}
+                 :post {:handler h/criar-tenant-handler}}]
+    ["/tenants/{id}" {:get {:handler h/obter-tenant-handler}
+                      :put {:handler h/atualizar-tenant-handler}
+                      :delete {:handler h/deletar-tenant-handler}}]]
 
-    ["/provision-tenant"
-     {:post {:handler h/provision-tenant-handler
-             :name :admin/provision}}]
-
-    ["/tenants"
-     {:get {:handler h/listar-tenants-handler
-            :name :admin/list-tenants}
-      :post {:handler h/criar-tenant-handler
-             :name :admin/create-tenant}}]
-
-    ["/tenants/{id}"
-     {:get {:handler h/obter-tenant-handler
-            :name :admin/get-tenant}
-      :put {:handler h/atualizar-tenant-handler
-            :name :admin/update-tenant}
-      :delete {:handler h/deletar-tenant-handler
-               :name :admin/delete-tenant}}]]
-
-   ["/auth" {:middleware [mw/wrap-public-db-repo
-                          mw/wrap-tenant-context]}
-    ["/login"
-     {:post {:handler h/login-handler
-             :name :auth/login}}]]
+   ["/auth" {:middleware [mw/wrap-public-db-repo mw/wrap-tenant-context]}
+    ["/login" {:post {:handler h/login-handler}}]]
 
    ["/api"
     {:middleware [mw/wrap-jwt-authentication]}
-
-    ["/processos"
-     {:get {:handler h/listar-processos-handler
-            :name :processos/list}
-      :post {:handler h/criar-processo-handler
-             :name :processos/create}}]
-
-    ["/processos/{id}"
-     {:get {:handler h/obter-processo-handler
-            :name :processos/get-by-id}
-      :put {:handler h/atualizar-processo-handler
-            :name :processos/update}
-      :delete {:handler h/deletar-processo-handler
-               :name :processos/delete}}]
-    
+    ["/processos" {:get {:handler h/listar-processos-handler}
+                   :post {:handler h/criar-processo-handler}}]
+    ["/processos/{id}" {:get {:handler h/obter-processo-handler}
+                        :put {:handler h/atualizar-processo-handler}
+                        :delete {:handler h/deletar-processo-handler}}]
     ["/operadores"
      {:middleware [mw/wrap-master-role-authorization]
-      :get {:handler h/listar-operadores-handler
-            :name :operadores/list}
-      :post {:handler h/criar-operador-handler
-             :name :operadores/create}}]
-
+      :get {:handler h/listar-operadores-handler}
+      :post {:handler h/criar-operador-handler}}]
     ["/operadores/{id}"
      {:middleware [mw/wrap-master-role-authorization]
-      :get {:handler h/obter-operador-handler
-            :name :operadores/get-by-id}
-      :put {:handler h/atualizar-operador-handler
-            :name :operadores/update}
-      :delete {:handler h/deletar-operador-handler
-               :name :operadores/delete}}]]])
+      :get {:handler h/obter-operador-handler}
+      :put {:handler h/atualizar-operador-handler}
+      :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Handler que serve o index.html para rotas do frontend ---
+;; --- Handler APENAS para a API ---
+(def api-handler
+  (ring/ring-handler
+   (ring/router api-routes {:data {:muuntaja m/instance}})
+   (ring/create-default-handler))) ; Handler para rotas de API não encontradas (404)
+
+;; --- Handler que serve o index.html para QUALQUER rota do frontend ---
 (defn spa-handler [_request]
   (-> (resp/resource-response "index.html" {:root "public"})
       (resp/content-type "text/html")))
 
-;; --- Handler principal que decide entre API e Frontend ---
-(def main-handler
-  (ring/router
-   ;; As rotas de API têm prioridade
-   api-routes
-   {:data {:muuntaja m/instance
-           :middleware [muuntaja/format-middleware]}}))
-
 ;; --- Aplicação final com todos os middlewares ---
 (def app
   (-> (fn [request]
-        ;; Se a rota não for encontrada no roteador da API,
-        ;; entrega o controle para o handler do frontend.
-        (or (main-handler request)
-            (spa-handler request)))
-      ;; O wrap-resource é crucial. Ele roda ANTES de tudo.
-      ;; Se a requisição for para um arquivo estático (ex: /assets/index.js),
-      ;; ele o serve e a requisição termina aqui.
-      ;; Se não, ele passa a requisição para a função acima.
+        ;; Se a URI começa com /api, /admin, ou /auth, usa o handler da API.
+        (if (re-find #"^/(api|admin|auth|debug)" (:uri request))
+          (api-handler request)
+          ;; Senão, é uma rota do frontend, então serve o SPA.
+          (spa-handler request)))
+      ;; 1. O wrap-resource roda PRIMEIRO. Se for um arquivo estático (JS/CSS), ele é servido.
       (resource/wrap-resource "public")
-      ;; Middleware de CORS
+      ;; 2. O wrap-cors roda em seguida para todas as requisições.
       (cors/wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :post :put :delete]
