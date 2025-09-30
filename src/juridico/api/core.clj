@@ -8,8 +8,8 @@
             [ring.middleware.cors :as cors]
             [ring.middleware.resource :as resource]
             [ring.util.response :as resp]
-            [clojure.string :as str]))
-  (:gen-class))
+            [clojure.string :as str])
+  (:gen-class)) ; <--- CORRIGIDO: Agora dentro da declaração 'ns'
 
 ;; --- Rotas da API (Estrutura Inalterada) ---
 (def api-routes
