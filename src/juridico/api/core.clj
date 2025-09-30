@@ -5,10 +5,13 @@
             [muuntaja.core :as m]
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
-            [ring.middleware.cors :as cors])
+            [ring.middleware.cors :as cors]
+            ;; Adicionados para servir o frontend
+            [ring.middleware.resource :as resource] 
+            [ring.util.response :as resp])
   (:gen-class))
 
-;; --- Rotas da API (Estrutura Corrigida) ---
+;; --- Rotas da API (Estrutura Inalterada) ---
 (def routes
   [""
    ;; --- ROTA DE DEPURAÇÃO (TEMPORÁRIA) ---
@@ -84,20 +87,30 @@
 
 ;; --- Handler Principal da Aplicação (COM A ALTERAÇÃO) ---
 (def app
-  (-> (ring/ring-handler
-       (ring/router
-        routes
-        {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}})
-       (ring/create-default-handler
-        {:not-found (constantly {:status 404, :body "{\"error\": \"Rota não encontrada.\"}"})}))
-      (cors/wrap-cors
-        :access-control-allow-origin [#".*"]
-        :access-control-allow-methods [:get :post :put :delete]
-        :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
+  (let [router (ring/router
+                routes
+                {:data {:muuntaja m/instance
+                        :middleware [muuntaja/format-middleware]}})]
+    (-> (ring/ring-handler
+         router
+         ;; Handler "catch-all": Se nenhuma rota da API corresponder,
+         ;; serve o index.html do React para permitir o roteamento no lado do cliente.
+         (fn [_request]
+           (-> (resp/resource-response "index.html" {:root "public"})
+               (resp/content-type "text/html"))))
+
+        ;; Middleware para servir arquivos estáticos (CSS, JS, imagens)
+        ;; da pasta 'public' onde o build do React estará.
+        (resource/wrap-resource "public")
+
+        ;; Middleware de CORS (mantido como estava)
+        (cors/wrap-cors
+         :access-control-allow-origin [#".*"]
+         :access-control-allow-methods [:get :post :put :delete]
+         :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"}))))
 
 
-;; --- Ponto de Entrada ---
+;; --- Ponto de Entrada (Inalterado) ---
 (defn -main []
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
     (println "Iniciando servidor na porta" port "...")
