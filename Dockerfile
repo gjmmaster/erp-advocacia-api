@@ -47,10 +47,9 @@ WORKDIR /app
 # 1. Copie o uberjar da etapa de build do backend para a imagem final
 COPY --from=backend-builder /app/target/juridico-api-0.1.0-SNAPSHOT-standalone.jar ./app.jar
 
-# 2. Copie os arquivos estáticos da etapa de build do frontend para uma pasta 'public'
-# O servidor Clojure foi configurado para servir arquivos desta pasta.
-COPY --from=frontend-builder /app/frontend/dist ./public
-# Nota: Se o seu build do React gerar uma pasta 'build' em vez de 'dist', troque 'dist' por 'build' na linha acima.
+# 2. Copie os arquivos estáticos da etapa de build do frontend DIRETAMENTE PARA A RAIZ
+#    O ponto final (.) significa copiar para o WORKDIR atual (/app).
+COPY --from=frontend-builder /app/frontend/dist .
 
 # Defina as variáveis de ambiente
 ENV PORT="3000"
