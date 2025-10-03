@@ -22,7 +22,7 @@ function SuperAdminLoginPage() {
 
   return (
     <div>
-      <h1>Super Admin Login</h1>
+      <h1>Super Admin Login v2</h1>
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="email">Email:</label>
