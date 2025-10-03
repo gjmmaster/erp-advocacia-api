@@ -6,6 +6,9 @@ import SuperAdminLoginPage from './pages/SuperAdminLoginPage'
 function App() {
   return (
     <Routes>
+      {/* Rota adicionada para corrigir o redirecionamento do servidor */}
+      <Route path="/index.html" element={<Navigate to="/" />} />
+
       <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
       <Route
         path="/super-admin/dashboard"
