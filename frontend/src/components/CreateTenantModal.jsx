@@ -3,9 +3,8 @@ import React, { useContext, useState } from 'react';
 import AuthContext from '../context/AuthContext';
 
 const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
-  const [tenantName, setTenantName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [masterEmail, setMasterEmail] = useState('');
-  const [masterPassword, setMasterPassword] = useState('');
   const [error, setError] = useState('');
   const { token } = useContext(AuthContext);
 
@@ -14,12 +13,12 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
     setError('');
 
     try {
+      // Ajustado para enviar os campos corretos que o backend espera
       await axios.post(
         '/admin/provision-tenant',
         {
-          tenant_name: tenantName,
-          master_user_email: masterEmail,
-          master_user_password: masterPassword,
+          company_name: companyName,
+          email: masterEmail,
         },
         {
           headers: {
@@ -27,10 +26,15 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
           },
         }
       );
-      onSuccess(); // Refresh the tenants list
-      onClose();   // Close the modal
+      
+      // Limpa os campos após o sucesso
+      setCompanyName('');
+      setMasterEmail('');
+      
+      onSuccess(); // Atualiza a lista de escritórios
+      onClose();   // Fecha o modal
     } catch (err) {
-      setError('Failed to provision tenant. Please try again.');
+      setError('Falha ao provisionar escritório. Tente novamente.');
       console.error(err);
     }
   };
@@ -42,19 +46,19 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
   return (
     <div className="modal">
       <div className="modal-content">
-        <h2>Provision New Tenant</h2>
+        <h2>Provisionar Novo Escritório</h2>
         <form onSubmit={handleSubmit}>
           <div>
-            <label>Tenant Name:</label>
+            <label>Nome do Escritório:</label>
             <input
               type="text"
-              value={tenantName}
-              onChange={(e) => setTenantName(e.target.value)}
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
               required
             />
           </div>
           <div>
-            <label>Master User Email:</label>
+            <label>E-mail do Administrador (Master):</label>
             <input
               type="email"
               value={masterEmail}
@@ -62,18 +66,10 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
               required
             />
           </div>
-          <div>
-            <label>Master User Password:</label>
-            <input
-              type="password"
-              value={masterPassword}
-              onChange={(e) => setMasterPassword(e.target.value)}
-              required
-            />
-          </div>
+          {/* O campo de senha foi removido, pois o backend gera uma senha temporária */}
           {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button type="submit">Provision</button>
-          <button type="button" onClick={onClose}>Cancel</button>
+          <button type="submit">Provisionar</button>
+          <button type="button" onClick={onClose}>Cancelar</button>
         </form>
       </div>
     </div>
