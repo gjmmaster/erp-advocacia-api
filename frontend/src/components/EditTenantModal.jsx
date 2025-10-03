@@ -1,17 +1,20 @@
+// frontend/src/components/EditTenantModal.jsx
 import axios from 'axios';
 import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/AuthContext';
 
 const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
-  // Renomeado para clareza
-  const [companyName, setCompanyName] = useState('');
+  // Estado local para o nome do escritório, para que o campo de texto seja editável
+  const [editableCompanyName, setEditableCompanyName] = useState('');
   const [error, setError] = useState('');
   const { token } = useContext(AuthContext);
 
+  // Efeito para atualizar o estado local sempre que o tenant selecionado mudar
   useEffect(() => {
     if (tenant) {
-      // CORREÇÃO: O backend envia 'company_name', não 'name'
-      setCompanyName(tenant.company_name);
+      setEditableCompanyName(tenant.company_name);
+    } else {
+      setEditableCompanyName(''); // Limpa se não houver tenant
     }
   }, [tenant]);
 
@@ -25,8 +28,8 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       await axios.put(
         `/admin/tenants/${tenant.id}`,
         {
-          // CORREÇÃO: A API espera 'company_name' no corpo da requisição
-          company_name: companyName,
+          // Envia o nome do estado local editável
+          company_name: editableCompanyName,
         },
         {
           headers: {
@@ -34,10 +37,10 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
           },
         }
       );
-      onSuccess(); // Atualiza a lista de tenants
+      onSuccess(); // Atualiza a lista
       onClose();   // Fecha o modal
     } catch (err) {
-      setError('Falha ao atualizar o escritório. Tente novamente.');
+      setError('Falha ao atualizar escritório. Tente novamente.');
       console.error(err);
     }
   };
@@ -55,8 +58,8 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
             <label>Nome do Escritório:</label>
             <input
               type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              value={editableCompanyName}
+              onChange={(e) => setEditableCompanyName(e.target.value)}
               required
             />
           </div>
