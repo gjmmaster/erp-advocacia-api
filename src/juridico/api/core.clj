@@ -6,10 +6,13 @@
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
             [ring.middleware.cors :as cors]
-            [ring.util.response :as resp])
+            [ring.util.response :as resp]
+            [ring.middleware.resource :as resource]
+            [ring.middleware.content-type :as content-type]
+            [ring.middleware.not-modified :as not-modified])
   (:gen-class))
 
-;; --- Rotas da API (Estrutura Inalterada) ---
+;; --- As rotas da sua API continuam exatamente as mesmas ---
 (def api-routes
   [""
    ["/debug"
@@ -21,7 +24,7 @@
                   mw/wrap-public-db-repo]}
     ["/provision-tenant" {:post {:handler h/provision-tenant-handler}}]
     ["/tenants" {:get {:handler h/listar-tenants-handler}
-                 :post {:handler h/criar-tenant-handler}}]
+                :post {:handler h/criar-tenant-handler}}]
     ["/tenants/{id}" {:get {:handler h/obter-tenant-handler}
                       :put {:handler h/atualizar-tenant-handler}
                       :delete {:handler h/deletar-tenant-handler}}]]
@@ -32,7 +35,7 @@
    ["/api"
     {:middleware [mw/wrap-jwt-authentication]}
     ["/processos" {:get {:handler h/listar-processos-handler}
-                   :post {:handler h/criar-processo-handler}}]
+                  :post {:handler h/criar-processo-handler}}]
     ["/processos/{id}" {:get {:handler h/obter-processo-handler}
                         :put {:handler h/atualizar-processo-handler}
                         :delete {:handler h/deletar-processo-handler}}]
@@ -46,27 +49,36 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Aplicação final com a lógica correta para SPA ---
+;; --- Handler que serve o index.html para qualquer rota não encontrada na API ---
+;; Esta função é a chave para o SPA funcionar. Ela garante que o React Router receba
+;; o controle para qualquer URL que não seja um endpoint da API.
+(defn spa-handler [_]
+  (-> (resp/resource-response "index.html" {:root "public"})
+      (resp/content-type "text/html")))
+
+;; --- Construção da Aplicação (Lógica Reescrevida e Mais Robusta) ---
 (def app
-  (-> (ring/ring-handler
-       (ring/router
-        api-routes
-        {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}})
-       ;; --- Handlers de Fallback (para o que não for API) ---
-       (ring/routes
-        ;; 1. Tenta servir um arquivo estático da pasta 'public'.
-        ;;    Isso lida com /assets/index.js, /vite.svg, etc.
-        (ring/create-resource-handler {:path "/"})
-        ;; 2. Se não for um arquivo estático, serve o 'index.html' para o React Router.
-        (ring/create-default-handler
-         {:not-found (constantly (-> (resp/resource-response "index.html" {:root "public"})
-                                     (resp/content-type "text/html")))})))
-      ;; Middleware de CORS aplicado a TUDO
-      (cors/wrap-cors
-       :access-control-allow-origin [#".*"]
-       :access-control-allow-methods [:get :post :put :delete]
-       :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
+  (->
+   ;; 1. O roteador da API é criado. O `spa-handler` é definido como o handler padrão
+   ;;    para qualquer rota que não corresponda à API.
+   (ring/ring-handler
+    (ring/router
+     api-routes
+     {:data {:muuntaja m/instance
+             :middleware [muuntaja/format-middleware]}})
+    {:default spa-handler})
+
+   ;; 2. Middlewares para servir os arquivos estáticos do frontend (js, css, imagens).
+   ;;    Eles rodam ANTES do roteador da API.
+   (resource/wrap-resource "public")
+   (content-type/wrap-content-type)
+   (not-modified/wrap-not-modified)
+
+   ;; 3. O middleware de CORS envolve tudo.
+   (cors/wrap-cors
+    :access-control-allow-origin [#".*"]
+    :access-control-allow-methods [:get :post :put :delete]
+    :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
 
 ;; --- Ponto de Entrada (Inalterado) ---
 (defn -main []
