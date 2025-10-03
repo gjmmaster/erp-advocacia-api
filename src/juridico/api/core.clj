@@ -49,33 +49,23 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Handler de Teste ---
-;; Temporariamente, esta função retorna um HTML simples em vez de procurar o index.html.
-;; Isso nos ajuda a confirmar se a lógica de roteamento está funcionando.
+;; --- Handler que serve o index.html para qualquer rota não encontrada na API ---
 (defn spa-handler [_]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body "<h1>Página de Teste do Backend</h1>"})
+  (-> (resp/resource-response "index.html" {:root "public"})
+      (resp/content-type "text/html")))
 
 ;; --- Construção da Aplicação (Lógica Reescrevida e Mais Robusta) ---
 (def app
   (->
-   ;; 1. O roteador da API é criado. O `spa-handler` é definido como o handler padrão
-   ;;    para qualquer rota que não corresponda à API.
    (ring/ring-handler
     (ring/router
      api-routes
      {:data {:muuntaja m/instance
              :middleware [muuntaja/format-middleware]}})
     {:default spa-handler})
-
-   ;; 2. Middlewares para servir os arquivos estáticos do frontend (js, css, imagens).
-   ;;    Eles rodam ANTES do roteador da API.
    (resource/wrap-resource "public")
    (content-type/wrap-content-type)
    (not-modified/wrap-not-modified)
-
-   ;; 3. O middleware de CORS envolve tudo.
    (cors/wrap-cors
     :access-control-allow-origin [#".*"]
     :access-control-allow-methods [:get :post :put :delete]
