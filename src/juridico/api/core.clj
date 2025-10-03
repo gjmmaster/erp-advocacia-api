@@ -49,12 +49,13 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Handler que serve o index.html para qualquer rota não encontrada na API ---
-;; Esta função é a chave para o SPA funcionar. Ela garante que o React Router receba
-;; o controle para qualquer URL que não seja um endpoint da API.
+;; --- Handler de Teste ---
+;; Temporariamente, esta função retorna um HTML simples em vez de procurar o index.html.
+;; Isso nos ajuda a confirmar se a lógica de roteamento está funcionando.
 (defn spa-handler [_]
-  (-> (resp/resource-response "index.html" {:root "public"})
-      (resp/content-type "text/html")))
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body "<h1>Página de Teste do Backend</h1>"})
 
 ;; --- Construção da Aplicação (Lógica Reescrevida e Mais Robusta) ---
 (def app
