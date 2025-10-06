@@ -12,7 +12,7 @@ function SuperAdminLoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const success = await login(email, password);
+    const success = await login(email, password, true); // true indica que é super admin
     if (success) {
       navigate('/super-admin/dashboard');
     } else {

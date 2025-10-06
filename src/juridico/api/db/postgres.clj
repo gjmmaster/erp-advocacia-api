@@ -57,6 +57,9 @@
   (encontrar-usuario-por-email [this tenant-id email]
     (first (sql/query db-conn ["SELECT * FROM users WHERE tenant_id = ? AND email = ?" tenant-id email])))
 
+  (encontrar-super-admin-por-email [this email]
+    (first (sql/query db-conn ["SELECT * FROM users WHERE email = ? AND role = 'super-admin'" email])))
+
   (criar-tenant-e-usuario-master [this {:keys [company_name email operator_limit]}]
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))

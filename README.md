@@ -62,6 +62,37 @@ O servidor será iniciado na porta definida pela variável `PORT` (padrão: 3000
 
 A API possui diferentes níveis de acesso baseados em papéis (`super-admin`, `master`, `operador`). Recomenda-se o uso de ferramentas como Postman ou `curl`.
 
+### Autenticação
+
+#### Login do Super Admin
+
+**IMPORTANTE:** Super admin usa uma rota separada que não requer tenant context.
+
+```bash
+curl -X POST https://[URL_DA_API]/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"super@admin.com","password":"sua_senha"}'
+```
+
+**Resposta:**
+```json
+{
+  "message": "Super Admin super@admin.com autenticado com sucesso.",
+  "token": "eyJ..."
+}
+```
+
+#### Login de Admin/Operador de Tenant
+
+```bash
+curl -X POST https://[URL_DA_API]/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Subdomain: nome-do-escritorio" \
+  -d '{"email":"admin@escritorio.com","password":"senha"}'
+```
+
+**Nota:** O header `X-Tenant-Subdomain` é obrigatório para identificar o escritório.
+
 ### Testes de Super Administrador (requer token de `super-admin`)
 
 **Listar todos os Tenants**
@@ -70,12 +101,20 @@ curl -X GET https://[URL_DA_API]/admin/tenants \
   -H "Authorization: Bearer $SUPER_ADMIN_TOKEN"
 ```
 
+**Criar um novo Tenant**
+```bash
+curl -X POST https://[URL_DA_API]/admin/tenants \
+  -H "Authorization: Bearer $SUPER_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"company_name": "Novo Escritório", "subdomain": "novo-escritorio", "operator_limit": 5}'
+```
+
 **Provisionar um novo Tenant e seu usuário Master**
 ```bash
 curl -X POST https://[URL_DA_API]/admin/provision-tenant \
   -H "Authorization: Bearer $SUPER_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"company_name": "Novo Escritório", "email": "admin@novo.com"}'
+  -d '{"company_name": "Novo Escritório", "email": "admin@novo.com", "operator_limit": 5}'
 ```
 
 ### Testes de Administrador de Tenant (requer token de `master`)
@@ -94,3 +133,30 @@ curl -X POST https://[URL_DA_API]/api/operadores \
   -H "Content-Type: application/json" \
   -d '{"full_name": "Novo Operador", "email": "operador@exemplo.com", "password": "senha"}'
 ```
+
+## 🆕 Correção do Login do Super Admin
+
+Recentemente foi implementada uma correção importante no sistema de autenticação do super admin. Para mais detalhes:
+
+- **[GUIA_RAPIDO.md](GUIA_RAPIDO.md)** - Guia rápido de uso
+- **[DOCUMENTACAO_INDEX.md](DOCUMENTACAO_INDEX.md)** - Índice completo da documentação
+- **[CHECKLIST_DEPLOY.md](CHECKLIST_DEPLOY.md)** - Checklist de deploy
+
+### Principais Mudanças
+
+1. **Nova rota de login para super admin:** `/admin/login` (não requer tenant context)
+2. **Rota antiga mantida:** `/auth/login` (para admin/operador de tenants)
+3. **Token JWT diferenciado:** Super admin não tem `tenant-id` no token
+
+### Criando o Super Admin
+
+Para criar o primeiro super admin no banco de dados:
+
+```bash
+# Gera o SQL com hash da senha
+lein run -m generate-password-hash
+
+# Execute o SQL gerado no seu banco PostgreSQL
+```
+
+Ou consulte o arquivo [SUPER_ADMIN_SETUP.md](SUPER_ADMIN_SETUP.md) para mais opções.

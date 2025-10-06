@@ -14,13 +14,18 @@
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
    ["/admin"
-    {:middleware [mw/wrap-jwt-authentication
-                  mw/wrap-super-admin-authorization
-                  mw/wrap-public-db-repo]}
-    ["/provision-tenant" {:post {:handler h/provision-tenant-handler}}]
-    ["/tenants" {:get {:handler h/listar-tenants-handler}
-                :post {:handler h/criar-tenant-handler}}]
-    ["/tenants/{id}" {:get {:handler h/obter-tenant-handler}
+    {:middleware [mw/wrap-public-db-repo]}
+    ["/login" {:post {:handler h/super-admin-login-handler}}]
+    ["/provision-tenant" {:middleware [mw/wrap-jwt-authentication
+                                       mw/wrap-super-admin-authorization]
+                          :post {:handler h/provision-tenant-handler}}]
+    ["/tenants" {:middleware [mw/wrap-jwt-authentication
+                              mw/wrap-super-admin-authorization]
+                 :get {:handler h/listar-tenants-handler}
+                 :post {:handler h/criar-tenant-handler}}]
+    ["/tenants/{id}" {:middleware [mw/wrap-jwt-authentication
+                                   mw/wrap-super-admin-authorization]
+                      :get {:handler h/obter-tenant-handler}
                       :put {:handler h/atualizar-tenant-handler}
                       :delete {:handler h/deletar-tenant-handler}}]]
    ["/auth" {:middleware [mw/wrap-public-db-repo mw/wrap-tenant-context]}

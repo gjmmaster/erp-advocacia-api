@@ -98,6 +98,28 @@
      :body {:error "Dados de login inválidos."
             :details (s/explain-data :juridico.api.specs/login-payload body-params)}}))
 
+(defn super-admin-login-handler
+  "Handler para autenticar o Super Admin (sem tenant context)."
+  [{:keys [db-repo body-params]}]
+  (if (s/valid? :juridico.api.specs/login-payload body-params)
+    (let [{:keys [email password]} body-params]
+      (if-let [user (p/encontrar-super-admin-por-email db-repo email)]
+        (if (hashers/check password (:users/password_hash user))
+          (let [claims {:user-id (:users/id user)
+                        :role (:users/role user)
+                        :exp (-> (java.time.Instant/now)
+                                 (.plusSeconds 3600)
+                                 (.getEpochSecond))}
+                token (jwt/sign claims config/jwt-secret)]
+            {:status 200
+             :body {:message (str "Super Admin " email " autenticado com sucesso.")
+                    :token token}})
+          {:status 401 :body {:error "Credenciais inválidas."}})
+        {:status 401 :body {:error "Credenciais inválidas."}}))
+    {:status 400
+     :body {:error "Dados de login inválidos."
+            :details (s/explain-data :juridico.api.specs/login-payload body-params)}}))
+
 
 ;; --- HANDLERS DE GESTÃO DE OPERADORES (Protegidos por Role 'master') ---
 

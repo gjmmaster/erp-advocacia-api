@@ -6,9 +6,10 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  const login = async (email, password) => {
+  const login = async (email, password, isSuperAdmin = false) => {
     try {
-      const { data } = await axios.post('/auth/login', { email, password });
+      const endpoint = isSuperAdmin ? '/admin/login' : '/auth/login';
+      const { data } = await axios.post(endpoint, { email, password });
       if (data.token) {
         localStorage.setItem('token', data.token);
         setToken(data.token);

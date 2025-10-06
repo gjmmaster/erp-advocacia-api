@@ -40,9 +40,13 @@
     (try
       (if-let [token (extract-token request)]
         (let [claims (jwt/unsign token config/jwt-secret)
-              tenant-id (:tenant-id claims)]
-          (if tenant-id
-            (let [repo (db/create-repository tenant-id)
+              tenant-id (:tenant-id claims)
+              role (:role claims)]
+          ;; Super admin não tem tenant-id, então criamos repo público
+          (if (or tenant-id (= role "super-admin"))
+            (let [repo (if tenant-id
+                         (db/create-repository tenant-id)
+                         (db/create-repository)) ; Repo público para super admin
                   request' (-> request
                                (assoc :db-repo repo)
                                (assoc :identity claims))]

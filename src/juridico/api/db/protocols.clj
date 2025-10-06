@@ -32,6 +32,9 @@
   (encontrar-usuario-por-email [this tenant-id email]
     "Busca um usuário pelo seu e-mail, dentro do escopo de um tenant específico.")
 
+  (encontrar-super-admin-por-email [this email]
+    "Busca um super admin pelo seu e-mail (sem tenant context).")
+
   (criar-tenant-e-usuario-master [this dados-provisionamento]
     "Cria um novo tenant e seu primeiro usuário (master).")
 
