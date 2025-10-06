@@ -15,7 +15,6 @@ function SuperAdminDashboardPage() {
   const { token, logout } = useContext(AuthContext);
 
   const fetchTenants = async () => {
-    // ... (fetchTenants logic remains the same)
     try {
       setLoading(true);
       const { data } = await axios.get('/admin/tenants', {
