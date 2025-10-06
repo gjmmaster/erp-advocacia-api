@@ -10,11 +10,23 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
   const [loading, setLoading] = useState(false);
   const { token } = useContext(AuthContext);
 
+  // Função para obter valor com suporte a chaves com namespace
+  const getValue = (obj, key) => {
+    if (!obj) return null;
+    if (obj[key] !== undefined) return obj[key];
+    if (obj[`tenants/${key}`] !== undefined) return obj[`tenants/${key}`];
+    if (obj[`:tenants/${key}`] !== undefined) return obj[`:tenants/${key}`];
+    return null;
+  };
+
   useEffect(() => {
     if (tenant) {
       console.log('Tenant recebido para edição:', tenant);
-      setEditableCompanyName(tenant.company_name || tenant.name || '');
-      setEditableOperatorLimit(tenant.operator_limit || 4);
+      const companyName = getValue(tenant, 'company_name') || getValue(tenant, 'name');
+      const operatorLimit = getValue(tenant, 'operator_limit');
+      
+      setEditableCompanyName(companyName || '');
+      setEditableOperatorLimit(operatorLimit || 4);
       setError('');
     } else {
       setEditableCompanyName('');
@@ -34,14 +46,23 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       return;
     }
 
+    const tenantId = getValue(tenant, 'id');
+    
+    if (!tenantId) {
+      setError('Erro: ID do escritório não encontrado.');
+      setLoading(false);
+      return;
+    }
+
     try {
       console.log('Enviando dados para atualização:', {
+        id: tenantId,
         company_name: editableCompanyName,
         operator_limit: editableOperatorLimit,
       });
 
       await axios.put(
-        `/admin/tenants/${tenant.id}`,
+        `/admin/tenants/${tenantId}`,
         {
           company_name: editableCompanyName,
           operator_limit: editableOperatorLimit,
@@ -54,11 +75,14 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       );
       
       console.log('Escritório atualizado com sucesso');
+      alert('✅ Escritório atualizado com sucesso!');
       onSuccess();
       onClose();
     } catch (err) {
       console.error('Erro ao atualizar escritório:', err);
-      setError(err.response?.data?.error || 'Falha ao atualizar escritório. Tente novamente.');
+      const errorMsg = err.response?.data?.error || err.message || 'Falha ao atualizar escritório. Tente novamente.';
+      setError(errorMsg);
+      alert(`❌ Erro: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -73,19 +97,28 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return 'N/A';
+    }
   };
 
   if (!isOpen || !tenant) {
     return null;
   }
+
+  const tenantId = getValue(tenant, 'id');
+  const subdomain = getValue(tenant, 'subdomain');
+  const createdAt = getValue(tenant, 'created_at');
 
   return (
     <div className="modal-overlay">
@@ -103,7 +136,7 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
               <input
                 type="text"
                 className="form-input"
-                value={tenant.id || 'N/A'}
+                value={tenantId || 'N/A'}
                 disabled
               />
             </div>
@@ -115,7 +148,7 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
               <input
                 type="text"
                 className="form-input"
-                value={tenant.subdomain || 'N/A'}
+                value={subdomain || 'N/A'}
                 disabled
                 style={{ fontFamily: 'monospace' }}
               />
@@ -131,7 +164,7 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
               <input
                 type="text"
                 className="form-input"
-                value={formatDate(tenant.created_at)}
+                value={formatDate(createdAt)}
                 disabled
               />
             </div>

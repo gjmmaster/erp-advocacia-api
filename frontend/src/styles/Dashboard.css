@@ -244,6 +244,21 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+  
+  .data-table {
+    font-size: 0.85rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 1rem;
@@ -253,6 +268,11 @@
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    padding: 1.5rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
   }
   
   .section-header {
@@ -261,11 +281,60 @@
     align-items: stretch;
   }
   
+  .primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
   .table-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .data-table {
+    min-width: 900px;
+    font-size: 0.8rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+    white-space: nowrap;
+  }
+  
+  .action-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-content {
+    border-radius: 8px;
+  }
+  
+  .dashboard-header {
+    padding: 1rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.25rem;
+  }
+  
+  .dashboard-body {
+    padding: 1rem;
   }
   
   .data-table {
     min-width: 800px;
+    font-size: 0.75rem;
+  }
+  
+  .tenant-subdomain {
+    font-size: 0.7rem;
   }
 }

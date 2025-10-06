@@ -44,8 +44,25 @@ function SuperAdminDashboardPage() {
     setEditModalOpen(true);
   };
 
+  const getValue = (obj, key) => {
+    if (!obj) return null;
+    if (obj[key] !== undefined) return obj[key];
+    if (obj[`tenants/${key}`] !== undefined) return obj[`tenants/${key}`];
+    if (obj[`:tenants/${key}`] !== undefined) return obj[`:tenants/${key}`];
+    return null;
+  };
+
   const handleDelete = async (tenant) => {
-    const tenantName = tenant.company_name || tenant.name || `ID ${tenant.id}`;
+    console.log('Tentando deletar tenant:', tenant);
+    
+    const tenantId = getValue(tenant, 'id');
+    const tenantName = getValue(tenant, 'company_name') || getValue(tenant, 'name') || `ID ${tenantId}`;
+    
+    if (!tenantId) {
+      alert('❌ Erro: ID do escritório não encontrado.');
+      return;
+    }
+    
     const confirmMessage = `⚠️ ATENÇÃO: Tem certeza que deseja deletar o escritório "${tenantName}"?\n\n` +
                           `Esta ação irá:\n` +
                           `• Deletar TODOS os dados do escritório\n` +
@@ -58,14 +75,18 @@ function SuperAdminDashboardPage() {
     
     if (userInput === 'DELETAR') {
       try {
-        await axios.delete(`/admin/tenants/${tenant.id}`, {
+        console.log(`Deletando tenant ID: ${tenantId}`);
+        await axios.delete(`/admin/tenants/${tenantId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        await fetchTenants();
+        console.log('Tenant deletado com sucesso');
         alert('✅ Escritório deletado com sucesso!');
+        await fetchTenants();
       } catch (err) {
         console.error('Erro ao deletar:', err);
-        setError(err.response?.data?.error || 'Falha ao deletar escritório. Tente novamente.');
+        const errorMsg = err.response?.data?.error || err.message || 'Falha ao deletar escritório. Tente novamente.';
+        setError(errorMsg);
+        alert(`❌ Erro ao deletar: ${errorMsg}`);
       }
     } else if (userInput !== null) {
       alert('❌ Confirmação incorreta. Escritório não foi deletado.');
