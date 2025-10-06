@@ -71,4 +71,4 @@
 (defn -main []
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
     (println "Iniciando servidor na porta" port "...")
-    (jetty/run-jetty app {:port port :join? false})))v
+    (jetty/run-jetty app {:port port :join? false})))
