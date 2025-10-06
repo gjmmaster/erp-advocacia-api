@@ -6,13 +6,10 @@
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
             [ring.middleware.cors :as cors]
-            [ring.util.response :as resp]
-            [ring.middleware.resource :as resource]
-            [ring.middleware.content-type :as content-type]
-            [ring.middleware.not-modified :as not-modified])
+            [ring.util.response :as resp])
   (:gen-class))
 
-;; --- As rotas da sua API continuam exatamente as mesmas ---
+;; --- Rotas da API (Estrutura Inalterada) ---
 (def api-routes
   [""
    ["/debug"
@@ -49,30 +46,29 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
-;; --- Handler que serve o index.html para qualquer rota não encontrada na API ---
-(defn spa-handler [_]
-  (-> (resp/resource-response "index.html" {:root "public"})
-      (resp/content-type "text/html")))
-
-;; --- Construção da Aplicação (Lógica Reescrevida e Mais Robusta) ---
+;; --- Aplicação final com a lógica original para SPA ---
 (def app
-  (->
-   (ring/ring-handler
-    (ring/router
-     api-routes
-     {:data {:muuntaja m/instance
-             :middleware [muuntaja/format-middleware]}})
-    {:default spa-handler})
-   (resource/wrap-resource "public")
-   (content-type/wrap-content-type)
-   (not-modified/wrap-not-modified)
-   (cors/wrap-cors
-    :access-control-allow-origin [#".*"]
-    :access-control-allow-methods [:get :post :put :delete]
-    :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
+  (-> (ring/ring-handler
+       (ring/router
+        api-routes
+        {:data {:muuntaja m/instance
+                :middleware [muuntaja/format-middleware]}})
+       ;; --- Handlers de Fallback (para o que não for API) ---
+       (ring/routes
+        ;; 1. Tenta servir um arquivo estático da pasta 'public'.
+        (ring/create-resource-handler {:path "/"})
+        ;; 2. Se não for um arquivo estático, serve o 'index.html'.
+        (ring/create-default-handler
+         {:not-found (constantly (-> (resp/resource-response "index.html" {:root "public"})
+                                     (resp/content-type "text/html")))})))
+      ;; Middleware de CORS aplicado a TUDO
+      (cors/wrap-cors
+       :access-control-allow-origin [#".*"]
+       :access-control-allow-methods [:get :post :put :delete]
+       :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
 
 ;; --- Ponto de Entrada (Inalterado) ---
 (defn -main []
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
     (println "Iniciando servidor na porta" port "...")
-    (jetty/run-jetty app {:port port :join? false})))
+    (jetty/run-jetty app {:port port :join? false})))v
