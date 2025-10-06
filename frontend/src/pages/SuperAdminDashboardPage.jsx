@@ -4,6 +4,7 @@ import CreateTenantModal from '../components/CreateTenantModal';
 import EditTenantModal from '../components/EditTenantModal';
 import TenantsTable from '../components/TenantsTable';
 import AuthContext from '../context/AuthContext';
+import '../styles/Dashboard.css';
 
 function SuperAdminDashboardPage() {
   const [tenants, setTenants] = useState([]);
@@ -17,14 +18,15 @@ function SuperAdminDashboardPage() {
   const fetchTenants = async () => {
     try {
       setLoading(true);
+      setError('');
       const { data } = await axios.get('/admin/tenants', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTenants(data);
-      setError('');
+      setTenants(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError('Falha ao carregar escritórios. Tente novamente.');
-      console.error(err);
+      console.error('Erro ao carregar escritórios:', err);
+      setError(err.response?.data?.error || 'Falha ao carregar escritórios. Tente novamente.');
+      setTenants([]);
     } finally {
       setLoading(false);
     }
@@ -37,155 +39,126 @@ function SuperAdminDashboardPage() {
   }, [token]);
 
   const handleEdit = (tenant) => {
+    console.log('Editando tenant:', tenant);
     setEditingTenant(tenant);
     setEditModalOpen(true);
   };
 
   const handleDelete = async (tenant) => {
-    const tenantName = tenant.company_name || tenant.name;
-    if (window.confirm(`Tem certeza que deseja deletar o escritório "${tenantName}"? Esta ação não pode ser desfeita e todos os dados associados serão perdidos.`)) {
+    const tenantName = tenant.company_name || tenant.name || `ID ${tenant.id}`;
+    const confirmMessage = `⚠️ ATENÇÃO: Tem certeza que deseja deletar o escritório "${tenantName}"?\n\n` +
+                          `Esta ação irá:\n` +
+                          `• Deletar TODOS os dados do escritório\n` +
+                          `• Remover TODOS os usuários associados\n` +
+                          `• Apagar TODOS os processos jurídicos\n\n` +
+                          `Esta ação NÃO PODE ser desfeita!\n\n` +
+                          `Digite "DELETAR" para confirmar:`;
+    
+    const userInput = window.prompt(confirmMessage);
+    
+    if (userInput === 'DELETAR') {
       try {
         await axios.delete(`/admin/tenants/${tenant.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        fetchTenants();
+        await fetchTenants();
+        alert('✅ Escritório deletado com sucesso!');
       } catch (err) {
+        console.error('Erro ao deletar:', err);
         setError(err.response?.data?.error || 'Falha ao deletar escritório. Tente novamente.');
-        console.error(err);
       }
+    } else if (userInput !== null) {
+      alert('❌ Confirmação incorreta. Escritório não foi deletado.');
     }
   };
 
+  const handleCloseError = () => {
+    setError('');
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '2rem'
-    }}>
-      <div style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        padding: '2rem'
-      }}>
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-          paddingBottom: '1rem',
-          borderBottom: '2px solid #f0f0f0'
-        }}>
+    <div className="dashboard-container">
+      <div className="dashboard-content">
+        <header className="dashboard-header">
           <div>
-            <h1 style={{ margin: 0, color: '#333' }}>Dashboard do Super Admin</h1>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', fontSize: '14px' }}>
+            <h1 className="dashboard-title">🏢 Dashboard do Super Admin</h1>
+            <p className="dashboard-subtitle">
               Gerencie todos os escritórios do sistema
             </p>
           </div>
-          <button 
-            onClick={logout}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '14px'
-            }}
-          >
-            Sair
+          <button className="logout-btn" onClick={logout}>
+            🚪 Sair
           </button>
         </header>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem'
-        }}>
-          <div>
-            <h2 style={{ margin: 0, color: '#333' }}>Escritórios</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', fontSize: '14px' }}>
-              Total: {tenants.length} escritório{tenants.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <button 
-            onClick={() => setCreateModalOpen(true)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span style={{ fontSize: '18px' }}>+</span>
-            Provisionar Novo Escritório
-          </button>
-        </div>
-
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-            <p>Carregando escritórios...</p>
-          </div>
-        )}
-        
-        {error && (
-          <div style={{
-            padding: '1rem',
-            backgroundColor: '#ffebee',
-            border: '1px solid #f44336',
-            borderRadius: '4px',
-            color: '#c62828',
-            marginBottom: '1rem'
-          }}>
-            {error}
-          </div>
-        )}
-        
-        {!loading && !error && tenants.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '3rem',
-            color: '#666',
-            backgroundColor: '#f9f9f9',
-            borderRadius: '4px'
-          }}>
-            <p style={{ fontSize: '16px', marginBottom: '1rem' }}>
-              Nenhum escritório cadastrado ainda.
-            </p>
+        <div className="dashboard-body">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">📋 Escritórios</h2>
+              <p className="section-subtitle">
+                {loading ? 'Carregando...' : `Total: ${tenants.length} escritório${tenants.length !== 1 ? 's' : ''}`}
+              </p>
+            </div>
             <button 
+              className="primary-btn"
               onClick={() => setCreateModalOpen(true)}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
+              disabled={loading}
             >
-              Criar Primeiro Escritório
+              <span>➕</span>
+              Provisionar Novo Escritório
             </button>
           </div>
-        )}
-        
-        {!loading && !error && tenants.length > 0 && (
-          <TenantsTable tenants={tenants} onEdit={handleEdit} onDelete={handleDelete} />
-        )}
+
+          {error && (
+            <div className="error-message">
+              <span>⚠️</span>
+              <span>{error}</span>
+              <button 
+                onClick={handleCloseError}
+                style={{ 
+                  marginLeft: 'auto', 
+                  background: 'none', 
+                  border: 'none', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  fontSize: '1.2rem'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {loading && (
+            <div className="loading-state">
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+              <p>Carregando escritórios...</p>
+            </div>
+          )}
+
+          {!loading && !error && tenants.length === 0 && (
+            <div className="empty-state">
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏢</div>
+              <h3>Nenhum escritório cadastrado</h3>
+              <p>Comece criando o primeiro escritório do sistema.</p>
+              <button 
+                className="primary-btn"
+                onClick={() => setCreateModalOpen(true)}
+              >
+                <span>➕</span>
+                Criar Primeiro Escritório
+              </button>
+            </div>
+          )}
+
+          {!loading && tenants.length > 0 && (
+            <TenantsTable 
+              tenants={tenants} 
+              onEdit={handleEdit} 
+              onDelete={handleDelete} 
+            />
+          )}
+        </div>
 
         <CreateTenantModal
           isOpen={isCreateModalOpen}

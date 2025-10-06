@@ -1,30 +1,45 @@
 import axios from 'axios';
 import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/AuthContext';
+import '../styles/Modal.css';
 
 const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
   const [editableCompanyName, setEditableCompanyName] = useState('');
   const [editableOperatorLimit, setEditableOperatorLimit] = useState(4);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { token } = useContext(AuthContext);
 
   useEffect(() => {
     if (tenant) {
+      console.log('Tenant recebido para edição:', tenant);
       setEditableCompanyName(tenant.company_name || tenant.name || '');
       setEditableOperatorLimit(tenant.operator_limit || 4);
+      setError('');
     } else {
       setEditableCompanyName('');
       setEditableOperatorLimit(4);
+      setError('');
     }
   }, [tenant]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    if (!tenant) return;
+    if (!tenant) {
+      setError('Erro: Dados do escritório não encontrados.');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Enviando dados para atualização:', {
+        company_name: editableCompanyName,
+        operator_limit: editableOperatorLimit,
+      });
+
       await axios.put(
         `/admin/tenants/${tenant.id}`,
         {
@@ -37,12 +52,35 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
           },
         }
       );
+      
+      console.log('Escritório atualizado com sucesso');
       onSuccess();
       onClose();
     } catch (err) {
+      console.error('Erro ao atualizar escritório:', err);
       setError(err.response?.data?.error || 'Falha ao atualizar escritório. Tente novamente.');
-      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setError('');
+      onClose();
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (!isOpen || !tenant) {
@@ -50,137 +88,111 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        maxWidth: '500px',
-        width: '90%',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
-        <h2 style={{ marginTop: 0 }}>Editar Escritório</h2>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2 className="modal-title">✏️ Editar Escritório</h2>
+        </div>
+        
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              ID:
-            </label>
-            <input
-              type="text"
-              value={tenant.id}
-              disabled
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px',
-                backgroundColor: '#f5f5f5',
-                color: '#666'
-              }}
-            />
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">
+                🆔 ID:
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={tenant.id || 'N/A'}
+                disabled
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                🌐 Subdomínio:
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={tenant.subdomain || 'N/A'}
+                disabled
+                style={{ fontFamily: 'monospace' }}
+              />
+              <div className="form-help">
+                O subdomínio não pode ser alterado após a criação
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                📅 Criado em:
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={formatDate(tenant.created_at)}
+                disabled
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                🏢 Nome do Escritório:
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={editableCompanyName}
+                onChange={(e) => setEditableCompanyName(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="Nome do escritório"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                👥 Limite de Operadores:
+              </label>
+              <input
+                type="number"
+                className="form-input"
+                min="1"
+                max="100"
+                value={editableOperatorLimit}
+                onChange={(e) => setEditableOperatorLimit(parseInt(e.target.value) || 1)}
+                required
+                disabled={loading}
+              />
+              <div className="form-help">
+                Número máximo de operadores que este escritório pode criar
+              </div>
+            </div>
+
+            {error && (
+              <div className="error-message-modal">
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
           </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Subdomínio:
-            </label>
-            <input
-              type="text"
-              value={tenant.subdomain}
-              disabled
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px',
-                backgroundColor: '#f5f5f5',
-                color: '#666',
-                fontFamily: 'monospace'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Nome do Escritório:
-            </label>
-            <input
-              type="text"
-              value={editableCompanyName}
-              onChange={(e) => setEditableCompanyName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Limite de Operadores:
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={editableOperatorLimit}
-              onChange={(e) => setEditableOperatorLimit(parseInt(e.target.value))}
-              required
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-            <small style={{ color: '#666', fontSize: '12px' }}>
-              Número máximo de operadores que este escritório pode criar
-            </small>
-          </div>
-          {error && <p style={{ color: '#f44336', marginBottom: '1rem' }}>{error}</p>}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+
+          <div className="modal-actions">
             <button 
               type="button" 
-              onClick={onClose}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f5f5f5',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="modal-btn modal-btn-cancel"
+              onClick={handleClose}
+              disabled={loading}
             >
-              Cancelar
+              ❌ Cancelar
             </button>
             <button 
               type="submit"
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
+              className="modal-btn modal-btn-success"
+              disabled={loading}
             >
-              Atualizar
+              {loading ? '⏳ Salvando...' : '💾 Salvar Alterações'}
             </button>
           </div>
         </form>

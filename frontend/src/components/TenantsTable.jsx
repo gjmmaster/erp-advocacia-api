@@ -1,8 +1,14 @@
 import React from 'react';
+import '../styles/Dashboard.css';
 
 const TenantsTable = ({ tenants, onEdit, onDelete }) => {
   if (!tenants || tenants.length === 0) {
-    return <p>Nenhum escritório encontrado.</p>;
+    return (
+      <div className="empty-state">
+        <h3>📋 Nenhum escritório encontrado</h3>
+        <p>Ainda não há escritórios cadastrados no sistema.</p>
+      </div>
+    );
   }
 
   const formatDate = (dateString) => {
@@ -18,61 +24,56 @@ const TenantsTable = ({ tenants, onEdit, onDelete }) => {
   };
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
+    <div className="table-container">
+      <table className="data-table">
         <thead>
-          <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
-            <th style={{ padding: '12px', textAlign: 'left' }}>ID</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Nome do Escritório</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Subdomínio</th>
-            <th style={{ padding: '12px', textAlign: 'center' }}>Limite de Operadores</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Criado em</th>
-            <th style={{ padding: '12px', textAlign: 'center' }}>Ações</th>
+          <tr>
+            <th>ID</th>
+            <th>Nome do Escritório</th>
+            <th>Subdomínio</th>
+            <th style={{ textAlign: 'center' }}>Limite de Operadores</th>
+            <th>Criado em</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           {tenants.map((tenant) => (
-            <tr key={tenant.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '12px' }}>{tenant.id}</td>
-              <td style={{ padding: '12px', fontWeight: '500' }}>
-                {tenant.company_name || tenant.name}
+            <tr key={tenant.id}>
+              <td>
+                <strong>#{tenant.id}</strong>
               </td>
-              <td style={{ padding: '12px', fontFamily: 'monospace', color: '#666' }}>
-                {tenant.subdomain}
+              <td>
+                <div className="tenant-name">
+                  {tenant.company_name || tenant.name || 'Nome não informado'}
+                </div>
               </td>
-              <td style={{ padding: '12px', textAlign: 'center' }}>
-                {tenant.operator_limit || 4}
+              <td>
+                <span className="tenant-subdomain">
+                  {tenant.subdomain || 'N/A'}
+                </span>
               </td>
-              <td style={{ padding: '12px', fontSize: '0.9em', color: '#666' }}>
-                {formatDate(tenant.created_at)}
+              <td style={{ textAlign: 'center' }}>
+                <strong>{tenant.operator_limit || 4}</strong>
               </td>
-              <td style={{ padding: '12px', textAlign: 'center' }}>
+              <td>
+                <div className="tenant-date">
+                  {formatDate(tenant.created_at)}
+                </div>
+              </td>
+              <td className="actions-cell">
                 <button 
+                  className="action-btn edit-btn"
                   onClick={() => onEdit(tenant)}
-                  style={{
-                    padding: '6px 12px',
-                    marginRight: '8px',
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  title="Editar escritório"
                 >
-                  Editar
+                  ✏️ Editar
                 </button>
                 <button 
+                  className="action-btn delete-btn"
                   onClick={() => onDelete(tenant)}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  title="Deletar escritório"
                 >
-                  Deletar
+                  🗑️ Deletar
                 </button>
               </td>
             </tr>
