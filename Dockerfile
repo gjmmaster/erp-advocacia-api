@@ -16,8 +16,8 @@ RUN lein uberjar
 FROM openjdk:11-jre-slim
 WORKDIR /app
 
-# Copia APENAS o uberjar final do estágio de build
-COPY --from=backend-builder /app/target/jurico-api-0.1.0-SNAPSHOT-standalone.jar ./app.jar
+# Copia APENAS o uberjar final do estágio de build (com o nome corrigido)
+COPY --from=backend-builder /app/target/juridico-api-0.1.0-SNAPSHOT-standalone.jar ./app.jar
 
 ENV PORT="3000"
 EXPOSE 3000
