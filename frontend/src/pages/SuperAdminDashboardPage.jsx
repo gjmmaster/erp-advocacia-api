@@ -53,13 +53,21 @@ function SuperAdminDashboardPage() {
   };
 
   const handleDelete = async (tenant) => {
-    console.log('Tentando deletar tenant:', tenant);
+    console.log('=== DELETE TENANT ===');
+    console.log('Tenant completo:', JSON.stringify(tenant, null, 2));
+    console.log('Chaves disponíveis:', Object.keys(tenant));
     
     const tenantId = getValue(tenant, 'id');
     const tenantName = getValue(tenant, 'company_name') || getValue(tenant, 'name') || `ID ${tenantId}`;
     
+    console.log('ID extraído:', tenantId);
+    console.log('Tipo do ID:', typeof tenantId);
+    console.log('Nome extraído:', tenantName);
+    
     if (!tenantId) {
-      alert('❌ Erro: ID do escritório não encontrado.');
+      const errorMsg = '❌ Erro: ID do escritório não encontrado. Tenant: ' + JSON.stringify(tenant);
+      console.error(errorMsg);
+      alert(errorMsg);
       return;
     }
     
@@ -75,15 +83,21 @@ function SuperAdminDashboardPage() {
     
     if (userInput === 'DELETAR') {
       try {
-        console.log(`Deletando tenant ID: ${tenantId}`);
-        await axios.delete(`/admin/tenants/${tenantId}`, {
+        const url = `/admin/tenants/${tenantId}`;
+        console.log('URL de delete:', url);
+        console.log('Token presente:', !!token);
+        
+        const response = await axios.delete(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log('Tenant deletado com sucesso');
+        
+        console.log('Resposta do delete:', response);
         alert('✅ Escritório deletado com sucesso!');
         await fetchTenants();
       } catch (err) {
-        console.error('Erro ao deletar:', err);
+        console.error('Erro completo ao deletar:', err);
+        console.error('Response data:', err.response?.data);
+        console.error('Response status:', err.response?.status);
         const errorMsg = err.response?.data?.error || err.message || 'Falha ao deletar escritório. Tente novamente.';
         setError(errorMsg);
         alert(`❌ Erro ao deletar: ${errorMsg}`);
