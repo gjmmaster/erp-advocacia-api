@@ -124,20 +124,29 @@
 
   (listar-tenants [this]
     (let [results (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants"])]
-      (mapv #(hash-map :id (:tenants/id %)
-                       :company_name (:tenants/company_name %)
-                       :subdomain (:tenants/subdomain %)
-                       :created_at (:tenants/created_at %)
-                       :operator_limit (:tenants/operator_limit %))
+      (println "=== POSTGRES: listar-tenants ===")
+      (println "Resultados brutos:" results)
+      (mapv #(let [tenant-map {:id (int (:tenants/id %))
+                               :company_name (:tenants/company_name %)
+                               :subdomain (:tenants/subdomain %)
+                               :created_at (str (:tenants/created_at %))
+                               :operator_limit (int (:tenants/operator_limit %))}]
+               (println "Tenant processado:" tenant-map)
+               tenant-map)
             results)))
 
   (obter-tenant-por-id [this tenant-id]
+    (println "=== POSTGRES: obter-tenant-por-id ===")
+    (println "Tenant ID recebido:" tenant-id "Tipo:" (type tenant-id))
     (when-let [result (first (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants WHERE id = ?" tenant-id]))]
-      {:id (:tenants/id result)
-       :company_name (:tenants/company_name result)
-       :subdomain (:tenants/subdomain result)
-       :created_at (:tenants/created_at result)
-       :operator_limit (:tenants/operator_limit result)}))
+      (println "Resultado bruto:" result)
+      (let [tenant-map {:id (int (:tenants/id result))
+                        :company_name (:tenants/company_name result)
+                        :subdomain (:tenants/subdomain result)
+                        :created_at (str (:tenants/created_at result))
+                        :operator_limit (int (:tenants/operator_limit result))}]
+        (println "Tenant processado:" tenant-map)
+        tenant-map)))
 
   (atualizar-tenant [this tenant-id dados-tenant]
     ;; Apenas company_name e operator_limit podem ser alterados
