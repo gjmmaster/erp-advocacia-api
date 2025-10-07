@@ -141,9 +141,14 @@
 
   (atualizar-tenant [this tenant-id dados-tenant]
     ;; Apenas company_name e operator_limit podem ser alterados
-    (sql/update! db-conn :tenants
-                 (select-keys dados-tenant [:company_name :operator_limit])
-                 {:id tenant-id}))
+    (println "=== POSTGRES: atualizar-tenant ===")
+    (println "Tenant ID:" tenant-id)
+    (println "Dados tenant:" dados-tenant)
+    (let [dados-filtrados (select-keys dados-tenant [:company_name :operator_limit])]
+      (println "Dados filtrados:" dados-filtrados)
+      (let [resultado (sql/update! db-conn :tenants dados-filtrados {:id tenant-id})]
+        (println "Resultado do UPDATE:" resultado)
+        resultado)))
 
   (criar-tenant [this {:keys [company_name subdomain operator_limit]}]
     (let [subdomain-to-use (or subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-")))]
@@ -154,7 +159,11 @@
                    {:return-keys true})))
 
   (deletar-tenant [this tenant-id]
-    (sql/delete! db-conn :tenants {:id tenant-id})))
+    (println "=== POSTGRES: deletar-tenant ===")
+    (println "Tenant ID:" tenant-id)
+    (let [resultado (sql/delete! db-conn :tenants {:id tenant-id})]
+      (println "Resultado do DELETE:" resultado)
+      resultado)))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository

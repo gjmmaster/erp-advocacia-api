@@ -195,10 +195,18 @@
 (defn obter-tenant-handler
   "Handler para o Super Admin obter um tenant por ID."
   [{:keys [db-repo path-params]}]
+  (println "=== OBTER TENANT HANDLER ===")
+  (println "Path params:" path-params)
+  (println "ID do path:" (:id path-params))
   (let [tenant-id (Long/parseLong (:id path-params))]
+    (println "Tenant ID parseado:" tenant-id)
     (if-let [tenant (p/obter-tenant-por-id db-repo tenant-id)]
-      {:status 200 :body tenant}
-      {:status 404 :body {:error "Tenant não encontrado."}})))
+      (do
+        (println "Tenant encontrado:" tenant)
+        {:status 200 :body tenant})
+      (do
+        (println "Tenant NÃO encontrado!")
+        {:status 404 :body {:error "Tenant não encontrado."}}))))
 
 (defn criar-tenant-handler
   "Handler para o Super Admin criar um novo tenant."
@@ -214,24 +222,40 @@
 (defn atualizar-tenant-handler
   "Handler para o Super Admin atualizar um tenant."
   [{:keys [db-repo body-params path-params]}]
+  (println "=== ATUALIZAR TENANT HANDLER ===")
+  (println "Path params:" path-params)
+  (println "Body params:" body-params)
+  (println "ID do path:" (:id path-params))
   (if (s/valid? :juridico.api.specs/update-tenant-payload body-params)
-    (let [tenant-id (Long/parseLong (:id path-params))
-          linhas-afetadas (p/atualizar-tenant db-repo tenant-id body-params)]
-      (if (= 1 (:next.jdbc/update-count linhas-afetadas))
-        {:status 200 :body {:message "Tenant atualizado com sucesso."}}
-        {:status 404 :body {:error "Tenant não encontrado."}}))
-    {:status 400
-     :body {:error "Dados de entrada inválidos."
-            :details (s/explain-data :juridico.api.specs/update-tenant-payload body-params)}}))
+    (let [tenant-id (Long/parseLong (:id path-params))]
+      (println "Tenant ID parseado:" tenant-id)
+      (println "Chamando p/atualizar-tenant com:" tenant-id body-params)
+      (let [linhas-afetadas (p/atualizar-tenant db-repo tenant-id body-params)]
+        (println "Linhas afetadas:" linhas-afetadas)
+        (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+          {:status 200 :body {:message "Tenant atualizado com sucesso."}}
+          {:status 404 :body {:error "Tenant não encontrado."}})))
+    (do
+      (println "Validação falhou!")
+      (println "Detalhes:" (s/explain-data :juridico.api.specs/update-tenant-payload body-params))
+      {:status 400
+       :body {:error "Dados de entrada inválidos."
+              :details (s/explain-data :juridico.api.specs/update-tenant-payload body-params)}})))
 
 (defn deletar-tenant-handler
   "Handler para o Super Admin deletar um tenant."
   [{:keys [db-repo path-params]}]
-  (let [tenant-id (Long/parseLong (:id path-params))
-        linhas-afetadas (p/deletar-tenant db-repo tenant-id)]
-    (if (= 1 (:next.jdbc/update-count linhas-afetadas))
-      {:status 204 :body nil}
-      {:status 404 :body {:error "Tenant não encontrado."}})))
+  (println "=== DELETAR TENANT HANDLER ===")
+  (println "Path params:" path-params)
+  (println "ID do path:" (:id path-params))
+  (let [tenant-id (Long/parseLong (:id path-params))]
+    (println "Tenant ID parseado:" tenant-id)
+    (println "Chamando p/deletar-tenant com:" tenant-id)
+    (let [linhas-afetadas (p/deletar-tenant db-repo tenant-id)]
+      (println "Linhas afetadas:" linhas-afetadas)
+      (if (= 1 (:next.jdbc/update-count linhas-afetadas))
+        {:status 204 :body nil}
+        {:status 404 :body {:error "Tenant não encontrado."}}))))
 
 
 ;; --- HANDLER DE DEPURAÇÃO (TEMPORÁRIO) ---

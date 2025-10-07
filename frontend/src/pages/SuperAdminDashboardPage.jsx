@@ -84,20 +84,30 @@ function SuperAdminDashboardPage() {
     if (userInput === 'DELETAR') {
       try {
         const url = `/admin/tenants/${tenantId}`;
+        console.log('=== FRONTEND: DELETAR TENANT ===');
+        console.log('URL completa:', axios.defaults.baseURL + url);
         console.log('URL de delete:', url);
+        console.log('Tenant ID:', tenantId);
+        console.log('Tipo do Tenant ID:', typeof tenantId);
         console.log('Token presente:', !!token);
+        console.log('Token (primeiros 20 chars):', token?.substring(0, 20));
         
         const response = await axios.delete(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
         console.log('Resposta do delete:', response);
+        console.log('Status da resposta:', response.status);
         alert('✅ Escritório deletado com sucesso!');
         await fetchTenants();
       } catch (err) {
-        console.error('Erro completo ao deletar:', err);
+        console.error('=== ERRO AO DELETAR ===');
+        console.error('Erro completo:', err);
+        console.error('Response:', err.response);
         console.error('Response data:', err.response?.data);
         console.error('Response status:', err.response?.status);
+        console.error('Response headers:', err.response?.headers);
+        console.error('Request config:', err.config);
         const errorMsg = err.response?.data?.error || err.message || 'Falha ao deletar escritório. Tente novamente.';
         setError(errorMsg);
         alert(`❌ Erro ao deletar: ${errorMsg}`);

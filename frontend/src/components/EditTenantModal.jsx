@@ -94,9 +94,14 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       
       const url = `/admin/tenants/${tenantId}`;
       
+      console.log('=== FRONTEND: EDITAR TENANT ===');
+      console.log('URL completa:', axios.defaults.baseURL + url);
       console.log('URL da requisição:', url);
+      console.log('Tenant ID:', tenantId);
+      console.log('Tipo do Tenant ID:', typeof tenantId);
       console.log('Dados a enviar:', updateData);
       console.log('Token presente:', !!token);
+      console.log('Token (primeiros 20 chars):', token?.substring(0, 20));
 
       const response = await axios.put(url, updateData, {
         headers: {
@@ -105,13 +110,20 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       });
       
       console.log('Resposta do servidor:', response.data);
+      console.log('Status da resposta:', response.status);
       
       console.log('Escritório atualizado com sucesso');
       alert('✅ Escritório atualizado com sucesso!');
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Erro ao atualizar escritório:', err);
+      console.error('=== ERRO AO ATUALIZAR ===');
+      console.error('Erro completo:', err);
+      console.error('Response:', err.response);
+      console.error('Response data:', err.response?.data);
+      console.error('Response status:', err.response?.status);
+      console.error('Response headers:', err.response?.headers);
+      console.error('Request config:', err.config);
       const errorMsg = err.response?.data?.error || err.message || 'Falha ao atualizar escritório. Tente novamente.';
       setError(errorMsg);
       alert(`❌ Erro: ${errorMsg}`);
