@@ -198,8 +198,8 @@
   (println "=== OBTER TENANT HANDLER ===")
   (println "Path params:" path-params)
   (println "ID do path:" (:id path-params))
-  (let [tenant-id (Long/parseLong (:id path-params))]
-    (println "Tenant ID parseado:" tenant-id)
+  (let [tenant-id (:id path-params)] ; UUID como string
+    (println "Tenant ID (UUID string):" tenant-id)
     (if-let [tenant (p/obter-tenant-por-id db-repo tenant-id)]
       (do
         (println "Tenant encontrado:" tenant)
@@ -227,8 +227,8 @@
   (println "Body params:" body-params)
   (println "ID do path:" (:id path-params))
   (if (s/valid? :juridico.api.specs/update-tenant-payload body-params)
-    (let [tenant-id (Long/parseLong (:id path-params))]
-      (println "Tenant ID parseado:" tenant-id)
+    (let [tenant-id (:id path-params)] ; UUID como string
+      (println "Tenant ID (UUID string):" tenant-id)
       (println "Chamando p/atualizar-tenant com:" tenant-id body-params)
       (let [linhas-afetadas (p/atualizar-tenant db-repo tenant-id body-params)]
         (println "Linhas afetadas:" linhas-afetadas)
@@ -248,8 +248,8 @@
   (println "=== DELETAR TENANT HANDLER ===")
   (println "Path params:" path-params)
   (println "ID do path:" (:id path-params))
-  (let [tenant-id (Long/parseLong (:id path-params))]
-    (println "Tenant ID parseado:" tenant-id)
+  (let [tenant-id (:id path-params)] ; UUID como string
+    (println "Tenant ID (UUID string):" tenant-id)
     (println "Chamando p/deletar-tenant com:" tenant-id)
     (let [linhas-afetadas (p/deletar-tenant db-repo tenant-id)]
       (println "Linhas afetadas:" linhas-afetadas)
