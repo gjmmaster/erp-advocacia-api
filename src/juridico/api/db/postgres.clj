@@ -126,6 +126,7 @@
     (let [results (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants"])]
       (println "=== POSTGRES: listar-tenants ===")
       (println "Resultados brutos:" results)
+      ;; Retorna IDs como strings para evitar perda de precisão no JavaScript
       (mapv #(let [tenant-map {:id (str (:tenants/id %))
                                :company_name (:tenants/company_name %)
                                :subdomain (:tenants/subdomain %)
@@ -138,12 +139,14 @@
   (obter-tenant-por-id [this tenant-id]
     (println "=== POSTGRES: obter-tenant-por-id ===")
     (println "Tenant ID recebido:" tenant-id "Tipo:" (type tenant-id))
-    ;; Converte string UUID para java.util.UUID se necessário
-    (let [uuid-id (if (string? tenant-id) 
-                    (java.util.UUID/fromString tenant-id) 
+    ;; Converte string para Long se necessário
+    (let [id-long (if (string? tenant-id) 
+                    (Long/parseLong tenant-id) 
                     tenant-id)]
-      (when-let [result (first (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants WHERE id = ?" uuid-id]))]
+      (println "ID convertido para Long:" id-long)
+      (when-let [result (first (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants WHERE id = ?" id-long]))]
         (println "Resultado bruto:" result)
+        ;; Retorna ID como string para evitar perda de precisão no JavaScript
         (let [tenant-map {:id (str (:tenants/id result))
                           :company_name (:tenants/company_name result)
                           :subdomain (:tenants/subdomain result)
@@ -157,14 +160,14 @@
     (println "=== POSTGRES: atualizar-tenant ===")
     (println "Tenant ID:" tenant-id)
     (println "Dados tenant:" dados-tenant)
-    ;; Converte string UUID para java.util.UUID se necessário
-    (let [uuid-id (if (string? tenant-id) 
-                    (java.util.UUID/fromString tenant-id) 
+    ;; Converte string para Long se necessário
+    (let [id-long (if (string? tenant-id) 
+                    (Long/parseLong tenant-id) 
                     tenant-id)
           dados-filtrados (select-keys dados-tenant [:company_name :operator_limit])]
-      (println "UUID convertido:" uuid-id)
+      (println "ID convertido para Long:" id-long)
       (println "Dados filtrados:" dados-filtrados)
-      (let [resultado (sql/update! db-conn :tenants dados-filtrados {:id uuid-id})]
+      (let [resultado (sql/update! db-conn :tenants dados-filtrados {:id id-long})]
         (println "Resultado do UPDATE:" resultado)
         resultado)))
 
@@ -179,12 +182,12 @@
   (deletar-tenant [this tenant-id]
     (println "=== POSTGRES: deletar-tenant ===")
     (println "Tenant ID:" tenant-id)
-    ;; Converte string UUID para java.util.UUID se necessário
-    (let [uuid-id (if (string? tenant-id) 
-                    (java.util.UUID/fromString tenant-id) 
+    ;; Converte string para Long se necessário
+    (let [id-long (if (string? tenant-id) 
+                    (Long/parseLong tenant-id) 
                     tenant-id)]
-      (println "UUID convertido:" uuid-id)
-      (let [resultado (sql/delete! db-conn :tenants {:id uuid-id})]
+      (println "ID convertido para Long:" id-long)
+      (let [resultado (sql/delete! db-conn :tenants {:id id-long})]
         (println "Resultado do DELETE:" resultado)
         resultado))))
 
