@@ -126,7 +126,7 @@
     (let [results (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants"])]
       (println "=== POSTGRES: listar-tenants ===")
       (println "Resultados brutos:" results)
-      (mapv #(let [tenant-map {:id (int (:tenants/id %))
+      (mapv #(let [tenant-map {:id (long (:tenants/id %))
                                :company_name (:tenants/company_name %)
                                :subdomain (:tenants/subdomain %)
                                :created_at (str (:tenants/created_at %))
@@ -140,7 +140,7 @@
     (println "Tenant ID recebido:" tenant-id "Tipo:" (type tenant-id))
     (when-let [result (first (sql/query db-conn ["SELECT id, company_name, subdomain, created_at, operator_limit FROM tenants WHERE id = ?" tenant-id]))]
       (println "Resultado bruto:" result)
-      (let [tenant-map {:id (int (:tenants/id result))
+      (let [tenant-map {:id (long (:tenants/id result))
                         :company_name (:tenants/company_name result)
                         :subdomain (:tenants/subdomain result)
                         :created_at (str (:tenants/created_at result))
