@@ -20,8 +20,11 @@
 ;; Spec para a senha (mínimo de 4 caracteres para a PoC)
 (s/def ::password (s/and string? #(< 3 (count %))))
 
-;; Spec para o subdomínio (ainda usada no retorno do provisionamento, etc.)
-(s/def ::subdomain (s/and string? not-empty))
+;; Spec para o subdomínio (RFC 1035 compliant)
+(s/def ::subdomain
+  (s/and string?
+         not-empty
+         #(re-matches #"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?" %)))
 
 ;; Define a estrutura do payload que o Super Admin envia para criar um novo escritório.
 ;; Espera o nome da empresa e o e-mail do futuro Admin do escritório.

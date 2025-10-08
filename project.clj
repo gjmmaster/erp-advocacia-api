@@ -10,6 +10,7 @@
                  [metosin/muuntaja "0.6.8"]
                  [buddy/buddy-sign "3.4.333"]
                  [buddy/buddy-hashers "1.8.158"]
+                 [buddy/buddy-core "1.11.423"]
                  [clj-http "3.12.3"]
                  [com.github.seancorfield/next.jdbc "1.3.894"]
                  [org.postgresql/postgresql "42.7.3"]

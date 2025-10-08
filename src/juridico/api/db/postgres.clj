@@ -4,7 +4,18 @@
             [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]]
             [environ.core :refer [env]]
             [buddy.hashers :as hashers]
+            [buddy.core.nonce :as nonce]
+            [buddy.core.codecs :as codecs]
             [clojure.string :as str]))
+
+;; --- FUNÇÃO HELPER PARA GERAÇÃO DE SENHA SEGURA ---
+(defn- generate-secure-temp-password
+  "Gera uma senha temporária criptograficamente segura de 12 caracteres alfanuméricos."
+  []
+  (-> (nonce/random-bytes 16)           ; 16 bytes = 128 bits de entropia
+      (codecs/bytes->b64-str)           ; Converte para Base64
+      (str/replace #"[^a-zA-Z0-9]" "")  ; Remove caracteres especiais
+      (subs 0 12)))                     ; Pega os primeiros 12 caracteres
 
 ;; --- FUNÇÃO HELPER PARA PARSE DA URL DO BANCO ---
 (defn- parse-db-url [db-url]
@@ -63,7 +74,7 @@
   (criar-tenant-e-usuario-master [this {:keys [company_name email operator_limit]}]
     (jdbc/with-transaction [tx db-conn]
       (let [subdomain (-> company_name str/lower-case (str/replace #"[^a-z0-9-]" "-"))
-            temp-password (str "pass" (rand-int 10000))
+            temp-password (generate-secure-temp-password)
             new-tenant (sql/insert! tx :tenants
                                     {:company_name company_name
                                      :subdomain subdomain
