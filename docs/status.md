@@ -161,3 +161,56 @@ Com a base da aplicação estável, esta etapa focou na criação de uma camada 
 *   **Validação do Serviço de E-mail:**
     *   O endpoint de provisionamento (`/admin/provision-tenant`) foi testado com sucesso utilizando um e-mail real (`gabriel.jmmaster@gmail.com`).
     *   O sistema não só criou o tenant e o usuário master, mas também disparou corretamente o e-mail de boas-vindas transacional, confirmando que a integração com o serviço de e-mail está funcional.
+
+---
+
+### **Etapa 6: Interface Web do Super Admin e Correção de Precisão BIGINT**
+
+**Data de Referência:** 07 de Outubro de 2025
+**Status:** Interface web completa implementada e problema de precisão numérica resolvido.
+
+Esta etapa focou na criação de uma interface web completa para o Super Admin e na resolução de um problema crítico de perda de precisão ao lidar com IDs BIGINT no JavaScript.
+
+#### **6.1. Interface Web do Super Admin**
+
+*   **Página de Login Dedicada:**
+    *   Criada rota `/super-admin/login` no frontend com interface específica para autenticação do Super Admin.
+    *   Implementada rota de backend `/admin/login` que não requer contexto de tenant, diferente da rota `/auth/login` usada por admins e operadores de tenants.
+    *   O `AuthContext` foi atualizado para suportar dois fluxos de login distintos.
+
+*   **Dashboard do Super Admin:**
+    *   Interface completa para gerenciamento de tenants (escritórios).
+    *   Funcionalidades implementadas:
+        *   **Listar Tenants:** Visualização em tabela com informações de ID, nome, subdomínio, limite de operadores e data de criação.
+        *   **Criar Tenant:** Modal para provisionamento de novos escritórios com validação de dados.
+        *   **Editar Tenant:** Modal para atualização de nome e limite de operadores.
+        *   **Deletar Tenant:** Confirmação com digitação de "DELETAR" para evitar exclusões acidentais.
+    *   Design responsivo e intuitivo com feedback visual para todas as operações.
+
+#### **6.2. Resolução do Problema de Precisão BIGINT**
+
+*   **Problema Identificado:**
+    *   O JavaScript não consegue representar com precisão números inteiros maiores que `2^53 - 1` (9.007.199.254.740.991).
+    *   IDs BIGINT do PostgreSQL (ex: `1113159344693608449`) eram convertidos incorretamente pelo JavaScript (ex: `1113159344693608400`), causando perda de precisão.
+    *   Resultado: Operações de edição e exclusão falhavam com erro 404 (Not Found) porque o ID enviado não correspondia ao ID no banco.
+
+*   **Solução Implementada:**
+    *   **Backend:** IDs BIGINT são convertidos para strings antes de serem enviados no JSON (`(str (:tenants/id %))`).
+    *   **Frontend:** IDs são tratados como strings, sem perda de precisão.
+    *   **Backend (recebimento):** Strings são convertidas de volta para Long antes de consultar o banco (`(Long/parseLong tenant-id)`).
+    *   Esta abordagem é um padrão da indústria usado por APIs como Twitter e GitHub.
+    *   **Vantagem:** Sem necessidade de migração de banco de dados, mantendo BIGINT como tipo de coluna.
+
+*   **Validação:**
+    *   Todas as operações CRUD de tenants foram testadas e validadas com sucesso:
+        *   ✅ Listar tenants
+        *   ✅ Obter tenant por ID
+        *   ✅ Criar tenant
+        *   ✅ Atualizar tenant
+        *   ✅ Deletar tenant
+
+#### **6.3. Melhorias de Logging e Debug**
+
+*   Adicionados logs detalhados em handlers e camada de persistência para facilitar troubleshooting.
+*   Logs incluem informações sobre conversão de tipos, dados recebidos e resultados de queries.
+*   Implementação de logs estruturados tanto no backend (Clojure) quanto no frontend (JavaScript).

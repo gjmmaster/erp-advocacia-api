@@ -134,19 +134,101 @@ curl -X POST https://[URL_DA_API]/api/operadores \
   -d '{"full_name": "Novo Operador", "email": "operador@exemplo.com", "password": "senha"}'
 ```
 
-## 🆕 Correção do Login do Super Admin
+## 🎯 Estado Atual do Projeto
 
-Recentemente foi implementada uma correção importante no sistema de autenticação do super admin. Para mais detalhes:
+### Funcionalidades Implementadas
 
-- **[GUIA_RAPIDO.md](GUIA_RAPIDO.md)** - Guia rápido de uso
+#### ✅ Backend (API REST)
+- **Multi-tenancy completo** com isolamento de dados por tenant
+- **Autenticação JWT** stateless com roles (`super-admin`, `master`, `operador`)
+- **RBAC (Role-Based Access Control)** com middlewares de autorização
+- **CRUD completo de Tenants** (apenas super admin)
+- **CRUD completo de Operadores** (apenas master do tenant)
+- **CRUD de Processos Jurídicos** (todos os usuários autenticados)
+- **Limite de operadores por tenant** com validação
+- **Integração com serviço de e-mail** para boas-vindas
+- **Persistência em PostgreSQL/CockroachDB**
+
+#### ✅ Frontend (React)
+- **Interface de login do Super Admin** (`/super-admin/login`)
+- **Dashboard do Super Admin** com:
+  - Listagem de todos os escritórios (tenants)
+  - Criação de novos escritórios (provisionamento)
+  - Edição de escritórios (nome e limite de operadores)
+  - Exclusão de escritórios (com confirmação)
+- **Design responsivo** e intuitivo
+- **Feedback visual** para todas as operações
+
+#### ✅ Correções Técnicas Importantes
+
+**Problema de Precisão BIGINT Resolvido:**
+- JavaScript não consegue representar números BIGINT com precisão
+- **Solução:** IDs são retornados como strings no JSON
+- Backend converte strings para Long ao receber requisições
+- Sem necessidade de migração de banco de dados
+- Documentação completa em [SOLUCAO_BIGINT.md](SOLUCAO_BIGINT.md)
+
+### Documentação Disponível
+
+- **[docs/status.md](docs/status.md)** - Histórico completo de evolução do projeto
 - **[DOCUMENTACAO_INDEX.md](DOCUMENTACAO_INDEX.md)** - Índice completo da documentação
+- **[GUIA_RAPIDO.md](GUIA_RAPIDO.md)** - Guia rápido de uso
+- **[SUPER_ADMIN_SETUP.md](SUPER_ADMIN_SETUP.md)** - Como configurar o super admin
 - **[CHECKLIST_DEPLOY.md](CHECKLIST_DEPLOY.md)** - Checklist de deploy
+- **[SOLUCAO_BIGINT.md](SOLUCAO_BIGINT.md)** - Solução para precisão de IDs grandes
+- **[FAQ.md](FAQ.md)** - Perguntas frequentes
 
-### Principais Mudanças
+## 🚀 Próximos Passos Sugeridos
 
-1. **Nova rota de login para super admin:** `/admin/login` (não requer tenant context)
-2. **Rota antiga mantida:** `/auth/login` (para admin/operador de tenants)
-3. **Token JWT diferenciado:** Super admin não tem `tenant-id` no token
+1. **Interface do Admin de Tenant (Master)**
+   - Dashboard para gerenciar operadores
+   - Dashboard para gerenciar processos jurídicos
+   - Relatórios e estatísticas
+
+2. **Interface do Operador**
+   - Visualização e edição de processos
+   - Filtros e busca avançada
+   - Notificações de prazos
+
+3. **Funcionalidades Avançadas**
+   - Upload de documentos
+   - Calendário de prazos
+   - Notificações por e-mail
+   - Relatórios em PDF
+   - Auditoria de ações
+
+4. **Melhorias de Segurança**
+   - Rate limiting
+   - Refresh tokens
+   - 2FA (autenticação de dois fatores)
+   - Logs de auditoria
+
+## 🆕 Sistema de Autenticação
+
+### Super Admin
+
+**Rota de login:** `/admin/login` (não requer tenant context)
+
+```bash
+curl -X POST https://[URL_DA_API]/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"super@admin.com","password":"sua_senha"}'
+```
+
+**Token JWT:** Contém `user-id` e `role`, mas **não** contém `tenant-id`
+
+### Admin/Operador de Tenant
+
+**Rota de login:** `/auth/login` (requer header `X-Tenant-Subdomain`)
+
+```bash
+curl -X POST https://[URL_DA_API]/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Subdomain: nome-do-escritorio" \
+  -d '{"email":"admin@escritorio.com","password":"senha"}'
+```
+
+**Token JWT:** Contém `user-id`, `tenant-id` e `role`
 
 ### Criando o Super Admin
 
