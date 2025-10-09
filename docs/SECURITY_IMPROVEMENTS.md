@@ -1,11 +1,6 @@
-# Melhorias de Segurança Implementadas
+# Melhorias de Segurança - Backend
 
-**Data:** 08 de Outubro de 2025  
-**Versão:** 1.0
-
-## Sumário Executivo
-
-Este documento descreve as melhorias críticas de segurança implementadas no backend do ERP para Advocacia multi-tenant. As mudanças foram baseadas em uma análise de segurança detalhada e corrigem vulnerabilidades de severidade Alta e Média.
+Documentação das melhorias de segurança implementadas no backend do ERP para Advocacia multi-tenant.
 
 ## Melhorias Implementadas
 
@@ -145,31 +140,20 @@ Este documento descreve as melhorias críticas de segurança implementadas no ba
 
 ---
 
-## Configuração Necessária
+## Configuração de Produção
 
-### Variáveis de Ambiente
+### Variáveis de Ambiente Obrigatórias
 
-**Obrigatórias em Produção:**
 ```bash
-JWT_SECRET=<sua-chave-secreta-forte>
 APP_ENV=production
+JWT_SECRET=<chave-secreta-forte-32-caracteres>
 DATABASE_URL=<sua-url-do-banco>
 ```
 
-**Opcionais em Desenvolvimento:**
-```bash
-# Se não definir JWT_SECRET, usará chave padrão com aviso
-APP_ENV=development
-DATABASE_URL=<sua-url-do-banco>
-```
-
-### Gerando um JWT_SECRET Seguro
+### Gerar JWT_SECRET
 
 ```bash
-# Linux/Mac
-openssl rand -base64 32
-
-# Windows PowerShell
+# PowerShell
 [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
 
 # Node.js
@@ -178,108 +162,17 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ---
 
-## Compatibilidade e Migração
+## Compatibilidade
 
-### Compatibilidade com Versões Anteriores
-
-✅ **Senhas Antigas:** Continuam funcionando (buddy.hashers é compatível)  
-✅ **Tokens JWT:** Válidos se usar o mesmo JWT_SECRET  
-✅ **Subdomínios Existentes:** Não são revalidados  
-✅ **Banco de Dados:** Nenhuma migração necessária
-
-### Plano de Rollback
-
-Se necessário reverter:
-
-1. Deploy da versão anterior do código
-2. Manter o mesmo `JWT_SECRET` (não mudar)
-3. Senhas antigas continuarão funcionando
-4. Nenhuma ação no banco de dados
+✅ **100% compatível** com versões anteriores  
+✅ **Nenhuma migração** de banco necessária  
+✅ **Rollback seguro** a qualquer momento  
 
 ---
 
-## Testes e Validação
+## Arquivos Modificados
 
-### Testes Manuais Recomendados
-
-**1. Testar Fail-Fast de JWT_SECRET:**
-```bash
-# Deve falhar
-APP_ENV=production lein run
-
-# Deve iniciar com aviso
-lein run
-
-# Deve iniciar normalmente
-JWT_SECRET=minha-chave-secreta lein run
-```
-
-**2. Testar Geração de Senha Segura:**
-```bash
-# Provisionar novo tenant
-curl -X POST http://localhost:3000/admin/tenants \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token-super-admin>" \
-  -d '{
-    "company_name": "Escritório Teste",
-    "email": "admin@teste.com"
-  }'
-
-# Verificar que temp_password tem 12 caracteres alfanuméricos
-```
-
-**3. Testar Validação de Subdomínio:**
-```bash
-# Deve ser aceito
-curl -X POST http://localhost:3000/admin/tenants \
-  -d '{"company_name": "Legal", "subdomain": "escritorio-legal", "email": "admin@legal.com"}'
-
-# Deve retornar erro 400
-curl -X POST http://localhost:3000/admin/tenants \
-  -d '{"company_name": "Legal", "subdomain": "-invalid-", "email": "admin@legal.com"}'
-```
-
----
-
-## Conformidade e Auditoria
-
-### Padrões Atendidos
-
-- ✅ **OWASP Top 10:** Mitigação de A02:2021 (Cryptographic Failures)
-- ✅ **NIST 800-63B:** Senhas temporárias com entropia adequada
-- ✅ **RFC 1035:** Subdomínios compatíveis com DNS
-- ✅ **LGPD:** Proteção adequada de credenciais
-
-### Eventos de Log
-
-A aplicação agora registra:
-
-```
-INFO  - ✓ JWT_SECRET carregado com sucesso
-WARN  - ⚠️  Usando chave JWT padrão. NÃO USE EM PRODUÇÃO!
-ERROR - ERRO CRÍTICO: A variável de ambiente JWT_SECRET não foi definida.
-```
-
----
-
-## Próximos Passos Recomendados
-
-1. ✅ Configurar `JWT_SECRET` em todos os ambientes
-2. ✅ Configurar `APP_ENV=production` em produção
-3. ⚠️ Considerar rotação periódica de `JWT_SECRET`
-4. ⚠️ Implementar rate limiting para tentativas de login
-5. ⚠️ Adicionar 2FA para super-admin
-6. ⚠️ Implementar auditoria de acessos
-
----
-
-## Suporte
-
-Para dúvidas ou problemas relacionados a estas melhorias de segurança, consulte:
-
-- **Spec Completa:** `.kiro/specs/backend-security-improvements/`
-- **Checklist de Deploy:** `docs/SECURITY_DEPLOY_CHECKLIST.md`
-- **Código-fonte:** 
-  - `src/juridico/api/db/postgres.clj` (geração de senha)
-  - `src/juridico/api/config.clj` (validação JWT)
-  - `src/juridico/api/specs.clj` (validação subdomínio)
+- `project.clj` - Dependência buddy-core
+- `src/juridico/api/db/postgres.clj` - Geração segura de senhas
+- `src/juridico/api/config.clj` - Validação JWT_SECRET
+- `src/juridico/api/specs.clj` - Validação de subdomínio
