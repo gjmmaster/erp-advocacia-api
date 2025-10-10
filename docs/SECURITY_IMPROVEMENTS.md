@@ -140,6 +140,123 @@ Documentação das melhorias de segurança implementadas no backend do ERP para 
 
 ---
 
+### 4. Proteção Contra Ataques de Força Bruta (Rate Limiting) ✅
+
+**Severidade:** MÉDIA
+
+**Problema Anterior:**
+- Endpoints de login sem limitação de tentativas
+- Possibilidade de ataques de força bruta ilimitados
+- Vulnerável a password spraying
+
+**Solução Implementada:**
+- Rate limiting baseado em IP do cliente
+- Limite: 5 tentativas de login a cada 15 minutos
+- Bloqueio temporário com resposta HTTP 429
+- Logs de tentativas suspeitas
+
+**Código:**
+```clojure
+;; Configuração: 5 tentativas por 15 minutos
+(def login-limiter
+  (throttler/make-throttler :login 5 (* 15 60 1000)))
+
+(defn wrap-rate-limit-login [handler]
+  (fn [request]
+    (if (login-endpoint? request)
+      (if (throttler/allow? login-limiter client-ip)
+        (handler request)
+        {:status 429
+         :body {:error "Muitas tentativas de login. Tente novamente em 15 minutos."}})
+      (handler request))))
+```
+
+**Comportamento:**
+- Monitora IPs em endpoints `/login` e `/admin/login`
+- Considera headers de proxy (X-Forwarded-For, X-Real-IP)
+- Retorna HTTP 429 com header `Retry-After: 900`
+- Registra tentativas bloqueadas nos logs
+
+**Impacto:**
+- ✅ Proteção contra força bruta
+- ✅ Proteção contra password spraying
+- ✅ Detecção de ataques automatizada
+- ✅ Sem impacto em usuários legítimos
+
+---
+
+### 5. Tratamento Global de Erros ✅
+
+**Severidade:** BAIXA (Hardening)
+
+**Problema Anterior:**
+- Exceções não tratadas poderiam expor stack traces
+- Information disclosure para atacantes
+- Logs sem contexto adequado
+
+**Solução Implementada:**
+- Middleware global de captura de exceções
+- Logs detalhados para equipe (com stack trace)
+- Resposta genérica para cliente (sem detalhes técnicos)
+- HTTP 500 padronizado
+
+**Código:**
+```clojure
+(defn wrap-global-error-handler [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Exception e
+        (log/error e "Erro não tratado" {:uri (:uri request)})
+        {:status 500
+         :body {:error "Erro interno do servidor."}}))))
+```
+
+**Impacto:**
+- ✅ Sem vazamento de informações técnicas
+- ✅ Logs estruturados para debugging
+- ✅ Experiência consistente para usuários
+- ✅ Conformidade com boas práticas
+
+---
+
+### 6. Segurança do Contêiner Docker ✅
+
+**Severidade:** BAIXA (Hardening)
+
+**Problema Anterior:**
+- Aplicação executava como usuário root no contêiner
+- Maior superfície de ataque em caso de exploração
+- Não segue princípio do menor privilégio
+
+**Solução Implementada:**
+- Criação de usuário e grupo não-root (`app`)
+- Mudança de proprietário dos arquivos
+- Execução da aplicação com usuário `app`
+- Isolamento adicional de segurança
+
+**Código (Dockerfile):**
+```dockerfile
+# Criar usuário não-root
+RUN addgroup --system app && adduser --system --ingroup app app
+
+# Copiar arquivo e mudar proprietário
+COPY --from=backend-builder /app/target/*.jar ./app.jar
+RUN chown app:app app.jar
+
+# Executar como usuário não-root
+USER app
+CMD ["java", "-jar", "app.jar"]
+```
+
+**Impacto:**
+- ✅ Redução de privilégios no contêiner
+- ✅ Menor impacto em caso de exploração
+- ✅ Conformidade com Docker best practices
+- ✅ Compatível com ambientes Kubernetes
+
+---
+
 ## Configuração de Produção
 
 ### Variáveis de Ambiente Obrigatórias
@@ -172,7 +289,23 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ## Arquivos Modificados
 
-- `project.clj` - Dependência buddy-core
+- `project.clj` - Dependências buddy-core e throttler
 - `src/juridico/api/db/postgres.clj` - Geração segura de senhas
 - `src/juridico/api/config.clj` - Validação JWT_SECRET
 - `src/juridico/api/specs.clj` - Validação de subdomínio
+- `src/juridico/api/rate_limit.clj` - Rate limiting e tratamento de erros (NOVO)
+- `src/juridico/api/core.clj` - Integração dos middlewares de segurança
+- `Dockerfile` - Execução como usuário não-root
+
+## Resumo das Melhorias
+
+| # | Melhoria | Severidade | Status |
+|---|----------|------------|--------|
+| 1 | Geração segura de senhas | ALTA | ✅ |
+| 2 | Validação fail-fast JWT | MÉDIA | ✅ |
+| 3 | Validação RFC 1035 subdomínios | MÉDIA | ✅ |
+| 4 | Rate limiting de login | MÉDIA | ✅ |
+| 5 | Tratamento global de erros | BAIXA | ✅ |
+| 6 | Segurança do contêiner | BAIXA | ✅ |
+
+**Total:** 6 melhorias implementadas (1 Alta, 3 Médias, 2 Hardening)

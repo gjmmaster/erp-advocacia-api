@@ -5,6 +5,7 @@
             [muuntaja.core :as m]
             [juridico.api.handlers :as h]
             [juridico.api.middleware :as mw]
+            [juridico.api.rate-limit :as rl]
             [ring.middleware.cors :as cors])
   (:gen-class))
 
@@ -58,7 +59,11 @@
       (cors/wrap-cors
        :access-control-allow-origin [#".*"]
        :access-control-allow-methods [:get :post :put :delete]
-       :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})))
+       :access-control-allow-headers #{"Content-Type" "Authorization" "X-Tenant-Subdomain"})
+      ;; Rate limiting para proteger endpoints de login
+      rl/wrap-rate-limit-login
+      ;; Tratamento global de erros (deve ser o último middleware)
+      rl/wrap-global-error-handler))
 
 ;; Ponto de Entrada
 (defn -main []
