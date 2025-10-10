@@ -33,12 +33,8 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
         }
       );
       
-      // Mostra mensagem de sucesso com a senha temporária
-      if (response.data.user && response.data.user.temp_password) {
-        setSuccess(`✅ Escritório criado com sucesso!\n\n📧 E-mail: ${masterEmail}\n🔑 Senha temporária: ${response.data.user.temp_password}\n\n⚠️ Anote esta senha! Ela será enviada por e-mail também.`);
-      } else {
-        setSuccess('✅ Escritório criado com sucesso!');
-      }
+      // Mostra mensagem de sucesso SEM expor a senha temporária
+      setSuccess(`✅ Escritório criado com sucesso!\n\n📧 Um e-mail de boas-vindas com as instruções de acesso foi enviado para:\n${masterEmail}\n\n⚠️ O administrador deve verificar a caixa de entrada (e spam) para obter as credenciais de acesso.`);
       
       // Limpa os campos após 5 segundos
       setTimeout(() => {
@@ -52,7 +48,7 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }) => {
       }, 5000);
       
     } catch (err) {
-      console.error('Erro ao criar escritório:', err);
+      // Removido console.error para produção
       setError(err.response?.data?.error || 'Falha ao provisionar escritório. Tente novamente.');
     } finally {
       setLoading(false);

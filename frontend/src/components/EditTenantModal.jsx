@@ -14,40 +14,18 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
   const getValue = (obj, key) => {
     if (!obj) return null;
     
-    // Log para debug
-    console.log(`Procurando chave '${key}' no objeto:`, obj);
-    console.log(`Chaves disponíveis:`, Object.keys(obj));
-    
     // Tenta diferentes formatos
-    if (obj[key] !== undefined) {
-      console.log(`Encontrado em formato simples: ${key} =`, obj[key]);
-      return obj[key];
-    }
-    if (obj[`tenants/${key}`] !== undefined) {
-      console.log(`Encontrado em formato namespace: tenants/${key} =`, obj[`tenants/${key}`]);
-      return obj[`tenants/${key}`];
-    }
-    if (obj[`:tenants/${key}`] !== undefined) {
-      console.log(`Encontrado em formato keyword: :tenants/${key} =`, obj[`:tenants/${key}`]);
-      return obj[`:tenants/${key}`];
-    }
+    if (obj[key] !== undefined) return obj[key];
+    if (obj[`tenants/${key}`] !== undefined) return obj[`tenants/${key}`];
+    if (obj[`:tenants/${key}`] !== undefined) return obj[`:tenants/${key}`];
     
-    console.log(`Chave '${key}' não encontrada em nenhum formato`);
     return null;
   };
 
   useEffect(() => {
     if (tenant) {
-      console.log('=== MODAL DE EDIÇÃO ===');
-      console.log('Tenant completo recebido:', JSON.stringify(tenant, null, 2));
-      console.log('Tipo do tenant:', typeof tenant);
-      console.log('Chaves do tenant:', Object.keys(tenant));
-      
       const companyName = getValue(tenant, 'company_name') || getValue(tenant, 'name');
       const operatorLimit = getValue(tenant, 'operator_limit');
-      
-      console.log('Company Name extraído:', companyName);
-      console.log('Operator Limit extraído:', operatorLimit);
       
       setEditableCompanyName(companyName || '');
       setEditableOperatorLimit(operatorLimit || 4);
@@ -70,13 +48,7 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       return;
     }
 
-    console.log('=== SUBMIT DE EDIÇÃO ===');
-    console.log('Tenant no submit:', tenant);
-    
     const tenantId = getValue(tenant, 'id');
-    
-    console.log('ID extraído:', tenantId);
-    console.log('Tipo do ID:', typeof tenantId);
     
     if (!tenantId) {
       const errorMsg = 'Erro: ID do escritório não encontrado. Tenant: ' + JSON.stringify(tenant);
@@ -93,26 +65,12 @@ const EditTenantModal = ({ isOpen, onClose, onSuccess, tenant }) => {
       };
       
       const url = `/admin/tenants/${tenantId}`;
-      
-      console.log('=== FRONTEND: EDITAR TENANT ===');
-      console.log('URL completa:', axios.defaults.baseURL + url);
-      console.log('URL da requisição:', url);
-      console.log('Tenant ID:', tenantId);
-      console.log('Tipo do Tenant ID:', typeof tenantId);
-      console.log('Dados a enviar:', updateData);
-      console.log('Token presente:', !!token);
-      console.log('Token (primeiros 20 chars):', token?.substring(0, 20));
 
-      const response = await axios.put(url, updateData, {
+      await axios.put(url, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      console.log('Resposta do servidor:', response.data);
-      console.log('Status da resposta:', response.status);
-      
-      console.log('Escritório atualizado com sucesso');
       alert('✅ Escritório atualizado com sucesso!');
       onSuccess();
       onClose();

@@ -2,9 +2,6 @@ import React from 'react';
 import '../styles/Dashboard.css';
 
 const TenantsTable = ({ tenants, onEdit, onDelete }) => {
-  // Log para debug
-  console.log('Tenants recebidos na tabela:', tenants);
-
   if (!tenants || tenants.length === 0) {
     return (
       <div className="empty-state">
@@ -58,9 +55,6 @@ const TenantsTable = ({ tenants, onEdit, onDelete }) => {
         </thead>
         <tbody>
           {tenants.map((tenant, index) => {
-            // Log de cada tenant para debug
-            console.log(`Tenant ${index}:`, tenant);
-            
             const id = getValue(tenant, 'id');
             const companyName = getValue(tenant, 'company_name') || getValue(tenant, 'name');
             const subdomain = getValue(tenant, 'subdomain');
@@ -93,20 +87,14 @@ const TenantsTable = ({ tenants, onEdit, onDelete }) => {
                 <td className="actions-cell">
                   <button 
                     className="action-btn edit-btn"
-                    onClick={() => {
-                      console.log('Editando tenant:', tenant);
-                      onEdit(tenant);
-                    }}
+                    onClick={() => onEdit(tenant)}
                     title="Editar escritório"
                   >
                     ✏️ Editar
                   </button>
                   <button 
                     className="action-btn delete-btn"
-                    onClick={() => {
-                      console.log('Deletando tenant:', tenant);
-                      onDelete(tenant);
-                    }}
+                    onClick={() => onDelete(tenant)}
                     title="Deletar escritório"
                   >
                     🗑️ Deletar

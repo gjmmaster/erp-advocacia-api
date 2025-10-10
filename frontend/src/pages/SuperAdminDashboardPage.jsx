@@ -39,7 +39,6 @@ function SuperAdminDashboardPage() {
   }, [token]);
 
   const handleEdit = (tenant) => {
-    console.log('Editando tenant:', tenant);
     setEditingTenant(tenant);
     setEditModalOpen(true);
   };
@@ -53,21 +52,11 @@ function SuperAdminDashboardPage() {
   };
 
   const handleDelete = async (tenant) => {
-    console.log('=== DELETE TENANT ===');
-    console.log('Tenant completo:', JSON.stringify(tenant, null, 2));
-    console.log('Chaves disponíveis:', Object.keys(tenant));
-    
     const tenantId = getValue(tenant, 'id');
     const tenantName = getValue(tenant, 'company_name') || getValue(tenant, 'name') || `ID ${tenantId}`;
     
-    console.log('ID extraído:', tenantId);
-    console.log('Tipo do ID:', typeof tenantId);
-    console.log('Nome extraído:', tenantName);
-    
     if (!tenantId) {
-      const errorMsg = '❌ Erro: ID do escritório não encontrado. Tenant: ' + JSON.stringify(tenant);
-      console.error(errorMsg);
-      alert(errorMsg);
+      alert('❌ Erro: ID do escritório não encontrado.');
       return;
     }
     
@@ -84,25 +73,14 @@ function SuperAdminDashboardPage() {
     if (userInput === 'DELETAR') {
       try {
         const url = `/admin/tenants/${tenantId}`;
-        console.log('=== FRONTEND: DELETAR TENANT ===');
-        console.log('URL completa:', axios.defaults.baseURL + url);
-        console.log('URL de delete:', url);
-        console.log('Tenant ID:', tenantId);
-        console.log('Tipo do Tenant ID:', typeof tenantId);
-        console.log('Token presente:', !!token);
-        console.log('Token (primeiros 20 chars):', token?.substring(0, 20));
         
-        const response = await axios.delete(url, {
+        await axios.delete(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
-        console.log('Resposta do delete:', response);
-        console.log('Status da resposta:', response.status);
         alert('✅ Escritório deletado com sucesso!');
         await fetchTenants();
       } catch (err) {
-        console.error('=== ERRO AO DELETAR ===');
-        console.error('Erro completo:', err);
         console.error('Response:', err.response);
         console.error('Response data:', err.response?.data);
         console.error('Response status:', err.response?.status);
