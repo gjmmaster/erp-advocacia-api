@@ -5,7 +5,7 @@
 ;; Execute com: lein run -m generate-password-hash
 
 (defn -main []
-  (let [password "jm-220925"
+  (let [password "DEFINA_SUA_SENHA_AQUI" ; ← MUDE ESTA SENHA!
         hash (hashers/encrypt password)]
     (println "Senha:" password)
     (println "Hash:" hash)
