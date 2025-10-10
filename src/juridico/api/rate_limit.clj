@@ -1,11 +1,14 @@
 (ns juridico.api.rate-limit
-  (:require [throttler.core :as throttler]
-            [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log]))
 
-;; Configuração do rate limiter
-;; Permite 5 tentativas de login por IP a cada 15 minutos
-(def login-limiter
-  (throttler/make-throttler :login 5 (* 15 60 1000)))
+;; Armazena tentativas de login por IP
+;; Estrutura: {ip {:attempts [timestamp1 timestamp2 ...] :blocked-until timestamp}}
+(def login-attempts (atom {}))
+
+;; Configuração
+(def max-attempts 5)
+(def window-ms (* 15 60 1000)) ; 15 minutos em milissegundos
+(def block-duration-ms (* 15 60 1000)) ; 15 minutos de bloqueio
 
 (defn get-client-ip
   "Extrai o IP do cliente da requisição, considerando proxies."
@@ -14,6 +17,48 @@
       (get-in request [:headers "x-real-ip"])
       (:remote-addr request)
       "unknown"))
+
+(defn clean-old-attempts
+  "Remove tentativas antigas fora da janela de tempo."
+  [attempts now]
+  (filter #(> % (- now window-ms)) attempts))
+
+(defn is-blocked?
+  "Verifica se o IP está bloqueado."
+  [ip-data now]
+  (when-let [blocked-until (:blocked-until ip-data)]
+    (> blocked-until now)))
+
+(defn should-block?
+  "Verifica se deve bloquear o IP baseado no número de tentativas."
+  [attempts]
+  (>= (count attempts) max-attempts))
+
+(defn record-attempt
+  "Registra uma tentativa de login para o IP."
+  [ip]
+  (let [now (System/currentTimeMillis)]
+    (swap! login-attempts
+           (fn [state]
+             (let [ip-data (get state ip {:attempts []})
+                   cleaned-attempts (clean-old-attempts (:attempts ip-data) now)
+                   new-attempts (conj cleaned-attempts now)]
+               (if (should-block? new-attempts)
+                 (assoc state ip {:attempts new-attempts
+                                 :blocked-until (+ now block-duration-ms)})
+                 (assoc state ip {:attempts new-attempts})))))))
+
+(defn check-rate-limit
+  "Verifica se o IP pode fazer login. Retorna nil se permitido, ou mensagem de erro se bloqueado."
+  [ip]
+  (let [now (System/currentTimeMillis)
+        ip-data (get @login-attempts ip)]
+    (when (and ip-data (is-blocked? ip-data now))
+      (let [remaining-seconds (quot (- (:blocked-until ip-data) now) 1000)]
+        {:blocked true
+         :retry-after remaining-seconds
+         :message (str "Muitas tentativas de login. Tente novamente em " 
+                      (quot remaining-seconds 60) " minutos.")}))))
 
 (defn wrap-rate-limit-login
   "Middleware que aplica rate limiting em endpoints de login.
@@ -27,17 +72,18 @@
                             (= uri "/admin/login")))]
       (if is-login?
         (let [client-ip (get-client-ip request)
-              throttle-key (str "login:" client-ip)]
-          (if (throttler/allow? login-limiter throttle-key)
-            (do
-              (log/info "Login attempt from IP:" client-ip)
-              (handler request))
+              rate-limit-check (check-rate-limit client-ip)]
+          (if rate-limit-check
             (do
               (log/warn "Rate limit exceeded for IP:" client-ip)
               {:status 429
                :headers {"Content-Type" "application/json"
-                        "Retry-After" "900"}
-               :body {:error "Muitas tentativas de login. Tente novamente em 15 minutos."}})))
+                        "Retry-After" (str (:retry-after rate-limit-check))}
+               :body {:error (:message rate-limit-check)}})
+            (do
+              (log/info "Login attempt from IP:" client-ip)
+              (record-attempt client-ip)
+              (handler request))))
         (handler request)))))
 
 (defn wrap-global-error-handler
