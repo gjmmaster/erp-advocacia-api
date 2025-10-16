@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: juridico-frontend-nextjs
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_API_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

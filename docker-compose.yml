@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Backend Clojure
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: juridico-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET:-chave-padrao-para-desenvolvimento-segura}
+      - APP_ENV=${APP_ENV:-development}
+    networks:
+      - juridico-network
+    restart: unless-stopped
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend-nextjs
+      dockerfile: Dockerfile
+    container_name: juridico-frontend
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=${NODE_ENV:-production}
+      - BACKEND_API_URL=http://backend:3000
+      - JWT_SECRET=${JWT_SECRET:-chave-padrao-para-desenvolvimento-segura}
+    depends_on:
+      - backend
+    networks:
+      - juridico-network
+    restart: unless-stopped
+
+networks:
+  juridico-network:
+    driver: bridge
