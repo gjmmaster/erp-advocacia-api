@@ -85,7 +85,7 @@ export async function setSession(backendToken: string) {
   cookieStore.set('access_token', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: ACCESS_TOKEN_EXPIRY,
     path: '/',
   });
@@ -93,7 +93,7 @@ export async function setSession(backendToken: string) {
   cookieStore.set('refresh_token', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: REFRESH_TOKEN_EXPIRY,
     path: '/',
   });

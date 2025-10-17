@@ -32,8 +32,10 @@ export async function middleware(request: NextRequest) {
       // Verifica o token
       const { payload } = await jwtVerify(accessToken, JWT_SECRET);
 
-      // Verifica se é super-admin
-      if (payload.role !== 'super-admin') {
+      // Verifica se é super-admin (aceita tanto 'super-admin' quanto 'superadmin')
+      const role = payload.role as string;
+      if (role !== 'super-admin' && role !== 'superadmin') {
+        console.error('Role inválida:', role);
         if (pathname.startsWith('/api/')) {
           return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
         }
@@ -43,6 +45,7 @@ export async function middleware(request: NextRequest) {
       // Token válido, continua
       return NextResponse.next();
     } catch (error) {
+      console.error('Erro ao verificar token:', error);
       // Token inválido ou expirado, tenta renovar
       const refreshToken = request.cookies.get('refresh_token')?.value;
 
