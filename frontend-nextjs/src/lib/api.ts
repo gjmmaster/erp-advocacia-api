@@ -124,5 +124,5 @@ export async function del<T = any>(
 
   // DELETE pode não retornar body
   const text = await response.text();
-  return text ? JSON.parse(text) : {};
+  return text ? JSON.parse(text) : ({} as T);
 }
