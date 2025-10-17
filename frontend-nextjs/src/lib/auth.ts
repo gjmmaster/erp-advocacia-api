@@ -12,6 +12,7 @@ export interface TokenPayload {
   email: string;
   role: string;
   'tenant-id'?: string;
+  type?: 'access' | 'refresh';
   exp?: number;
 }
 
