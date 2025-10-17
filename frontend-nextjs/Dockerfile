@@ -11,9 +11,8 @@ COPY next.config.js ./
 RUN npm ci && \
     npm cache clean --force
 
-# Copia o código-fonte
-COPY src ./src
-COPY public ./public
+# Copia TODO o código-fonte
+COPY . .
 
 # Build da aplicação Next.js
 RUN npm run build
