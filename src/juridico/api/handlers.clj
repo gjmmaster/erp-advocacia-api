@@ -188,9 +188,20 @@
 
 (defn listar-tenants-handler
   "Handler para o Super Admin listar todos os tenants."
-  [{:keys [db-repo]}]
-  {:status 200
-   :body (p/listar-tenants db-repo)})
+  [{:keys [db-repo] :as request}]
+  (println "=== LISTAR TENANTS HANDLER ===")
+  (println "Request keys:" (keys request))
+  (println "db-repo presente?" (some? db-repo))
+  (println "db-repo valor:" db-repo)
+  (if db-repo
+    (let [tenants (p/listar-tenants db-repo)]
+      (println "Tenants encontrados:" (count tenants))
+      {:status 200
+       :body tenants})
+    (do
+      (println "ERRO: db-repo é nil!")
+      {:status 500
+       :body {:error "Erro interno: db-repo não disponível"}})))
 
 (defn obter-tenant-handler
   "Handler para o Super Admin obter um tenant por ID."
