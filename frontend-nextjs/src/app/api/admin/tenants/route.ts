@@ -4,17 +4,24 @@ import { getSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('[API TENANTS] GET /api/admin/tenants chamado');
     const session = await getSession();
+    console.log('[API TENANTS] Sessão obtida:', session ? 'SIM' : 'NÃO');
+    console.log('[API TENANTS] Role da sessão:', session?.role);
+    
     if (!session || session.role !== 'super-admin') {
+      console.log('[API TENANTS] Acesso negado - sessão inválida ou role incorreta');
       return NextResponse.json(
         { error: 'Acesso negado' },
         { status: 403 }
       );
     }
 
+    console.log('[API TENANTS] Fazendo requisição ao backend');
     const response = await fetchBackend('/admin/tenants', {
       method: 'GET',
     });
+    console.log('[API TENANTS] Resposta do backend:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Falha ao carregar tenants' }));

@@ -49,14 +49,21 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
  * Obtém a sessão atual dos cookies
  */
 export async function getSession(): Promise<TokenPayload | null> {
+  console.log('[AUTH] getSession chamado');
   const cookieStore = cookies();
   const accessToken = cookieStore.get('access_token')?.value;
+  console.log('[AUTH] Access token presente:', accessToken ? 'SIM' : 'NÃO');
 
   if (!accessToken) {
+    console.log('[AUTH] Sem access token, retornando null');
     return null;
   }
 
-  return verifyToken(accessToken);
+  console.log('[AUTH] Verificando token...');
+  const result = await verifyToken(accessToken);
+  console.log('[AUTH] Token verificado:', result ? 'VÁLIDO' : 'INVÁLIDO');
+  console.log('[AUTH] Role do token:', result?.role);
+  return result;
 }
 
 /**
