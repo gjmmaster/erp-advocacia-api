@@ -4,13 +4,16 @@ WORKDIR /app
 
 # Copia os arquivos de definição do projeto
 COPY package*.json ./
+COPY tsconfig.json ./
+COPY next.config.js ./
 
-# Instala as dependências
-RUN npm ci --only=production && \
+# Instala TODAS as dependências (incluindo devDependencies para build)
+RUN npm ci && \
     npm cache clean --force
 
 # Copia o código-fonte
-COPY . .
+COPY src ./src
+COPY public ./public
 
 # Build da aplicação Next.js
 RUN npm run build
