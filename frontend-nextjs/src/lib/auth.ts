@@ -63,10 +63,15 @@ export async function getSession(): Promise<TokenPayload | null> {
  * Define os cookies de sessão
  */
 export async function setSession(backendToken: string) {
+  console.log('[AUTH] setSession chamado');
+  console.log('[AUTH] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[AUTH] Token recebido (primeiros 20 chars):', backendToken.substring(0, 20));
+  
   const cookieStore = cookies();
   
   // Usa o token do backend DIRETAMENTE como access_token
   // Não recria o token para evitar problemas de JWT_SECRET
+  console.log('[AUTH] Definindo access_token cookie');
   cookieStore.set('access_token', backendToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -75,6 +80,7 @@ export async function setSession(backendToken: string) {
     path: '/',
   });
 
+  console.log('[AUTH] Definindo refresh_token cookie');
   // Usa o mesmo token como refresh_token por enquanto
   cookieStore.set('refresh_token', backendToken, {
     httpOnly: true,
@@ -83,6 +89,8 @@ export async function setSession(backendToken: string) {
     maxAge: REFRESH_TOKEN_EXPIRY,
     path: '/',
   });
+  
+  console.log('[AUTH] Cookies definidos com sucesso');
 }
 
 /**
