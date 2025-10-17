@@ -65,24 +65,9 @@ export async function getSession(): Promise<TokenPayload | null> {
 export async function setSession(backendToken: string) {
   const cookieStore = cookies();
   
-  // Decodifica o token do backend para obter o payload
-  const payload = await verifyToken(backendToken);
-  
-  if (!payload) {
-    throw new Error('Invalid token from backend');
-  }
-
-  // Cria access token (15 min)
-  const accessToken = await createToken(payload, ACCESS_TOKEN_EXPIRY);
-  
-  // Cria refresh token (7 dias)
-  const refreshToken = await createToken(
-    { ...payload, type: 'refresh' },
-    REFRESH_TOKEN_EXPIRY
-  );
-
-  // Define cookies HttpOnly
-  cookieStore.set('access_token', accessToken, {
+  // Usa o token do backend DIRETAMENTE como access_token
+  // Não recria o token para evitar problemas de JWT_SECRET
+  cookieStore.set('access_token', backendToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -90,7 +75,8 @@ export async function setSession(backendToken: string) {
     path: '/',
   });
 
-  cookieStore.set('refresh_token', refreshToken, {
+  // Usa o mesmo token como refresh_token por enquanto
+  cookieStore.set('refresh_token', backendToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
