@@ -18,6 +18,9 @@ export async function fetchBackend(
 
   try {
     const url = `${BACKEND_URL}${endpoint}`;
+    console.log('[API] Fazendo requisição para:', url);
+    console.log('[API] BACKEND_URL:', BACKEND_URL);
+    console.log('[API] endpoint:', endpoint);
     
     const response = await fetch(url, {
       ...fetchOptions,
