@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { fetchBackend } from '@/lib/api';
 import { getSession } from '@/lib/auth';
 
@@ -18,8 +19,17 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[API TENANTS] Fazendo requisição ao backend');
+    
+    // Obter o token dos cookies para enviar ao backend
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    console.log('[API TENANTS] Token para backend:', accessToken ? 'SIM' : 'NÃO');
+    
     const response = await fetchBackend('/admin/tenants', {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
     });
     console.log('[API TENANTS] Resposta do backend:', response.status);
 
@@ -71,8 +81,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obter o token dos cookies para enviar ao backend
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
     const response = await fetchBackend('/admin/tenants', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         company_name: body.company_name,
         email: body.email,

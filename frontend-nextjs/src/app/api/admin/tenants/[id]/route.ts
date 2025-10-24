@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { fetchBackend } from '@/lib/api';
 import { getSession } from '@/lib/auth';
 
@@ -27,8 +28,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
     const response = await fetchBackend(`/admin/tenants/${id}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
     });
 
     if (!response.ok) {
@@ -82,8 +89,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.company_name) updateData.company_name = body.company_name;
     if (body.operator_limit) updateData.operator_limit = body.operator_limit;
 
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
     const response = await fetchBackend(`/admin/tenants/${id}`, {
       method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify(updateData),
     });
 
@@ -126,8 +139,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('access_token')?.value;
+    
     const response = await fetchBackend(`/admin/tenants/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
     });
 
     if (!response.ok) {
