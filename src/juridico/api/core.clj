@@ -50,13 +50,25 @@
       :put {:handler h/atualizar-operador-handler}
       :delete {:handler h/deletar-operador-handler}}]]])
 
+;; Handler de fallback para rotas não encontradas
+(defn not-found-handler [request]
+  (println "=== ROTA NÃO ENCONTRADA ===")
+  (println "URI:" (:uri request))
+  (println "Method:" (:request-method request))
+  {:status 404
+   :body {:error "Rota não encontrada"
+          :uri (:uri request)
+          :method (:request-method request)}})
+
 ;; Construção da Aplicação (Apenas API)
 (def app
   (-> (ring/ring-handler
        (ring/router
         api-routes
         {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}}))
+                :middleware [muuntaja/format-middleware]}})
+       (ring/create-default-handler
+        {:not-found not-found-handler}))
       ;; CORS é essencial para permitir que o frontend (em outro domínio) acesse a API
       (cors/wrap-cors
        :access-control-allow-origin [#".*"]
