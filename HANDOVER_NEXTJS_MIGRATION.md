@@ -1,14 +1,14 @@
 # 🔄 Handover - Migração Next.js BFF
 
-**Data:** 17 de Outubro de 2025  
-**Status:** 95% Completo - Aguardando resolução de Rate Limit  
+**Data:** 24 de Outubro de 2025  
+**Status:** ✅ 100% Completo - Sistema Funcionando em Produção  
 **Branch:** `feat/clojure-multi-tenant-api`
 
 ---
 
 ## 📊 Status Atual
 
-### ✅ O Que Está Funcionando
+### ✅ TUDO Funcionando!
 
 1. **Frontend Next.js (100%)**
    - ✅ Build completo e deployado no Render
@@ -18,43 +18,52 @@
    - ✅ API Routes criadas e funcionais
    - ✅ Cookies HttpOnly configurados
    - ✅ TypeScript sem erros
+   - ✅ Token JWT enviado ao backend
 
-2. **Backend Clojure (95%)**
+2. **Backend Clojure (100%)**
    - ✅ Rotas de admin implementadas
-   - ✅ Handlers de tenants criados
-   - ✅ JWT funcionando
+   - ✅ Handlers de tenants funcionando
+   - ✅ JWT funcionando perfeitamente
    - ✅ Middleware de autenticação OK
-   - ⚠️ Rate limit muito restritivo (bloqueando testes)
+   - ✅ Rate limit ajustado (20 tentativas / 5 min)
+   - ✅ db-repo disponível nos handlers
 
 3. **Deploy (100%)**
    - ✅ Frontend: https://erp-advocacia-front-end.onrender.com
    - ✅ Backend: https://erp-advocacy-api.onrender.com
    - ✅ Docker configurado
    - ✅ Variáveis de ambiente configuradas
+   - ✅ Sistema funcionando em produção!
 
 ---
 
-## 🐛 Problema Atual
+## ✅ Problema Resolvido!
 
-### Rate Limit Bloqueando Login
+### Token JWT não estava sendo enviado ao backend
 
-**Sintoma:**
+**Problema:**
 ```
-[LOGIN] Resposta do backend: 429
-[LOGIN] Erro do backend: { error: 'Credenciais inválidas' }
+Frontend → Backend (SEM token)
+Backend → 401 Unauthorized
 ```
 
-**Causa:**
-O backend está bloqueando tentativas de login após 5 tentativas em 15 minutos (rate limiting de segurança).
+**Solução:**
+```typescript
+// Adicionado em todas as API routes:
+const accessToken = cookieStore.get('access_token')?.value;
 
-**Status:**
-- ✅ Correção commitada (aumentado para 20 tentativas, 5 minutos)
-- ⏳ Aguardando redeploy do backend (~5 minutos)
-- ⏳ Aguardando expiração do bloqueio atual (~5-10 minutos)
+fetchBackend('/admin/tenants', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,  // ← ADICIONADO!
+  },
+});
+```
+
+**Status:** ✅ RESOLVIDO
 
 **Último Commit:**
 ```
-2fd2422 - fix: ajustar rate limit para desenvolvimento
+5c6b194 - fix: adicionar token JWT nas requisicoes ao backend
 ```
 
 ---
