@@ -149,11 +149,13 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
   - Adicionar botão de logout no layout
 
 
+
   - Redirecionar para login após logout
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
 - [ ] 13. Frontend - Atualizar middleware para proteger rotas do tenant
   - Adicionar validação de autenticação para rotas `/[subdomain]/dashboard`
+
   - Verificar que tenant-id do token corresponde ao subdomínio
   - Redirecionar para login se não autenticado
   - Retornar 403 se tenant-id não corresponde
