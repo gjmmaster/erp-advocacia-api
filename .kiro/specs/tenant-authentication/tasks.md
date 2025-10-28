@@ -43,6 +43,9 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
     - `count-processos`
     - `count-clientes`
     - `count-operadores`
+
+
+
     - `count-processos-ativos`
   - Criar handler `get-dashboard-stats-handler`
   - Adicionar rota `GET /api/dashboard/stats/:tenant-id`
@@ -53,6 +56,8 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
 
 - [ ] 4. Frontend - Atualizar middleware para extrair subdomínio
   - Criar função `extractSubdomain` no middleware
+
+
   - Criar função `validateTenant` que chama backend
   - Adicionar lógica para redirecionar se não tem subdomínio
   - Adicionar headers `x-tenant-id` e `x-tenant-subdomain`

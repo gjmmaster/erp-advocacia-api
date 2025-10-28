@@ -16,3 +16,10 @@ export interface UpdateTenantPayload {
   company_name?: string;
   operator_limit?: number;
 }
+
+export interface TenantValidation {
+  id: string;
+  name: string;
+  subdomain: string;
+  active: boolean;
+}
