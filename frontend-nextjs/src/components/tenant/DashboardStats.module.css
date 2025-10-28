@@ -1,0 +1,259 @@
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-color);
+}
+
+/* Color variants */
+.blue {
+  --accent-color: #3182ce;
+}
+
+.green {
+  --accent-color: #38a169;
+}
+
+.purple {
+  --accent-color: #805ad5;
+}
+
+.orange {
+  --accent-color: #dd6b20;
+}
+
+.statIcon {
+  font-size: 32px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.blue .statIcon {
+  background: rgba(49, 130, 206, 0.1);
+}
+
+.green .statIcon {
+  background: rgba(56, 161, 105, 0.1);
+}
+
+.purple .statIcon {
+  background: rgba(128, 90, 213, 0.1);
+}
+
+.orange .statIcon {
+  background: rgba(221, 107, 32, 0.1);
+}
+
+.statContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.statTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #718096;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 4px 0;
+  line-height: 1;
+}
+
+.statDescription {
+  font-size: 12px;
+  color: #a0aec0;
+  margin: 0;
+}
+
+/* Loading state */
+.loading {
+  pointer-events: none;
+}
+
+.skeleton {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.skeletonIcon {
+  width: 60px;
+  height: 60px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeletonLine {
+  height: 16px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonLine:first-child {
+  width: 60%;
+}
+
+.skeletonLine:last-child {
+  width: 40%;
+  height: 12px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Error state */
+.errorContainer {
+  grid-column: 1 / -1;
+}
+
+.errorCard {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid #fed7d7;
+  background: #fef5e7;
+}
+
+.errorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.errorCard h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #c53030;
+  margin: 0 0 8px 0;
+}
+
+.errorCard p {
+  font-size: 14px;
+  color: #744210;
+  margin: 0 0 20px 0;
+}
+
+.retryButton {
+  background: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.retryButton:hover {
+  background: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .statCard {
+    padding: 20px;
+  }
+
+  .statIcon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .statValue {
+    font-size: 24px;
+  }
+
+  .statTitle {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .statIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+
+  .errorCard {
+    padding: 24px;
+  }
+
+  .errorIcon {
+    font-size: 36px;
+  }
+}
