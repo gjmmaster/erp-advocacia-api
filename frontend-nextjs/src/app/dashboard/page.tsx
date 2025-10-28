@@ -1,7 +1,9 @@
 import { getSession } from '@/lib/auth';
-import { redirect, headers } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import DashboardLayout from '@/components/tenant/DashboardLayout';
 import DashboardStats from '@/components/tenant/DashboardStats';
+import type { UserSession } from '@/types/auth';
 
 export default async function TenantDashboardPage() {
   const session = await getSession();
@@ -12,7 +14,7 @@ export default async function TenantDashboardPage() {
 
   // Obter nome do tenant dos headers
   const headersList = headers();
-  const tenantName = headersList.get('x-tenant-name') || undefined;
+  const tenantName = headersList.get('x-tenant-name') || 'Escritório';
 
   return (
     <DashboardLayout user={session} tenantName={tenantName}>
