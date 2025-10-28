@@ -200,7 +200,31 @@
       (println "ID convertido para Long:" id-long)
       (let [resultado (sql/delete! db-conn :tenants {:id id-long})]
         (println "Resultado do DELETE:" resultado)
-        resultado))))
+        resultado)))
+
+  ;; --- Funções de Estatísticas do Dashboard ---
+  
+  (count-processos [this tenant-id]
+    (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
+          result (jdbc/execute-one! db-conn 
+                   ["SELECT COUNT(*) as count FROM legal_cases WHERE tenant_id = ?" id-long])]
+      (:count result 0)))
+
+  (count-clientes [this tenant-id]
+    ;; Por enquanto retorna 0, será implementado quando criar tabela de clientes
+    0)
+
+  (count-operadores [this tenant-id]
+    (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
+          result (jdbc/execute-one! db-conn 
+                   ["SELECT COUNT(*) as count FROM users WHERE tenant_id = ? AND role = 'operador'" id-long])]
+      (:count result 0)))
+
+  (count-processos-ativos [this tenant-id]
+    (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
+          result (jdbc/execute-one! db-conn 
+                   ["SELECT COUNT(*) as count FROM legal_cases WHERE tenant_id = ? AND status = 'ativo'" id-long])]
+      (:count result 0))))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository

@@ -431,12 +431,25 @@ O sistema implementa **segurança de nível empresarial** com múltiplas camadas
 
 **Recomendação:** ✅ Sistema APROVADO para produção
 
-**Próximos Passos:**
-1. Restringir CORS (2 horas)
-2. Remover logs de debug (1 hora)
-3. Ajustar rate limit (30 minutos)
+**Próximos Passos (Opcionais):**
+1. Restringir CORS (2 horas) - Prioridade MÉDIA
+2. Remover logs de debug (1 hora) - Prioridade BAIXA
+3. Ajustar rate limit (30 minutos) - Prioridade BAIXA
 
 **Total de Trabalho:** ~4 horas para segurança 100%
+
+---
+
+## ❓ FAQ - Refresh Token
+
+**P: Preciso implementar refresh token?**  
+R: **NÃO** para segurança. O BFF já resolve o problema. Implemente apenas se usuários reclamarem de fazer login frequentemente.
+
+**P: O refresh token melhora a segurança?**  
+R: **NÃO**. Melhora apenas UX (renovação automática) e controle (revogação de sessões).
+
+**P: Onde está a análise completa?**  
+R: Leia `frontend-nextjs/BFF_VS_REFRESH_TOKEN.md`
 
 ---
 

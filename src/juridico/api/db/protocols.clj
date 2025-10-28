@@ -69,4 +69,18 @@
     "Cria um novo tenant.")
 
   (deletar-tenant [this tenant-id]
-    "Deleta um tenant específico."))
+    "Deleta um tenant específico.")
+
+  ;; --- Funções de Estatísticas do Dashboard ---
+
+  (count-processos [this tenant-id]
+    "Retorna o total de processos de um tenant.")
+
+  (count-clientes [this tenant-id]
+    "Retorna o total de clientes de um tenant.")
+
+  (count-operadores [this tenant-id]
+    "Retorna o total de operadores de um tenant.")
+
+  (count-processos-ativos [this tenant-id]
+    "Retorna o total de processos ativos de um tenant."))

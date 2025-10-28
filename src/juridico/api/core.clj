@@ -14,6 +14,10 @@
   [""
    ["/debug"
     ["/secret-check" {:get {:handler h/secret-check-handler}}]]
+   ["/api"
+    {:middleware [mw/wrap-public-db-repo]}
+    ["/tenants"
+     ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]]
    ["/admin"
     {:middleware [mw/wrap-public-db-repo]}
     ["/login" {:post {:handler h/super-admin-login-handler}}]
@@ -40,6 +44,8 @@
     ["/processos/{id}" {:get {:handler h/obter-processo-handler}
                         :put {:handler h/atualizar-processo-handler}
                         :delete {:handler h/deletar-processo-handler}}]
+    ["/dashboard"
+     ["/stats/{tenant-id}" {:get {:handler h/get-dashboard-stats-handler}}]]
     ["/operadores"
      {:middleware [mw/wrap-master-role-authorization]
       :get {:handler h/listar-operadores-handler}

@@ -75,25 +75,51 @@
             :details (s/explain-data :juridico.api.specs/provision-payload body-params)}}))
 
 (defn login-handler
-  "Handler para autenticar um usuário (Admin ou Operador)."
-  [{:keys [db-repo body-params tenant]}]
+  "Handler para autenticar um usuário (Admin ou Operador) de um tenant específico.
+   Agora aceita 'subdomain' no body para identificar o tenant."
+  [{:keys [db-repo body-params]}]
   (if (s/valid? :juridico.api.specs/login-payload body-params)
-    (let [{:keys [email password]} body-params
-          tenant-id (:tenants/id tenant)]
-      (if-let [user (and tenant-id (p/encontrar-usuario-por-email db-repo tenant-id email))]
-        (if (hashers/check password (:users/password_hash user))
-          (let [claims {:user-id (:users/id user)
-                        :tenant-id tenant-id
-                        :role (:users/role user)
-                        :exp (-> (java.time.Instant/now)
-                                 (.plusSeconds 3600)
-                                 (.getEpochSecond))}
-                token (jwt/sign claims config/jwt-secret)]
-            {:status 200
-             :body {:message (str "Usuário " email " autenticado com sucesso.")
-                    :token token}})
-          {:status 401 :body {:error "Credenciais inválidas."}})
-        {:status 401 :body {:error "Credenciais inválidas."}}))
+    (let [{:keys [email password subdomain]} body-params]
+      
+      ;; 1. Buscar tenant pelo subdomain
+      (if-let [tenant (p/encontrar-tenant-por-subdominio db-repo subdomain)]
+        (let [tenant-id (:tenants/id tenant)]
+          
+          ;; 2. Buscar usuário pelo email no tenant
+          (if-let [user (p/encontrar-usuario-por-email db-repo tenant-id email)]
+            
+            ;; 3. Validar que usuário pertence ao tenant correto (redundante mas seguro)
+            (if (= (:users/tenant_id user) tenant-id)
+              
+              ;; 4. Validar senha
+              (if (hashers/check password (:users/password_hash user))
+                
+                ;; 5. Gerar JWT com tenant-id
+                (let [claims {:user-id (:users/id user)
+                              :email (:users/email user)
+                              :tenant-id tenant-id
+                              :role (:users/role user)
+                              :exp (-> (java.time.Instant/now)
+                                       (.plusSeconds 900))} ; 15 minutos
+                      token (jwt/sign claims config/jwt-secret)]
+                  {:status 200
+                   :body {:message (str "Usuário " email " autenticado com sucesso.")
+                          :token token}})
+                
+                ;; Senha incorreta
+                {:status 401 :body {:error "Credenciais inválidas."}})
+              
+              ;; Usuário não pertence ao tenant
+              {:status 403 :body {:error "Usuário não pertence a este escritório."}})
+            
+            ;; Usuário não encontrado
+            {:status 401 :body {:error "Credenciais inválidas."}})
+          )
+        
+        ;; Tenant não encontrado
+        {:status 404 :body {:error "Escritório não encontrado."}}))
+    
+    ;; Validação de payload falhou
     {:status 400
      :body {:error "Dados de login inválidos."
             :details (s/explain-data :juridico.api.specs/login-payload body-params)}}))
@@ -276,6 +302,41 @@
         {:status 204 :body nil}
         {:status 404 :body {:error "Tenant não encontrado."}}))))
 
+
+;; --- HANDLER DE BUSCA DE TENANT POR SUBDOMÍNIO ---
+(defn get-tenant-by-subdomain-handler
+  "Handler público para buscar tenant por subdomínio.
+   Usado pelo frontend Next.js para validar subdomínios."
+  [{:keys [db-repo path-params]}]
+  (let [subdomain (:subdomain path-params)]
+    (if-let [tenant (p/encontrar-tenant-por-subdominio db-repo subdomain)]
+      {:status 200
+       :body {:id (str (:tenants/id tenant))
+              :name (:tenants/company_name tenant)
+              :subdomain (:tenants/subdomain tenant)
+              :active true}}
+      {:status 404
+       :body {:error "Tenant não encontrado"}})))
+
+;; --- HANDLER DE ESTATÍSTICAS DO DASHBOARD ---
+(defn get-dashboard-stats-handler
+  "Handler para obter estatísticas do dashboard de um tenant.
+   Requer autenticação e valida que usuário pertence ao tenant solicitado."
+  [{:keys [db-repo path-params identity]}]
+  (let [tenant-id (:tenant-id path-params)
+        user-tenant-id (:tenant-id identity)]
+    
+    ;; Validar que usuário pertence ao tenant solicitado
+    (if (= (str user-tenant-id) tenant-id)
+      (let [stats {:total-processos (p/count-processos db-repo tenant-id)
+                   :total-clientes (p/count-clientes db-repo tenant-id)
+                   :total-operadores (p/count-operadores db-repo tenant-id)
+                   :processos-ativos (p/count-processos-ativos db-repo tenant-id)}]
+        {:status 200
+         :body stats})
+      
+      {:status 403
+       :body {:error "Acesso negado"}})))
 
 ;; --- HANDLER DE DEPURAÇÃO (TEMPORÁRIO) ---
 (defn secret-check-handler
