@@ -59,6 +59,8 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
 
 
   - Criar função `validateTenant` que chama backend
+
+
   - Adicionar lógica para redirecionar se não tem subdomínio
   - Adicionar headers `x-tenant-id` e `x-tenant-subdomain`
   - Tratar erro 404 (tenant não encontrado)
@@ -66,7 +68,10 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
   - Testar com diferentes subdomínios
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 5. Frontend - Criar tipos TypeScript
+- [x] 5. Frontend - Criar tipos TypeScript
+
+
+
   - Criar interface `Tenant` em `src/types/tenant.ts`
   - Criar interface `UserSession` em `src/types/auth.ts`
   - Criar interface `DashboardStats` em `src/types/dashboard.ts`
@@ -74,6 +79,8 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
 
 - [ ] 6. Frontend - Página de login do tenant
   - Criar estrutura de pastas `src/app/[subdomain]/login/`
+
+
   - Criar `page.tsx` com formulário de login
   - Criar `login.module.css` com estilos
   - Adicionar validação client-side (e-mail, senha obrigatórios)
@@ -82,11 +89,15 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
   - Redirecionar para dashboard após login bem-sucedido
   - _Requirements: 2.1, 2.2, 2.3, 7.1, 7.2, 7.3_
 
+
+
 - [ ] 7. Frontend - BFF API route de login
   - Criar `src/app/api/tenant/login/route.ts`
   - Extrair subdomain e tenant-id dos headers
   - Fazer requisição ao backend com subdomain
   - Validar que tenant-id do token corresponde ao subdomínio
+
+
   - Armazenar token em cookie HttpOnly usando `setSession`
   - Retornar dados do usuário (sem token)
   - Tratar erros apropriadamente
