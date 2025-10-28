@@ -129,13 +129,17 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
   - Tratar erros de carregamento
   - _Requirements: 4.2, 7.4_
 
-- [ ] 11. Frontend - BFF API route de stats
+- [x] 11. Frontend - BFF API route de stats
+
+
   - Criar `src/app/api/tenant/dashboard/stats/route.ts`
   - Verificar autenticação com `getSession`
   - Extrair tenant-id da sessão
   - Fazer requisição ao backend com Authorization header
   - Retornar dados das estatísticas
   - Tratar erros apropriadamente
+
+
   - _Requirements: 4.2, 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 12. Frontend - Funcionalidade de logout
@@ -143,6 +147,8 @@ Este documento contém a lista de tarefas para implementar a autenticação e da
   - Remover cookie de autenticação usando `clearSession`
   - Retornar sucesso
   - Adicionar botão de logout no layout
+
+
   - Redirecionar para login após logout
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
