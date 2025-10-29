@@ -19,7 +19,9 @@
    ["/api"
     {:middleware [mw/wrap-public-db-repo]}
     ["/tenants"
-     ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]]
+     ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
+    ["/super-admin"
+     ["/login" {:post {:handler h/super-admin-login-handler}}]]]
    ["/admin"
     {:middleware [mw/wrap-public-db-repo]}
     ["/login" {:post {:handler h/super-admin-login-handler}}]
