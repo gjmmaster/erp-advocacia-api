@@ -71,7 +71,7 @@
   (encontrar-usuario-por-email-global [this email]
     "Busca usuário por email em TODOS os tenants (para auto-descoberta)"
     (first (sql/query db-conn 
-             ["SELECT u.*, t.company_name as tenant_name, t.active as tenant_active
+             ["SELECT u.*, t.company_name as tenant_name, t.is_active as tenant_active
                FROM users u
                JOIN tenants t ON u.tenant_id = t.id
                WHERE LOWER(u.email) = LOWER(?)"
