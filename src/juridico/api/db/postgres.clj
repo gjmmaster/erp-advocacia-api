@@ -77,9 +77,10 @@
                             WHERE LOWER(u.email) = LOWER(?)"
                            email]))]
       (println "[POSTGRES] encontrar-usuario-por-email-global result:" result)
-      (println "[POSTGRES] tenant_active value:" (:tenant_active result))
-      (println "[POSTGRES] tenants/is_active value:" (:tenants/is_active result))
-      result))
+      (println "[POSTGRES] :tenants/tenant_active value:" (:tenants/tenant_active result))
+      ;; Retornar com o campo correto (sem namespace para facilitar acesso)
+      (when result
+        (assoc result :tenant_active (:tenants/tenant_active result)))))
 
   (encontrar-super-admin-por-email [this email]
     (first (sql/query db-conn ["SELECT * FROM users WHERE email = ? AND role = 'super-admin'" email])))
