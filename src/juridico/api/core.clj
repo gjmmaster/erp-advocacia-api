@@ -9,6 +9,8 @@
             [ring.middleware.cors :as cors])
   (:gen-class))
 
+;; Deploy: 2025-10-29 - Fix backend connectivity
+
 ;; As rotas da API continuam as mesmas
 (def api-routes
   [""
