@@ -67,18 +67,23 @@
   [{:keys [db-repo body-params]}]
   (if (s/valid? :juridico.api.specs/provision-payload body-params)
     (let [resultado (p/criar-tenant-e-usuario-master db-repo body-params)
+          _ (println "[PROVISION] Resultado do DB:" resultado)
+          _ (println "[PROVISION] User:" (:user resultado))
+          _ (println "[PROVISION] Temp password:" (:temp_password (:user resultado)))
           ;; Tentar enviar email (mas não falhar se não conseguir)
           email-sent (try
                        (email-service/send-welcome-email (:user resultado) (:tenant resultado))
                        true
                        (catch Exception e
                          (println "AVISO: Falha ao enviar email:" (.getMessage e))
-                         false))]
+                         false))
+          response-body (assoc resultado
+                          :message "Tenant criado com sucesso."
+                          :temp_password (:temp_password (:user resultado))  ; Retornar senha temporária
+                          :email_sent email-sent)
+          _ (println "[PROVISION] Response body:" response-body)]
       {:status 201
-       :body (assoc resultado
-               :message "Tenant criado com sucesso."
-               :temp_password (:temp_password (:user resultado))  ; Retornar senha temporária
-               :email_sent email-sent)})  ; Indicar se email foi enviado
+       :body response-body})  ; Indicar se email foi enviado
     {:status 400
      :body {:error "Dados para provisionamento inválidos."
             :details (s/explain-data :juridico.api.specs/provision-payload body-params)}}))

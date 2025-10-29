@@ -106,6 +106,10 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log('[API TENANTS POST] Resposta do backend:', JSON.stringify(data, null, 2));
+    console.log('[API TENANTS POST] data.temp_password:', data.temp_password);
+    console.log('[API TENANTS POST] data.user:', data.user);
+    console.log('[API TENANTS POST] data.user?.temp_password:', data.user?.temp_password);
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Erro ao criar tenant:', error);

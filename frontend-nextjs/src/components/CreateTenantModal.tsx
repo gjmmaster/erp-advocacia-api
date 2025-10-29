@@ -53,6 +53,8 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
       console.log('[CREATE TENANT] Resposta completa:', result);
       console.log('[CREATE TENANT] result.tenant:', result.tenant);
       console.log('[CREATE TENANT] result.user:', result.user);
+      console.log('[CREATE TENANT] result.temp_password:', result.temp_password);
+      console.log('[CREATE TENANT] result.user?.temp_password:', result.user?.temp_password);
       
       // Limpar campos
       setCompanyName('');
