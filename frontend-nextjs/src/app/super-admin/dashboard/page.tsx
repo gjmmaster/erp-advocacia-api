@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import TenantsTable from '@/components/TenantsTable';
 import CreateTenantModal from '@/components/CreateTenantModal';
 import EditTenantModal from '@/components/EditTenantModal';
+import TenantCreatedModal from '@/components/TenantCreatedModal';
 import type { Tenant } from '@/types/tenant';
 import styles from './dashboard.module.css';
 
@@ -15,6 +16,13 @@ export default function SuperAdminDashboardPage() {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdTenant, setCreatedTenant] = useState<{
+    tenantName: string;
+    email: string;
+    tempPassword: string;
+    emailSent: boolean;
+  } | null>(null);
   const router = useRouter();
 
   const fetchTenants = async () => {
@@ -135,7 +143,9 @@ export default function SuperAdminDashboardPage() {
       <CreateTenantModal
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => {
+        onSuccess={(data) => {
+          setCreatedTenant(data);
+          setShowSuccessModal(true);
           setCreateModalOpen(false);
           fetchTenants();
         }}
@@ -154,6 +164,20 @@ export default function SuperAdminDashboardPage() {
           fetchTenants();
         }}
       />
+
+      {showSuccessModal && createdTenant && (
+        <TenantCreatedModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setCreatedTenant(null);
+          }}
+          tenantName={createdTenant.tenantName}
+          email={createdTenant.email}
+          tempPassword={createdTenant.tempPassword}
+          emailSent={createdTenant.emailSent}
+        />
+      )}
     </div>
   );
 }

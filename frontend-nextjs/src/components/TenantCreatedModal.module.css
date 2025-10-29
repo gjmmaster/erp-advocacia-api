@@ -1,0 +1,230 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.content {
+  padding: 24px;
+}
+
+.info {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.info p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.warning {
+  padding: 12px 16px;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  color: #c53030;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.passwordSection {
+  margin: 24px 0;
+  padding: 20px;
+  background: #fffaf0;
+  border: 2px solid #f6ad55;
+  border-radius: 8px;
+}
+
+.passwordSection h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: #2d3748;
+}
+
+.important {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #c05621;
+}
+
+.passwordBox {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border: 2px solid #f6ad55;
+  border-radius: 8px;
+}
+
+.password {
+  flex: 1;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #2d3748;
+  letter-spacing: 2px;
+}
+
+.copyButton {
+  padding: 12px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.copyButton:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+
+.instructions {
+  margin-top: 24px;
+  padding: 16px;
+  background: #ebf8ff;
+  border-radius: 8px;
+}
+
+.instructions h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #2c5282;
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.instructions li {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.closeButton {
+  padding: 12px 32px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+
+.confirmClose {
+  width: 100%;
+}
+
+.confirmClose p {
+  margin: 0 0 16px 0;
+  color: #c53030;
+  font-weight: 600;
+  text-align: center;
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background: #e2e8f0;
+  color: #2d3748;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #cbd5e0;
+}
+
+.confirmButton {
+  padding: 12px 24px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmButton:hover {
+  background: #38a169;
+}
+
+@media (max-width: 640px) {
+  .password {
+    font-size: 18px;
+  }
+  
+  .passwordBox {
+    flex-direction: column;
+  }
+  
+  .copyButton {
+    width: 100%;
+  }
+}

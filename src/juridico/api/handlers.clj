@@ -62,14 +62,23 @@
 ;; --- HANDLERS DE PROVISIONAMENTO E AUTENTICAÇÃO (Públicos) ---
 
 (defn provision-tenant-handler
-  "Handler para o Super Admin criar um novo tenant e seu usuário Admin."
+  "Handler para o Super Admin criar um novo tenant e seu usuário Admin.
+   MODIFICADO: Retorna senha temporária na resposta e indica se email foi enviado."
   [{:keys [db-repo body-params]}]
   (if (s/valid? :juridico.api.specs/provision-payload body-params)
-    (let [resultado (p/criar-tenant-e-usuario-master db-repo body-params)]
-      (email-service/send-welcome-email (:user resultado) (:tenant resultado))
+    (let [resultado (p/criar-tenant-e-usuario-master db-repo body-params)
+          ;; Tentar enviar email (mas não falhar se não conseguir)
+          email-sent (try
+                       (email-service/send-welcome-email (:user resultado) (:tenant resultado))
+                       true
+                       (catch Exception e
+                         (println "AVISO: Falha ao enviar email:" (.getMessage e))
+                         false))]
       {:status 201
        :body (assoc resultado
-                      :message "Tenant criado com sucesso. E-mail de boas-vindas enviado.")})
+               :message "Tenant criado com sucesso."
+               :temp_password (:temp_password (:user resultado))  ; Retornar senha temporária
+               :email_sent email-sent)})  ; Indicar se email foi enviado
     {:status 400
      :body {:error "Dados para provisionamento inválidos."
             :details (s/explain-data :juridico.api.specs/provision-payload body-params)}}))

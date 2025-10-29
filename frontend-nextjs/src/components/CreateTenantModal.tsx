@@ -7,7 +7,12 @@ import styles from './Modal.module.css';
 interface CreateTenantModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (data: {
+    tenantName: string;
+    email: string;
+    tempPassword: string;
+    emailSent: boolean;
+  }) => void;
 }
 
 export default function CreateTenantModal({ isOpen, onClose, onSuccess }: CreateTenantModalProps) {
@@ -44,10 +49,15 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
         throw new Error(data.error || 'Falha ao provisionar escritório');
       }
 
-      // Mostra mensagem de sucesso SEM expor a senha temporária
-      setSuccess(
-        `✅ Escritório criado com sucesso!\n\n📧 Um e-mail de boas-vindas com as instruções de acesso foi enviado para:\n${masterEmail}\n\n⚠️ O administrador deve verificar a caixa de entrada (e spam) para obter as credenciais de acesso.`
-      );
+      const result = await response.json();
+      
+      // Chamar onSuccess com os dados da senha
+      onSuccess({
+        tenantName: result.tenant.company_name,
+        email: result.user.email,
+        tempPassword: result.temp_password,
+        emailSent: result.email_sent || false,
+      });
 
       // Limpa os campos após 5 segundos
       setTimeout(() => {
