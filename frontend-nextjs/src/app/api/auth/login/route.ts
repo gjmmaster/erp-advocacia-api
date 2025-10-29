@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[LOGIN] Fazendo requisição ao backend:', process.env.BACKEND_API_URL);
-    const response = await fetchBackend('/admin/login', {
+    console.log('[LOGIN] Fazendo requisição ao backend:', process.env.BACKEND_URL);
+    const response = await fetchBackend('/api/super-admin/login', {
       method: 'POST',
       body: JSON.stringify({
         email: body.email,
