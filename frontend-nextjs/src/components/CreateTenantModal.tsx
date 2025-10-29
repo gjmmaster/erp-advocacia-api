@@ -50,6 +50,9 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
       }
 
       const result = await response.json();
+      console.log('[CREATE TENANT] Resposta completa:', result);
+      console.log('[CREATE TENANT] result.tenant:', result.tenant);
+      console.log('[CREATE TENANT] result.user:', result.user);
       
       // Limpar campos
       setCompanyName('');
@@ -58,9 +61,9 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
       
       // Chamar onSuccess com os dados da senha (abre o modal de sucesso)
       onSuccess({
-        tenantName: result.tenant.company_name,
-        email: result.user.email,
-        tempPassword: result.temp_password,
+        tenantName: result.tenant?.company_name || 'Tenant',
+        email: result.user?.email || masterEmail,
+        tempPassword: result.temp_password || result.user?.temp_password || 'N/A',
         emailSent: result.email_sent || false,
       });
     } catch (err) {
