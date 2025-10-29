@@ -35,6 +35,9 @@
 ;; Espera e-mail, senha e subdomain para identificar o tenant.
 (s/def ::login-payload (s/keys :req-un [::email ::password ::subdomain]))
 
+;; Define a estrutura do payload para login do super admin (sem subdomain)
+(s/def ::super-admin-login-payload (s/keys :req-un [::email ::password]))
+
 ;; --- Specs para Gestão de Usuários ---
 (s/def ::full_name (s/and string? not-empty))
 
