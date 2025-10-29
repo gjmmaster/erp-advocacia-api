@@ -20,6 +20,8 @@
     {:middleware [mw/wrap-public-db-repo]}
     ["/tenants"
      ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
+    ["/auth"
+     ["/login" {:post {:handler h/login-auto-discover-handler}}]]
     ["/super-admin"
      ["/login" {:post {:handler h/super-admin-login-handler}}]]]
    ["/admin"

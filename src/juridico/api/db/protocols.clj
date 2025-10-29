@@ -32,6 +32,9 @@
   (encontrar-usuario-por-email [this tenant-id email]
     "Busca um usuário pelo seu e-mail, dentro do escopo de um tenant específico.")
 
+  (encontrar-usuario-por-email-global [this email]
+    "Busca um usuário por email em TODOS os tenants (para auto-descoberta).")
+
   (encontrar-super-admin-por-email [this email]
     "Busca um super admin pelo seu e-mail (sem tenant context).")
 

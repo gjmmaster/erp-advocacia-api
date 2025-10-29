@@ -7,7 +7,7 @@
   padding: 20px;
 }
 
-.loginBox {
+.card {
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -16,19 +16,22 @@
   max-width: 420px;
 }
 
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
 .title {
   font-size: 28px;
   font-weight: 700;
   color: #1a202c;
   margin: 0 0 8px 0;
-  text-align: center;
 }
 
 .subtitle {
   font-size: 14px;
   color: #718096;
-  margin: 0 0 32px 0;
-  text-align: center;
+  margin: 0;
 }
 
 .form {
@@ -45,7 +48,7 @@
 
 .label {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #2d3748;
 }
 
@@ -55,7 +58,6 @@
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.2s;
-  background: white;
 }
 
 .input:focus {
@@ -65,28 +67,13 @@
 }
 
 .input:disabled {
-  background: #f7fafc;
+  background-color: #f7fafc;
   cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.input::placeholder {
-  color: #a0aec0;
-}
-
-.error {
-  padding: 12px 16px;
-  background: #fed7d7;
-  border: 1px solid #fc8181;
-  border-radius: 8px;
-  color: #c53030;
-  font-size: 14px;
-  text-align: center;
 }
 
 .button {
   padding: 14px 24px;
-  background: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -98,25 +85,51 @@
 }
 
 .button:hover:not(:disabled) {
-  background: #5568d3;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
 .button:disabled {
-  background: #a0aec0;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-/* Responsive */
+.error {
+  padding: 12px 16px;
+  background-color: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  color: #c53030;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadingHint {
+  text-align: center;
+  font-size: 13px;
+  color: #718096;
+  margin: 8px 0 0 0;
+}
+
+.footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.footer p {
+  font-size: 13px;
+  color: #a0aec0;
+  margin: 0;
+}
+
 @media (max-width: 480px) {
-  .loginBox {
-    padding: 32px 24px;
+  .card {
+    padding: 24px;
   }
 
   .title {

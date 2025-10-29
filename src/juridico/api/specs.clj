@@ -38,6 +38,9 @@
 ;; Define a estrutura do payload para login do super admin (sem subdomain)
 (s/def ::super-admin-login-payload (s/keys :req-un [::email ::password]))
 
+;; Define a estrutura do payload para login simples (auto-descoberta, sem subdomain)
+(s/def ::simple-login-payload (s/keys :req-un [::email ::password]))
+
 ;; --- Specs para Gestão de Usuários ---
 (s/def ::full_name (s/and string? not-empty))
 

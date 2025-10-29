@@ -68,6 +68,15 @@
   (encontrar-usuario-por-email [this tenant-id email]
     (first (sql/query db-conn ["SELECT * FROM users WHERE tenant_id = ? AND email = ?" tenant-id email])))
 
+  (encontrar-usuario-por-email-global [this email]
+    "Busca usuário por email em TODOS os tenants (para auto-descoberta)"
+    (first (sql/query db-conn 
+             ["SELECT u.*, t.company_name as tenant_name, t.active as tenant_active
+               FROM users u
+               JOIN tenants t ON u.tenant_id = t.id
+               WHERE LOWER(u.email) = LOWER(?)"
+              email])))
+
   (encontrar-super-admin-por-email [this email]
     (first (sql/query db-conn ["SELECT * FROM users WHERE email = ? AND role = 'super-admin'" email])))
 

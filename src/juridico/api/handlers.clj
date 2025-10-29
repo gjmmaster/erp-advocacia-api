@@ -146,6 +146,46 @@
      :body {:error "Dados de login inválidos."
             :details (s/explain-data :juridico.api.specs/super-admin-login-payload body-params)}}))
 
+(defn login-auto-discover-handler
+  "Handler para login com auto-descoberta de tenant por email.
+   Não requer subdomain - mais seguro e simples.
+   O sistema descobre automaticamente qual tenant o usuário pertence."
+  [{:keys [db-repo body-params]}]
+  (if (s/valid? :juridico.api.specs/simple-login-payload body-params)
+    (let [{:keys [email password]} body-params]
+      ;; 1. Buscar usuário por email em TODOS os tenants
+      (if-let [user (p/encontrar-usuario-por-email-global db-repo email)]
+        ;; 2. Validar que tenant está ativo
+        (if (:tenant_active user)
+          ;; 3. Validar senha
+          (if (hashers/check password (:users/password_hash user))
+            ;; 4. Gerar token com tenant-id
+            (let [claims {:user-id (:users/id user)
+                          :email (:users/email user)
+                          :role (:users/role user)
+                          :tenant-id (:users/tenant_id user)
+                          :exp (-> (java.time.Instant/now)
+                                   (.plusSeconds 3600)
+                                   (.getEpochSecond))}
+                  token (jwt/sign claims config/jwt-secret)]
+              {:status 200
+               :body {:message (str "Usuário " email " autenticado com sucesso.")
+                      :token token
+                      :user {:email email
+                             :role (:users/role user)
+                             :tenant-id (:users/tenant_id user)
+                             :tenant-name (:tenant_name user)}}})
+            ;; Senha incorreta
+            {:status 401 :body {:error "Credenciais inválidas."}})
+          ;; Tenant inativo
+          {:status 403 :body {:error "Escritório inativo."}})
+        ;; Usuário não encontrado
+        {:status 401 :body {:error "Credenciais inválidas."}}))
+    ;; Validação de payload falhou
+    {:status 400
+     :body {:error "Dados de login inválidos."
+            :details (s/explain-data :juridico.api.specs/simple-login-payload body-params)}}))
+
 
 ;; --- HANDLERS DE GESTÃO DE OPERADORES (Protegidos por Role 'master') ---
 
