@@ -97,6 +97,12 @@ export default function SuperAdminLoginPage() {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          {loading && (
+            <p className={styles.loadingHint}>
+              ⏳ Primeira vez pode demorar até 1 minuto (servidor iniciando)
+            </p>
+          )}
         </form>
 
         <div className={styles.footer}>

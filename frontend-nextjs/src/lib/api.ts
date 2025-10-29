@@ -11,7 +11,7 @@ export async function fetchBackend(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<Response> {
-  const { timeout = 30000, ...fetchOptions } = options;
+  const { timeout = 60000, ...fetchOptions } = options; // Aumentado para 60s para sleep mode
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
