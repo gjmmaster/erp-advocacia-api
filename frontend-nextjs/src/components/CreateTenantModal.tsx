@@ -51,24 +51,18 @@ export default function CreateTenantModal({ isOpen, onClose, onSuccess }: Create
 
       const result = await response.json();
       
-      // Chamar onSuccess com os dados da senha
+      // Limpar campos
+      setCompanyName('');
+      setMasterEmail('');
+      setOperatorLimit(4);
+      
+      // Chamar onSuccess com os dados da senha (abre o modal de sucesso)
       onSuccess({
         tenantName: result.tenant.company_name,
         email: result.user.email,
         tempPassword: result.temp_password,
         emailSent: result.email_sent || false,
       });
-
-      // Limpa os campos após 5 segundos
-      setTimeout(() => {
-        setCompanyName('');
-        setMasterEmail('');
-        setOperatorLimit(4);
-        setSuccess('');
-        setError('');
-        onSuccess();
-        onClose();
-      }, 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao provisionar escritório. Tente novamente.');
     } finally {
