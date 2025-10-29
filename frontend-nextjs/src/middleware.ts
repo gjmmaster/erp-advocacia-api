@@ -63,11 +63,16 @@ export async function middleware(request: NextRequest) {
   const subdomain = extractSubdomain(hostname);
   console.log('[MIDDLEWARE] Subdomínio extraído:', subdomain);
 
-  // Rotas públicas do super admin (sem subdomínio)
-  const superAdminPublicPaths = ['/super-admin/login', '/api/auth/login'];
+  // Rotas públicas (sem autenticação necessária)
+  const publicPaths = [
+    '/super-admin/login', 
+    '/api/auth/login',
+    '/login',              // Login de tenants (auto-descoberta)
+    '/api/tenant/login'    // API route de login de tenants
+  ];
   
-  if (superAdminPublicPaths.some(path => pathname.startsWith(path))) {
-    console.log('[MIDDLEWARE] Rota pública do super admin');
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    console.log('[MIDDLEWARE] Rota pública');
     return NextResponse.next();
   }
 
