@@ -76,9 +76,42 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Se não tem subdomínio, trata como rotas do super admin
+  // Rotas de tenant (sem subdomínio, usa auto-descoberta)
+  const tenantPaths = ['/dashboard'];
+  const isTenantPath = tenantPaths.some(path => pathname.startsWith(path));
+
+  // Se não tem subdomínio, trata como rotas do super admin OU tenant
   if (!subdomain) {
-    console.log('[MIDDLEWARE] Sem subdomínio - rotas do super admin');
+    console.log('[MIDDLEWARE] Sem subdomínio');
+    
+    // Se é rota de tenant, valida autenticação de tenant
+    if (isTenantPath) {
+      console.log('[MIDDLEWARE] Rota de tenant (auto-descoberta)');
+      const accessToken = request.cookies.get('access_token')?.value;
+      
+      if (!accessToken) {
+        console.log('[MIDDLEWARE] Sem token, redirecionando para login');
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+
+      try {
+        const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+        const role = payload.role as string;
+        
+        // Verifica se é tenant (master ou operador)
+        if (role === 'master' || role === 'operador') {
+          console.log('[MIDDLEWARE] Autenticação tenant OK');
+          return NextResponse.next();
+        }
+        
+        // Se não é tenant, redireciona para login
+        console.log('[MIDDLEWARE] Role inválida para tenant:', role);
+        return NextResponse.redirect(new URL('/login', request.url));
+      } catch (error) {
+        console.error('[MIDDLEWARE] Erro ao verificar token:', error);
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+    }
     
     // Se está tentando acessar rotas do super admin, valida autenticação
     if (pathname.startsWith('/super-admin') || pathname.startsWith('/api/admin')) {

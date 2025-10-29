@@ -53,8 +53,22 @@ Adicionados logs para verificar:
 4. Identificar qual campo está sendo retornado
 5. Corrigir o código conforme necessário
 
+## ✅ Solução Encontrada
+
+O campo estava vindo com namespace: **`:tenants/tenant_active`**
+
+Mas o código tentava acessar: **`:tenant_active`** (sem namespace)
+
+**Fix aplicado:**
+```clojure
+(when result
+  (assoc result :tenant_active (:tenants/tenant_active result)))
+```
+
+Agora o resultado inclui o campo `:tenant_active` sem namespace, facilitando o acesso no handler.
+
 ---
 
-**Commit:** `f832991`  
+**Commits:** `f832991`, `bce0f29`  
 **Data:** 29/10/2025  
-**Status:** 🔍 INVESTIGANDO
+**Status:** ✅ RESOLVIDO
