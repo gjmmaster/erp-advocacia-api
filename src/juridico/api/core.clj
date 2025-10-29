@@ -34,7 +34,7 @@
                               mw/wrap-jwt-authentication
                               mw/wrap-super-admin-authorization]
                  :get {:handler h/listar-tenants-handler}
-                 :post {:handler h/criar-tenant-handler}}]
+                 :post {:handler h/provision-tenant-handler}}]
     ["/tenants/{id}" {:middleware [mw/wrap-public-db-repo
                                    mw/wrap-jwt-authentication
                                    mw/wrap-super-admin-authorization]
