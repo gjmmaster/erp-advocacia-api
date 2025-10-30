@@ -61,14 +61,14 @@
    - :body-params {:current_password, :new_password, :confirm_password}
    - :db-repo (injetado pelo middleware)
    - :headers (para audit log)"
-  [{:keys [db-repo jwt-payload body-params headers] :as request}]
+  [{:keys [db-repo identity body-params headers] :as request}]
   (let [{:keys [current_password new_password confirm_password]} body-params
-        user-id (:user-id jwt-payload)
-        tenant-id (:tenant-id jwt-payload)
-        email (:email jwt-payload)]
+        user-id (:user-id identity)
+        tenant-id (:tenant-id identity)
+        email (:email identity)]
     
     (println "[CHANGE PASSWORD] Iniciando troca de senha")
-    (println "[CHANGE PASSWORD] JWT payload:" jwt-payload)
+    (println "[CHANGE PASSWORD] Identity:" identity)
     (println "[CHANGE PASSWORD] user-id:" user-id)
     (println "[CHANGE PASSWORD] email:" email)
     (println "[CHANGE PASSWORD] tenant-id:" tenant-id)
