@@ -5,9 +5,10 @@ interface TenantsTableProps {
   tenants: Tenant[];
   onEdit: (tenant: Tenant) => void;
   onDelete: (tenant: Tenant) => void;
+  onImpersonate?: (tenant: Tenant) => void;
 }
 
-export default function TenantsTable({ tenants, onEdit, onDelete }: TenantsTableProps) {
+export default function TenantsTable({ tenants, onEdit, onDelete, onImpersonate }: TenantsTableProps) {
   if (!tenants || tenants.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -44,7 +45,7 @@ export default function TenantsTable({ tenants, onEdit, onDelete }: TenantsTable
             <th style={{ minWidth: '150px' }}>Subdomínio</th>
             <th style={{ width: '120px', textAlign: 'center' }}>Limite de Operadores</th>
             <th style={{ minWidth: '150px' }}>Criado em</th>
-            <th style={{ width: '200px', textAlign: 'center' }}>Ações</th>
+            <th style={{ width: '280px', textAlign: 'center' }}>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -72,6 +73,15 @@ export default function TenantsTable({ tenants, onEdit, onDelete }: TenantsTable
                 </div>
               </td>
               <td className={styles.actionsCell}>
+                {onImpersonate && (
+                  <button
+                    className={`${styles.actionBtn} ${styles.impersonateBtn}`}
+                    onClick={() => onImpersonate(tenant)}
+                    title="Acessar como este escritório"
+                  >
+                    👤 Acessar Como
+                  </button>
+                )}
                 <button
                   className={`${styles.actionBtn} ${styles.editBtn}`}
                   onClick={() => onEdit(tenant)}

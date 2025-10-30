@@ -92,4 +92,10 @@
   
   (update-user-password! [this user-id new-password-hash temporary-password]
     "Atualiza a senha de um usuário e a flag temporary_password.
-     Retorna o número de linhas afetadas."))
+     Retorna o número de linhas afetadas.")
+  
+  ;; --- Funções de Impersonation ---
+  
+  (find-by-id [this user-id]
+    "Busca um usuário pelo seu ID (para impersonation).
+     Retorna o usuário ou nil."))

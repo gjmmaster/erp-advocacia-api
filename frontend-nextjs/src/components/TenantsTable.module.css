@@ -94,6 +94,17 @@
   box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
 }
 
+.impersonateBtn {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+}
+
+.impersonateBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.4);
+}
+
 .emptyState {
   text-align: center;
   padding: 3rem;

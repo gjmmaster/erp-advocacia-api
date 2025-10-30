@@ -254,7 +254,20 @@
                                 :temporary_password temporary-password}
                                {:id id-long})]
         (println "[POSTGRES] Linhas afetadas:" (:next.jdbc/update-count result))
-        result))))
+        result)))
+  
+  ;; --- Funções de Impersonation ---
+  
+  (find-by-id [this user-id]
+    "Busca um usuário pelo seu ID (para impersonation).
+     Retorna o usuário ou nil."
+    (let [id-long (if (string? user-id) (Long/parseLong user-id) user-id)
+          result (first (sql/query db-conn ["SELECT id, email, role, tenant_id FROM users WHERE id = ?" id-long]))]
+      (when result
+        {:id (:users/id result)
+         :email (:users/email result)
+         :role (:users/role result)
+         :tenant_id (:users/tenant_id result)}))))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository

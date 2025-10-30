@@ -23,6 +23,7 @@ export default function SuperAdminDashboardPage() {
     tempPassword: string;
     emailSent: boolean;
   } | null>(null);
+  const [impersonating, setImpersonating] = useState(false);
   const router = useRouter();
 
   const fetchTenants = async () => {
@@ -57,6 +58,42 @@ export default function SuperAdminDashboardPage() {
   const handleEdit = (tenant: Tenant) => {
     setEditingTenant(tenant);
     setEditModalOpen(true);
+  };
+
+  const handleImpersonate = async (tenant: Tenant) => {
+    const confirmMessage = `Você está prestes a acessar como o escritório "${tenant.company_name}".\n\n` +
+                          `Durante o acesso:\n` +
+                          `• Você verá exatamente o que o tenant vê\n` +
+                          `• Todas as ações serão registradas em audit log\n` +
+                          `• Um banner laranja será exibido no topo\n\n` +
+                          `Deseja continuar?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setImpersonating(true);
+    try {
+      // Buscar o user_id do tenant (primeiro usuário master do tenant)
+      // Por enquanto, vamos usar o tenant.id como user_id
+      // TODO: Buscar o user_id correto do banco
+      const response = await fetch(`/api/admin/impersonate/${tenant.id}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Falha ao iniciar impersonation');
+      }
+
+      // Redirecionar para dashboard do tenant
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err) {
+      alert(`❌ Erro: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+    } finally {
+      setImpersonating(false);
+    }
   };
 
   const handleDelete = async (tenant: Tenant) => {
@@ -131,11 +168,17 @@ export default function SuperAdminDashboardPage() {
             <div className={styles.spinner}></div>
             <p>Carregando escritórios...</p>
           </div>
+        ) : impersonating ? (
+          <div className={styles.loading}>
+            <div className={styles.spinner}></div>
+            <p>Iniciando impersonation...</p>
+          </div>
         ) : (
           <TenantsTable
             tenants={tenants}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onImpersonate={handleImpersonate}
           />
         )}
       </main>

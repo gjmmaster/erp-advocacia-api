@@ -3,15 +3,18 @@
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserSession } from '@/types/auth';
+import ImpersonationBanner from '@/components/ImpersonationBanner';
 import styles from './DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
   children: ReactNode;
   user: UserSession;
   tenantName?: string;
+  impersonating?: boolean;
+  impersonatorEmail?: string;
 }
 
-export default function DashboardLayout({ children, user, tenantName }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, user, tenantName, impersonating, impersonatorEmail }: DashboardLayoutProps) {
   const router = useRouter();
   const isAdmin = user.role === 'master';
 
@@ -31,6 +34,10 @@ export default function DashboardLayout({ children, user, tenantName }: Dashboar
 
   return (
     <div className={styles.container}>
+      {/* Banner de Impersonation */}
+      {impersonating && impersonatorEmail && (
+        <ImpersonationBanner targetEmail={user.email} />
+      )}
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerContent}>

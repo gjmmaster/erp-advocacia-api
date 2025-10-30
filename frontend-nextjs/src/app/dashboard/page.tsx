@@ -20,8 +20,17 @@ export default async function TenantDashboardPage() {
     ? session['tenant-id'] 
     : parseInt(String(session['tenant-id']));
 
+  // Verificar se está em modo impersonation
+  const impersonating = session.impersonating === true;
+  const impersonatorEmail = session['impersonator-email'];
+
   return (
-    <DashboardLayout user={session as any} tenantName={tenantName}>
+    <DashboardLayout 
+      user={session as any} 
+      tenantName={tenantName}
+      impersonating={impersonating}
+      impersonatorEmail={impersonatorEmail}
+    >
       <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '24px', color: '#1a202c' }}>
         Dashboard
       </h1>

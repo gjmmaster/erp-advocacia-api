@@ -159,6 +159,26 @@ export async function middleware(request: NextRequest) {
 
         // Verifica se é super-admin
         const role = payload.role as string;
+        const impersonating = payload.impersonating as boolean;
+        
+        // ⭐ NOVO: Bloquear rotas admin durante impersonation (exceto stop-impersonate)
+        if (impersonating === true) {
+          console.log('[MIDDLEWARE] Em modo impersonation');
+          
+          // Permitir apenas stop-impersonate
+          if (pathname === '/api/admin/stop-impersonate') {
+            console.log('[MIDDLEWARE] Permitindo stop-impersonate');
+            return NextResponse.next();
+          }
+          
+          // Bloquear todas as outras rotas admin
+          console.log('[MIDDLEWARE] Bloqueando rota admin durante impersonation');
+          if (pathname.startsWith('/api/')) {
+            return NextResponse.json({ error: 'Acesso negado durante impersonation' }, { status: 403 });
+          }
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+        
         if (role !== 'super-admin' && role !== 'superadmin') {
           console.error('[MIDDLEWARE] Role inválida:', role);
           if (pathname.startsWith('/api/')) {

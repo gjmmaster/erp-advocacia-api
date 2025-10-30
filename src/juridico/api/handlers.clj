@@ -5,7 +5,8 @@
             [buddy.sign.jwt :as jwt]
             [buddy.hashers :as hashers]
             [juridico.api.services.email :as email-service]
-            [juridico.api.config :as config]))
+            [juridico.api.config :as config]
+            [juridico.api.handlers.impersonation :as impersonation]))
 
 
 ;; --- HANDLERS DE PROCESSOS (Protegidos por JWT) ---
@@ -410,3 +411,8 @@
   [request]
   {:status 200
    :body {:secret_start (subs config/jwt-secret 0 4)}})
+
+
+;; --- HANDLERS DE IMPERSONATION (Super Admin) ---
+(def start-impersonation-handler impersonation/start-impersonation-handler)
+(def stop-impersonation-handler impersonation/stop-impersonation-handler)
