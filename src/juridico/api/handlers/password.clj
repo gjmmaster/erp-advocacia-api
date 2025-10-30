@@ -64,9 +64,14 @@
   [{:keys [db-repo jwt-payload body-params headers] :as request}]
   (let [{:keys [current_password new_password confirm_password]} body-params
         user-id (:user-id jwt-payload)
-        tenant-id (:tenant-id jwt-payload)]
+        tenant-id (:tenant-id jwt-payload)
+        email (:email jwt-payload)]
     
-    (println "[CHANGE PASSWORD] Iniciando troca de senha para user-id:" user-id)
+    (println "[CHANGE PASSWORD] Iniciando troca de senha")
+    (println "[CHANGE PASSWORD] JWT payload:" jwt-payload)
+    (println "[CHANGE PASSWORD] user-id:" user-id)
+    (println "[CHANGE PASSWORD] email:" email)
+    (println "[CHANGE PASSWORD] tenant-id:" tenant-id)
     
     (cond
       ;; Validar que todos os campos foram fornecidos
@@ -81,7 +86,7 @@
       
       ;; Buscar usuário no banco
       :else
-      (if-let [user (p/encontrar-usuario-por-email db-repo tenant-id (:email jwt-payload))]
+      (if-let [user (p/encontrar-usuario-por-email db-repo tenant-id email)]
         (cond
           ;; Validar senha atual
           (not (hashers/check current_password (:users/password_hash user)))
