@@ -74,10 +74,17 @@ export default function SuperAdminDashboardPage() {
 
     setImpersonating(true);
     try {
-      // Buscar o user_id do tenant (primeiro usuário master do tenant)
-      // Por enquanto, vamos usar o tenant.id como user_id
-      // TODO: Buscar o user_id correto do banco
-      const response = await fetch(`/api/admin/impersonate/${tenant.id}`, {
+      // Buscar o user_id do master user do tenant
+      const masterUserResponse = await fetch(`/api/admin/tenants/${tenant.id}/master-user`);
+      
+      if (!masterUserResponse.ok) {
+        throw new Error('Falha ao buscar usuário master do tenant');
+      }
+
+      const masterUser = await masterUserResponse.json();
+      
+      // Iniciar impersonation com o user_id correto
+      const response = await fetch(`/api/admin/impersonate/${masterUser.id}`, {
         method: 'POST',
       });
 

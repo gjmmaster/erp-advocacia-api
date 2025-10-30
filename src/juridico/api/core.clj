@@ -46,6 +46,10 @@
                       :get {:handler h/obter-tenant-handler}
                       :put {:handler h/atualizar-tenant-handler}
                       :delete {:handler h/deletar-tenant-handler}}]
+    ["/tenants/{tenant-id}/master-user" {:middleware [mw/wrap-public-db-repo
+                                                      mw/wrap-jwt-authentication
+                                                      mw/wrap-super-admin-authorization]
+                                         :get {:handler h/get-tenant-master-user-handler}}]
     ;; Rotas de Impersonation
     ["/impersonate/{user-id}" {:middleware [mw/wrap-jwt-authentication
                                             mw/wrap-super-admin-authorization]

@@ -369,6 +369,16 @@
         {:status 204 :body nil}
         {:status 404 :body {:error "Tenant não encontrado."}}))))
 
+(defn get-tenant-master-user-handler
+  "Handler para buscar o usuário master de um tenant."
+  [{:keys [db-repo path-params]}]
+  (let [tenant-id (:tenant-id path-params)]
+    (if-let [master-user (p/get-tenant-master-user db-repo tenant-id)]
+      {:status 200
+       :body master-user}
+      {:status 404
+       :body {:error "Master user não encontrado para este tenant"}})))
+
 
 ;; --- HANDLER DE BUSCA DE TENANT POR SUBDOMÍNIO ---
 (defn get-tenant-by-subdomain-handler

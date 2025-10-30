@@ -74,6 +74,9 @@
   (deletar-tenant [this tenant-id]
     "Deleta um tenant específico.")
 
+  (get-tenant-master-user [this tenant-id]
+    "Busca o usuário master de um tenant específico.")
+
   ;; --- Funções de Estatísticas do Dashboard ---
 
   (count-processos [this tenant-id]

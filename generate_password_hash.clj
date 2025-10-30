@@ -1,15 +1,10 @@
-(ns generate-password-hash
-  (:require [buddy.hashers :as hashers]))
+(require '[buddy.hashers :as hashers])
 
-;; Script para gerar o hash da senha do super admin
-;; Execute com: lein run -m generate-password-hash
-
-(defn -main []
-  (let [password "DEFINA_SUA_SENHA_AQUI" ; ← MUDE ESTA SENHA!
-        hash (hashers/encrypt password)]
-    (println "Senha:" password)
-    (println "Hash:" hash)
-    (println "\nUse este SQL para criar o super admin:")
-    (println "INSERT INTO users (tenant_id, email, password_hash, role, full_name, created_at)")
-    (println "VALUES (NULL, 'super@admin.com', '" hash "', 'super-admin', 'Super Administrator', NOW())")
-    (println "ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;")))
+(println "=== GERADOR DE HASH DE SENHA ===")
+(println "")
+(println "Senha: Admin@123")
+(println "Hash:" (hashers/encrypt "Admin@123"))
+(println "")
+(println "Copie o hash acima e execute no CockroachDB:")
+(println "")
+(println "UPDATE users SET password_hash = '<COLE_O_HASH_AQUI>' WHERE role = 'super-admin';")
