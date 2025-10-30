@@ -3,6 +3,7 @@
             [reitit.ring :as ring]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [muuntaja.core :as m]
+            [ring.util.response :as response]
             [juridico.api.handlers :as h]
             [juridico.api.handlers.password :as pwd]  ;; ⭐ NOVO
             [juridico.api.middleware :as mw]
@@ -77,10 +78,11 @@
   (println "=== ROTA NÃO ENCONTRADA ===")
   (println "URI:" (:uri request))
   (println "Method:" (:request-method request))
-  {:status 404
-   :body {:error "Rota não encontrada"
-          :uri (:uri request)
-          :method (:request-method request)}})
+  (-> (response/response {:error "Rota não encontrada"
+                          :uri (:uri request)
+                          :method (:request-method request)})
+      (response/status 404)
+      (response/content-type "application/json")))
 
 ;; Construção da Aplicação (Apenas API)
 (def app
