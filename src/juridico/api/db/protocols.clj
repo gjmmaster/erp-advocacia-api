@@ -86,4 +86,10 @@
     "Retorna o total de operadores de um tenant.")
 
   (count-processos-ativos [this tenant-id]
-    "Retorna o total de processos ativos de um tenant."))
+    "Retorna o total de processos ativos de um tenant.")
+  
+  ;; --- Funções de Gestão de Senha ---
+  
+  (update-user-password! [this user-id new-password-hash temporary-password]
+    "Atualiza a senha de um usuário e a flag temporary_password.
+     Retorna o número de linhas afetadas."))

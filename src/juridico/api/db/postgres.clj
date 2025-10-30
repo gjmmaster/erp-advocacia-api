@@ -105,7 +105,8 @@
                                       {:tenant_id new-tenant-id
                                        :email email
                                        :password_hash (hashers/encrypt temp-password)
-                                       :role "master"} 
+                                       :role "master"
+                                       :temporary_password true}  ;; ⭐ NOVO: Marcar senha como temporária
                                       {:return-keys true})]
             {:tenant {:id new-tenant-id :subdomain subdomain :company_name company_name}
              :user {:email email :temp_password temp-password}})))))
@@ -238,7 +239,22 @@
     (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
           result (jdbc/execute-one! db-conn 
                    ["SELECT COUNT(*) as count FROM legal_cases WHERE tenant_id = ? AND status = 'ativo'" id-long])]
-      (:count result 0))))
+      (:count result 0)))
+  
+  ;; --- Funções de Gestão de Senha ---
+  
+  (update-user-password! [this user-id new-password-hash temporary-password]
+    "Atualiza a senha de um usuário e a flag temporary_password.
+     Usa transação para garantir atomicidade."
+    (println "[POSTGRES] Atualizando senha para user-id:" user-id)
+    (jdbc/with-transaction [tx db-conn]
+      (let [id-long (if (string? user-id) (Long/parseLong user-id) user-id)
+            result (sql/update! tx :users
+                               {:password_hash new-password-hash
+                                :temporary_password temporary-password}
+                               {:id id-long})]
+        (println "[POSTGRES] Linhas afetadas:" (:next.jdbc/update-count result))
+        result))))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository

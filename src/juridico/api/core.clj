@@ -4,6 +4,7 @@
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [muuntaja.core :as m]
             [juridico.api.handlers :as h]
+            [juridico.api.handlers.password :as pwd]  ;; ⭐ NOVO
             [juridico.api.middleware :as mw]
             [juridico.api.rate-limit :as rl]
             [ring.middleware.cors :as cors])
@@ -21,7 +22,9 @@
     ["/tenants"
      ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
     ["/auth"
-     ["/login" {:post {:handler h/login-auto-discover-handler}}]]
+     ["/login" {:post {:handler h/login-auto-discover-handler}}]
+     ["/change-password" {:middleware [mw/wrap-jwt-authentication]  ;; ⭐ NOVO: Requer autenticação
+                          :post {:handler pwd/change-password-handler}}]]
     ["/super-admin"
      ["/login" {:post {:handler h/super-admin-login-handler}}]]]
    ["/admin"

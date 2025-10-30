@@ -101,6 +101,27 @@ export async function middleware(request: NextRequest) {
         // Verifica se é tenant (master ou operador)
         if (role === 'master' || role === 'operador') {
           console.log('[MIDDLEWARE] Autenticação tenant OK');
+          
+          // ⭐ NOVO: Verificar se precisa trocar senha temporária
+          const temporaryPassword = payload['temporary-password'] as boolean;
+          const requiresPasswordChange = payload['requires-password-change'] as boolean;
+          
+          if (temporaryPassword === true || requiresPasswordChange === true) {
+            console.log('[MIDDLEWARE] Usuário precisa trocar senha temporária');
+            
+            // Permitir apenas rotas relacionadas a troca de senha
+            const allowedPaths = [
+              '/change-password',
+              '/api/auth/change-password',
+              '/api/auth/logout'
+            ];
+            
+            if (!allowedPaths.some(path => pathname.startsWith(path))) {
+              console.log('[MIDDLEWARE] Redirecionando para /change-password');
+              return NextResponse.redirect(new URL('/change-password', request.url));
+            }
+          }
+          
           return NextResponse.next();
         }
         

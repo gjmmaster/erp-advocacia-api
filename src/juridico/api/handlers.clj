@@ -108,14 +108,20 @@
               ;; 4. Validar senha
               (if (hashers/check password (:users/password_hash user))
                 
-                ;; 5. Gerar JWT com tenant-id
-                (let [claims {:user-id (:users/id user)
+                ;; 5. Gerar JWT com tenant-id e flag de senha temporária
+                (let [temporary-password (boolean (:users/temporary_password user))
+                      claims {:user-id (:users/id user)
                               :email (:users/email user)
                               :tenant-id tenant-id
                               :role (:users/role user)
+                              :temporary-password temporary-password  ;; ⭐ NOVO
+                              :requires-password-change temporary-password  ;; ⭐ NOVO
                               :exp (-> (java.time.Instant/now)
                                        (.plusSeconds 900))} ; 15 minutos
                       token (jwt/sign claims config/jwt-secret)]
+                  ;; Log quando usuário faz login com senha temporária
+                  (when temporary-password
+                    (println "[LOGIN] Usuário" email "fez login com senha temporária"))
                   {:status 200
                    :body {:message (str "Usuário " email " autenticado com sucesso.")
                           :token token}})
@@ -173,15 +179,21 @@
         (if (:tenant_active user)
           ;; 3. Validar senha
           (if (hashers/check password (:users/password_hash user))
-            ;; 4. Gerar token com tenant-id
-            (let [claims {:user-id (:users/id user)
+            ;; 4. Gerar token com tenant-id e flag de senha temporária
+            (let [temporary-password (boolean (:users/temporary_password user))
+                  claims {:user-id (:users/id user)
                           :email (:users/email user)
                           :role (:users/role user)
                           :tenant-id (:users/tenant_id user)
+                          :temporary-password temporary-password  ;; ⭐ NOVO
+                          :requires-password-change temporary-password  ;; ⭐ NOVO
                           :exp (-> (java.time.Instant/now)
                                    (.plusSeconds 3600)
                                    (.getEpochSecond))}
                   token (jwt/sign claims config/jwt-secret)]
+              ;; Log quando usuário faz login com senha temporária
+              (when temporary-password
+                (println "[LOGIN AUTO-DISCOVER] Usuário" email "fez login com senha temporária"))
               {:status 200
                :body {:message (str "Usuário " email " autenticado com sucesso.")
                       :token token

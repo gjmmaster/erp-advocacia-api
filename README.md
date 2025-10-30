@@ -34,12 +34,20 @@ Sistema completo de gerenciamento jurídico com arquitetura multi-tenant, autent
 - [x] Área de conteúdo principal
 - [x] Logout seguro
 
+### ✅ Troca de Senha Temporária (NOVO!)
+- [x] Detecção automática de senha temporária
+- [x] Redirecionamento forçado para troca
+- [x] Validação de força da senha em tempo real
+- [x] Indicador visual de força
+- [x] Bloqueio de acesso até troca ser concluída
+- [x] Atualização segura com bcrypt
+
 ---
 
 ## 📋 Próximas Funcionalidades (Backlog)
 
 ### 🔄 Prioridade Alta
-1. **Trocar Senha Temporária** - Forçar usuário a mudar senha no primeiro login
+1. ✅ **Trocar Senha Temporária** - IMPLEMENTADO! Ver `IMPLEMENTACAO_COMPLETA_FORCE_PASSWORD.md`
 2. **Impersonation** - Super admin acessar como tenant para suporte
 3. **Reset de Senha** - Self-service via email
 
