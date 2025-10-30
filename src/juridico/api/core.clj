@@ -23,7 +23,8 @@
      ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
     ["/auth"
      ["/login" {:post {:handler h/login-auto-discover-handler}}]
-     ["/change-password" {:middleware [mw/wrap-jwt-authentication]  ;; ⭐ NOVO: Requer autenticação
+     ["/change-password" {:middleware [mw/wrap-public-db-repo  ;; ⭐ Adicionar db-repo
+                                       mw/wrap-jwt-authentication]  ;; ⭐ Requer autenticação
                           :post {:handler pwd/change-password-handler}}]]
     ["/super-admin"
      ["/login" {:post {:handler h/super-admin-login-handler}}]]]
