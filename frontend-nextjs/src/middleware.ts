@@ -68,7 +68,9 @@ export async function middleware(request: NextRequest) {
     '/super-admin/login', 
     '/api/auth/login',
     '/login',              // Login de tenants (auto-descoberta)
-    '/api/tenant/login'    // API route de login de tenants
+    '/api/tenant/login',   // API route de login de tenants
+    '/change-password',    // Página de troca de senha temporária
+    '/api/auth/change-password'  // API route de troca de senha
   ];
   
   if (publicPaths.some(path => pathname.startsWith(path))) {
