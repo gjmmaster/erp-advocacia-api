@@ -14,6 +14,13 @@ export interface TokenPayload {
   'tenant-id'?: string;
   type?: 'access' | 'refresh';
   exp?: number;
+  // Impersonation fields
+  impersonating?: boolean;
+  'impersonator-id'?: number;
+  'impersonator-email'?: string;
+  // Temporary password fields
+  'temporary-password'?: boolean;
+  'requires-password-change'?: boolean;
 }
 
 /**
