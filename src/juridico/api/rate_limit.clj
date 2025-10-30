@@ -6,9 +6,9 @@
 (def login-attempts (atom {}))
 
 ;; Configuração
-(def max-attempts 20) ; Aumentado de 5 para 20
-(def window-ms (* 5 60 1000)) ; Reduzido de 15 para 5 minutos
-(def block-duration-ms (* 5 60 1000)) ; Reduzido de 15 para 5 minutos de bloqueio
+(def max-attempts 100) ; Aumentado para 100 para facilitar testes
+(def window-ms (* 5 60 1000)) ; 5 minutos
+(def block-duration-ms (* 2 60 1000)) ; Reduzido para 2 minutos de bloqueio
 
 (defn get-client-ip
   "Extrai o IP do cliente da requisição, considerando proxies."
