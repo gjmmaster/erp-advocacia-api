@@ -55,21 +55,36 @@
 
 Antes de usar a feature, você DEVE executar a migration:
 
+#### Opção A: CockroachDB Cloud Console (Recomendado)
+
+1. Acesse: https://cockroachlabs.cloud/
+2. Abra SQL Shell
+3. Execute:
+
+```sql
+-- Adicionar coluna
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS temporary_password BOOLEAN DEFAULT false;
+
+-- Criar índice
+CREATE INDEX IF NOT EXISTS idx_users_temporary_password 
+ON users(temporary_password) 
+WHERE temporary_password = true;
+
+-- Verificar
+SHOW COLUMNS FROM users;
+```
+
+**Ver guia completo:** `MIGRATION_COCKROACHDB.md`
+
+#### Opção B: Via Script (PostgreSQL local)
+
 ```bash
 # Definir DATABASE_URL
 export DATABASE_URL="postgresql://user:pass@host:port/dbname"
 
 # Executar migration
 bash run_migration_temporary_password.sh local
-
-# OU executar SQL diretamente
-psql $DATABASE_URL -f add_temporary_password_column.sql
-```
-
-**Verificar que funcionou:**
-```bash
-psql $DATABASE_URL -c "\d users"
-# Deve mostrar coluna temporary_password
 ```
 
 ---
