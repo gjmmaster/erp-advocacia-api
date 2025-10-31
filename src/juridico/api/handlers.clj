@@ -372,12 +372,20 @@
 (defn get-tenant-master-user-handler
   "Handler para buscar o usuário master de um tenant."
   [{:keys [db-repo path-params]}]
+  (println "=== GET TENANT MASTER USER HANDLER CHAMADO ===")
+  (println "Path params:" path-params)
+  (println "DB-repo presente:" (boolean db-repo))
   (let [tenant-id (:tenant-id path-params)]
+    (println "Tenant ID extraído:" tenant-id)
     (if-let [master-user (p/get-tenant-master-user db-repo tenant-id)]
-      {:status 200
-       :body (update master-user :id str)}  ;; Converte ID para string para evitar perda de precisão no JavaScript
-      {:status 404
-       :body {:error "Master user não encontrado para este tenant"}})))
+      (do
+        (println "Master user encontrado:" master-user)
+        {:status 200
+         :body (update master-user :id str)})  ;; Converte ID para string para evitar perda de precisão no JavaScript
+      (do
+        (println "Master user NÃO encontrado!")
+        {:status 404
+         :body {:error "Master user não encontrado para este tenant"}}))))
 
 
 ;; --- HANDLER DE BUSCA DE TENANT POR SUBDOMÍNIO ---
