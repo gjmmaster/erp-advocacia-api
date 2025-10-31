@@ -51,10 +51,12 @@
                                                       mw/wrap-super-admin-authorization]
                                          :get {:handler h/get-tenant-master-user-handler}}]
     ;; Rotas de Impersonation
-    ["/impersonate/{user-id}" {:middleware [mw/wrap-jwt-authentication
+    ["/impersonate/{user-id}" {:middleware [mw/wrap-public-db-repo
+                                            mw/wrap-jwt-authentication
                                             mw/wrap-super-admin-authorization]
                                :post {:handler h/start-impersonation-handler}}]
-    ["/stop-impersonate" {:middleware [mw/wrap-jwt-authentication]
+    ["/stop-impersonate" {:middleware [mw/wrap-public-db-repo
+                                       mw/wrap-jwt-authentication]
                           :post {:handler h/stop-impersonation-handler}}]]
    ["/auth" {:middleware [mw/wrap-public-db-repo mw/wrap-tenant-context]}
     ["/login" {:post {:handler h/login-handler}}]]
