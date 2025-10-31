@@ -93,9 +93,14 @@ export default function SuperAdminDashboardPage() {
         throw new Error(error.error || 'Falha ao iniciar impersonation');
       }
 
+      const data = await response.json();
+      console.log('Impersonation iniciado com sucesso:', data);
+
+      // Aguardar um pouco para garantir que o cookie foi definido
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Redirecionar para dashboard do tenant
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } catch (err) {
       alert(`❌ Erro: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
