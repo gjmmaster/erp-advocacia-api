@@ -8,8 +8,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('[MASTER USER] Tenant ID:', params.id);
+    console.log('[MASTER USER] API_URL:', API_URL);
+    
     const cookieStore = cookies();
     const token = cookieStore.get('auth-token')?.value || cookieStore.get('access_token')?.value;
+
+    console.log('[MASTER USER] Token presente:', token ? 'SIM' : 'NÃO');
 
     if (!token) {
       return NextResponse.json(
@@ -18,14 +23,19 @@ export async function GET(
       );
     }
 
+    const url = `${API_URL}/admin/tenants/${params.id}/master-user`;
+    console.log('[MASTER USER] URL completa:', url);
+
     // Chamar backend para buscar master user
-    const response = await fetch(`${API_URL}/admin/tenants/${params.id}/master-user`, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    console.log('[MASTER USER] Resposta do backend:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
