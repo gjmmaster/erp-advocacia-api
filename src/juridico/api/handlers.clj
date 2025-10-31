@@ -375,7 +375,7 @@
   (println "=== GET TENANT MASTER USER HANDLER CHAMADO ===")
   (println "Path params:" path-params)
   (println "DB-repo presente:" (boolean db-repo))
-  (let [tenant-id (:tenant-id path-params)]
+  (let [tenant-id (:id path-params)]  ;; Mudado de :tenant-id para :id
     (println "Tenant ID extraído:" tenant-id)
     (if-let [master-user (p/get-tenant-master-user db-repo tenant-id)]
       (do

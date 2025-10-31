@@ -40,16 +40,17 @@
                               mw/wrap-super-admin-authorization]
                  :get {:handler h/listar-tenants-handler}
                  :post {:handler h/provision-tenant-handler}}]
-    ["/tenants/{id}" {:middleware [mw/wrap-public-db-repo
-                                   mw/wrap-jwt-authentication
-                                   mw/wrap-super-admin-authorization]
-                      :get {:handler h/obter-tenant-handler}
-                      :put {:handler h/atualizar-tenant-handler}
-                      :delete {:handler h/deletar-tenant-handler}}]
-    ["/tenants/{tenant-id}/master-user" {:middleware [mw/wrap-public-db-repo
-                                                      mw/wrap-jwt-authentication
-                                                      mw/wrap-super-admin-authorization]
-                                         :get {:handler h/get-tenant-master-user-handler}}]
+    ;; Rota mais específica deve vir ANTES da rota genérica
+    ["/tenants/:id/master-user" {:middleware [mw/wrap-public-db-repo
+                                              mw/wrap-jwt-authentication
+                                              mw/wrap-super-admin-authorization]
+                                 :get {:handler h/get-tenant-master-user-handler}}]
+    ["/tenants/:id" {:middleware [mw/wrap-public-db-repo
+                                  mw/wrap-jwt-authentication
+                                  mw/wrap-super-admin-authorization]
+                     :get {:handler h/obter-tenant-handler}
+                     :put {:handler h/atualizar-tenant-handler}
+                     :delete {:handler h/deletar-tenant-handler}}]
     ;; Rotas de Impersonation
     ["/impersonate/{user-id}" {:middleware [mw/wrap-public-db-repo
                                             mw/wrap-jwt-authentication
