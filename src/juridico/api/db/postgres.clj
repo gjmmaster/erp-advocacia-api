@@ -217,18 +217,6 @@
         (println "Resultado do DELETE:" resultado)
         resultado)))
 
-  (get-tenant-master-user [this tenant-id]
-    "Busca o usuário master de um tenant específico."
-    (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
-          result (first (sql/query db-conn 
-                          ["SELECT id, email, role, tenant_id FROM users WHERE tenant_id = ? AND role = 'master' LIMIT 1" 
-                           id-long]))]
-      (when result
-        {:id (:users/id result)
-         :email (:users/email result)
-         :role (:users/role result)
-         :tenant_id (:users/tenant_id result)})))
-
   ;; --- Funções de Estatísticas do Dashboard ---
   
   (count-processos [this tenant-id]
@@ -275,7 +263,7 @@
     (println "=== POSTGRES: get-tenant-master-user ===")
     (println "Tenant ID:" tenant-id)
     (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
-          result (first (sql/query db-conn ["SELECT id, email, role, tenant_id FROM users WHERE tenant_id = ? AND role = 'tenant'" id-long]))]
+          result (first (sql/query db-conn ["SELECT id, email, role, tenant_id FROM users WHERE tenant_id = ? AND role = 'master' LIMIT 1" id-long]))]
       (println "Resultado da query:" result)
       (when result
         (let [user-map {:id (:users/id result)
