@@ -45,13 +45,13 @@
         (if-let [target-user (p/find-by-id db-repo target-user-id)]
           (do
             (println "Usuário encontrado:" target-user)
-            (if (not= (:role target-user) "tenant")
-              (response/status (response/response {:error "Can only impersonate tenants"}) 400)
+            (if (not (contains? #{"tenant" "master"} (:role target-user)))
+              (response/status (response/response {:error "Can only impersonate tenant users (master or tenant role)"}) 400)
               
               ;; Gerar JWT especial
               (let [jwt-claims {:user-id (:id target-user)
                                :email (:email target-user)
-                               :role "tenant"
+                               :role (:role target-user)
                                :tenant-id (:tenant_id target-user)
                                :impersonating true
                                :impersonator-id impersonator-id
@@ -71,7 +71,7 @@
                 (response/response {:token token
                                    :user {:id (:id target-user)
                                          :email (:email target-user)
-                                         :role "tenant"
+                                         :role (:role target-user)
                                          :tenant-id (:tenant_id target-user)
                                          :impersonating true
                                          :impersonator-email impersonator-email}}))))
