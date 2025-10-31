@@ -114,5 +114,13 @@
 ;; Ponto de Entrada
 (defn -main []
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    (println "Iniciando servidor API na porta" port "...")
+    (println "=== INICIANDO SERVIDOR API ===")
+    (println "Porta:" port)
+    (println "Rotas registradas:")
+    (println "  GET  /admin/tenants")
+    (println "  GET  /admin/tenants/:id/master-user")
+    (println "  GET  /admin/tenants/:id")
+    (println "  POST /admin/impersonate/:user-id")
+    (println "  POST /admin/stop-impersonate")
+    (println "==============================")
     (jetty/run-jetty app {:port port :join? false})))
