@@ -46,45 +46,40 @@
           (do
             (println "Usuário encontrado:" target-user)
             (if (not= (:role target-user) "tenant")
-          (response/status (response/response {:error "Can only impersonate tenants"}) 400)
-          
-          ;; Gerar JWT especial
-          (let [jwt-claims {:user-id (:id target-user)
-                           :email (:email target-user)
-                           :role "tenant"
-                           :tenant-id (:tenant_id target-user)
-                           :impersonating true
-                           :impersonator-id impersonator-id
-                           :impersonator-email impersonator-email
-                           :exp (-> (java.time.Instant/now)
-                                    (.plusSeconds 3600)
-                                    (.getEpochSecond))}
-                token (jwt/sign jwt-claims config/jwt-secret)]
-            
-            ;; Log do evento
-            (log-impersonation-event "IMPERSONATE_START"
-                                    impersonator-id
-                                    target-user-id
-                                    (:tenant_id target-user)
-                                    ip-address)
-            
-            (response/response {:token token
-                               :user {:id (:id target-user)
-                                     :email (:email target-user)
-                                     :role "tenant"
-                                     :tenant-id (:tenant_id target-user)
-                                     :impersonating true
-                                     :impersonator-email impersonator-email}}))))
+              (response/status (response/response {:error "Can only impersonate tenants"}) 400)
+              
+              ;; Gerar JWT especial
+              (let [jwt-claims {:user-id (:id target-user)
+                               :email (:email target-user)
+                               :role "tenant"
+                               :tenant-id (:tenant_id target-user)
+                               :impersonating true
+                               :impersonator-id impersonator-id
+                               :impersonator-email impersonator-email
+                               :exp (-> (java.time.Instant/now)
+                                        (.plusSeconds 3600)
+                                        (.getEpochSecond))}
+                    token (jwt/sign jwt-claims config/jwt-secret)]
+                
+                ;; Log do evento
+                (log-impersonation-event "IMPERSONATE_START"
+                                        impersonator-id
+                                        target-user-id
+                                        (:tenant_id target-user)
+                                        ip-address)
+                
+                (response/response {:token token
+                                   :user {:id (:id target-user)
+                                         :email (:email target-user)
+                                         :role "tenant"
+                                         :tenant-id (:tenant_id target-user)
+                                         :impersonating true
+                                         :impersonator-email impersonator-email}}))))
           
           ;; Usuário não encontrado
           (do
             (println "ERRO: Usuário não encontrado no banco!")
-            (response/status (response/response {:error "User not found"}) 404))))
-        
-        ;; Role não é super-admin
-        (do
-          (println "ERRO: Usuário não é super-admin!")
-          (response/status (response/response {:error "Unauthorized"}) 403))))))
+            (response/status (response/response {:error "User not found"}) 404))))))))
 
 (defn stop-impersonation-handler
   "Handler para parar impersonation e voltar para super admin"
