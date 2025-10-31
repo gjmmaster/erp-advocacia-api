@@ -12,9 +12,13 @@ export async function POST(
     console.log('[IMPERSONATE] API_URL:', API_URL);
     
     const cookieStore = cookies();
-    const token = cookieStore.get('auth-token')?.value || cookieStore.get('access_token')?.value;
+    const authToken = cookieStore.get('auth-token')?.value;
+    const accessToken = cookieStore.get('access_token')?.value;
+    const token = accessToken || authToken;
 
-    console.log('[IMPERSONATE] Token presente:', token ? 'SIM' : 'NÃO');
+    console.log('[IMPERSONATE] auth-token:', authToken ? 'SIM' : 'NÃO');
+    console.log('[IMPERSONATE] access_token:', accessToken ? 'SIM' : 'NÃO');
+    console.log('[IMPERSONATE] Token usado:', token ? token.substring(0, 20) + '...' : 'NENHUM');
 
     if (!token) {
       console.log('[IMPERSONATE] ERRO: Sem token');
