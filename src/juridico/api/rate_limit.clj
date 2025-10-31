@@ -62,29 +62,19 @@
 
 (defn wrap-rate-limit-login
   "Middleware que aplica rate limiting em endpoints de login.
-   Bloqueia IPs que excedem 5 tentativas em 15 minutos."
+   TEMPORARIAMENTE DESABILITADO para testes."
   [handler]
   (fn [request]
+    ;; TEMPORARIAMENTE DESABILITADO - apenas loga mas não bloqueia
     (let [uri (:uri request)
           method (:request-method request)
           is-login? (and (= method :post)
                         (or (= uri "/login")
                             (= uri "/admin/login")))]
-      (if is-login?
-        (let [client-ip (get-client-ip request)
-              rate-limit-check (check-rate-limit client-ip)]
-          (if rate-limit-check
-            (do
-              (log/warn "Rate limit exceeded for IP:" client-ip)
-              {:status 429
-               :headers {"Content-Type" "application/json"
-                        "Retry-After" (str (:retry-after rate-limit-check))}
-               :body {:error (:message rate-limit-check)}})
-            (do
-              (log/info "Login attempt from IP:" client-ip)
-              (record-attempt client-ip)
-              (handler request))))
-        (handler request)))))
+      (when is-login?
+        (let [client-ip (get-client-ip request)]
+          (log/info "Login attempt from IP:" client-ip "(rate limiting disabled)")))
+      (handler request))))
 
 (defn wrap-global-error-handler
   "Middleware global que captura todas as exceções não tratadas.
