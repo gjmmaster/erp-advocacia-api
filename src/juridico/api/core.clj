@@ -21,7 +21,7 @@
    ["/api"
     {:middleware [mw/wrap-public-db-repo]}
     ["/tenants"
-     ["/by-subdomain/{subdomain}" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
+     ["/by-subdomain/:subdomain" {:get {:handler h/get-tenant-by-subdomain-handler}}]]
     ["/auth"
      ["/login" {:post {:handler h/login-auto-discover-handler}}]
      ["/change-password" {:middleware [mw/wrap-public-db-repo  ;; ⭐ Adicionar db-repo
@@ -52,10 +52,10 @@
                      :put {:handler h/atualizar-tenant-handler}
                      :delete {:handler h/deletar-tenant-handler}}]
     ;; Rotas de Impersonation
-    ["/impersonate/{user-id}" {:middleware [mw/wrap-public-db-repo
-                                            mw/wrap-jwt-authentication
-                                            mw/wrap-super-admin-authorization]
-                               :post {:handler h/start-impersonation-handler}}]
+    ["/impersonate/:user-id" {:middleware [mw/wrap-public-db-repo
+                                           mw/wrap-jwt-authentication
+                                           mw/wrap-super-admin-authorization]
+                              :post {:handler h/start-impersonation-handler}}]
     ["/stop-impersonate" {:middleware [mw/wrap-public-db-repo
                                        mw/wrap-jwt-authentication]
                           :post {:handler h/stop-impersonation-handler}}]]
@@ -65,16 +65,16 @@
     {:middleware [mw/wrap-jwt-authentication]}
     ["/processos" {:get {:handler h/listar-processos-handler}
                   :post {:handler h/criar-processo-handler}}]
-    ["/processos/{id}" {:get {:handler h/obter-processo-handler}
-                        :put {:handler h/atualizar-processo-handler}
-                        :delete {:handler h/deletar-processo-handler}}]
+    ["/processos/:id" {:get {:handler h/obter-processo-handler}
+                       :put {:handler h/atualizar-processo-handler}
+                       :delete {:handler h/deletar-processo-handler}}]
     ["/dashboard"
-     ["/stats/{tenant-id}" {:get {:handler h/get-dashboard-stats-handler}}]]
+     ["/stats/:tenant-id" {:get {:handler h/get-dashboard-stats-handler}}]]
     ["/operadores"
      {:middleware [mw/wrap-master-role-authorization]
       :get {:handler h/listar-operadores-handler}
       :post {:handler h/criar-operador-handler}}]
-    ["/operadores/{id}"
+    ["/operadores/:id"
      {:middleware [mw/wrap-master-role-authorization]
       :get {:handler h/obter-operador-handler}
       :put {:handler h/atualizar-operador-handler}
