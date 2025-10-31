@@ -18,6 +18,11 @@
 (defn start-impersonation-handler
   "Handler para iniciar impersonation de um tenant"
   [{:keys [identity path-params db-repo] :as request}]
+  (println "=== START IMPERSONATION HANDLER CHAMADO ===")
+  (println "Path params:" path-params)
+  (println "Identity:" identity)
+  (println "DB-repo presente:" (boolean db-repo))
+  
   (let [target-user-id (parse-long (:user-id path-params))
         impersonator-id (:user-id identity)
         impersonator-email (:email identity)
@@ -26,13 +31,21 @@
                        (get-in request [:headers "x-real-ip"])
                        (:remote-addr request))]
     
+    (println "Target user ID:" target-user-id)
+    (println "Impersonator ID:" impersonator-id)
+    (println "Impersonator role:" impersonator-role)
+    
     ;; Validar que é super-admin
     (if (not= impersonator-role "super-admin")
       (response/status (response/response {:error "Unauthorized"}) 403)
       
       ;; Buscar tenant target
-      (if-let [target-user (p/find-by-id db-repo target-user-id)]
-        (if (not= (:role target-user) "tenant")
+      (do
+        (println "Buscando usuário target no banco...")
+        (if-let [target-user (p/find-by-id db-repo target-user-id)]
+          (do
+            (println "Usuário encontrado:" target-user)
+            (if (not= (:role target-user) "tenant")
           (response/status (response/response {:error "Can only impersonate tenants"}) 400)
           
           ;; Gerar JWT especial
@@ -61,10 +74,17 @@
                                      :role "tenant"
                                      :tenant-id (:tenant_id target-user)
                                      :impersonating true
-                                     :impersonator-email impersonator-email}})))
+                                     :impersonator-email impersonator-email}}))))
+          
+          ;; Usuário não encontrado
+          (do
+            (println "ERRO: Usuário não encontrado no banco!")
+            (response/status (response/response {:error "User not found"}) 404))))
         
-        ;; Usuário não encontrado
-        (response/status (response/response {:error "User not found"}) 404)))))
+        ;; Role não é super-admin
+        (do
+          (println "ERRO: Usuário não é super-admin!")
+          (response/status (response/response {:error "Unauthorized"}) 403))))))
 
 (defn stop-impersonation-handler
   "Handler para parar impersonation e voltar para super admin"
