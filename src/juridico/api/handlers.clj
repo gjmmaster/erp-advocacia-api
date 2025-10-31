@@ -375,7 +375,7 @@
   (let [tenant-id (:tenant-id path-params)]
     (if-let [master-user (p/get-tenant-master-user db-repo tenant-id)]
       {:status 200
-       :body master-user}
+       :body (update master-user :id str)}  ;; Converte ID para string para evitar perda de precisão no JavaScript
       {:status 404
        :body {:error "Master user não encontrado para este tenant"}})))
 
