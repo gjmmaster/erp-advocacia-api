@@ -79,7 +79,7 @@
           ;; Usuário não encontrado
           (do
             (println "ERRO: Usuário não encontrado no banco!")
-            (response/status (response/response {:error "User not found"}) 404))))))))
+            (response/status (response/response {:error "User not found"}) 404)))))))
 
 (defn stop-impersonation-handler
   "Handler para parar impersonation e voltar para super admin"
