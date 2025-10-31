@@ -85,11 +85,12 @@
   (println "=== ROTA NÃO ENCONTRADA ===")
   (println "URI:" (:uri request))
   (println "Method:" (:request-method request))
-  (-> (response/response {:error "Rota não encontrada"
-                          :uri (:uri request)
-                          :method (:request-method request)})
-      (response/status 404)
-      (response/content-type "application/json")))
+  (println "Request completo:" request)
+  {:status 404
+   :headers {"Content-Type" "application/json"}
+   :body (m/encode "application/json" {:error "Rota não encontrada"
+                                        :uri (:uri request)
+                                        :method (name (:request-method request))})})
 
 ;; Construção da Aplicação (Apenas API)
 (def app
