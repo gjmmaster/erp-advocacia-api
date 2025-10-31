@@ -270,16 +270,36 @@
   
   ;; --- Funções de Impersonation ---
   
+  (get-tenant-master-user [this tenant-id]
+    "Busca o usuário master de um tenant específico."
+    (println "=== POSTGRES: get-tenant-master-user ===")
+    (println "Tenant ID:" tenant-id)
+    (let [id-long (if (string? tenant-id) (Long/parseLong tenant-id) tenant-id)
+          result (first (sql/query db-conn ["SELECT id, email, role, tenant_id FROM users WHERE tenant_id = ? AND role = 'tenant'" id-long]))]
+      (println "Resultado da query:" result)
+      (when result
+        (let [user-map {:id (:users/id result)
+                       :email (:users/email result)
+                       :role (:users/role result)
+                       :tenant_id (:users/tenant_id result)}]
+          (println "User map retornado:" user-map)
+          user-map))))
+  
   (find-by-id [this user-id]
     "Busca um usuário pelo seu ID (para impersonation).
      Retorna o usuário ou nil."
+    (println "=== POSTGRES: find-by-id ===")
+    (println "User ID:" user-id)
     (let [id-long (if (string? user-id) (Long/parseLong user-id) user-id)
           result (first (sql/query db-conn ["SELECT id, email, role, tenant_id FROM users WHERE id = ?" id-long]))]
+      (println "Resultado da query:" result)
       (when result
-        {:id (:users/id result)
-         :email (:users/email result)
-         :role (:users/role result)
-         :tenant_id (:users/tenant_id result)}))))
+        (let [user-map {:id (:users/id result)
+                       :email (:users/email result)
+                       :role (:users/role result)
+                       :tenant_id (:users/tenant_id result)}]
+          (println "User map retornado:" user-map)
+          user-map)))))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
