@@ -51,15 +51,22 @@ export async function POST(
     const data = await response.json();
     console.log('[IMPERSONATE] Token recebido:', data.token ? 'SIM' : 'NÃO');
 
-    // Atualizar cookie com novo token
+    // Atualizar cookies com novo token (ambos auth-token e access_token)
     const responseObj = NextResponse.json(data);
-    responseObj.cookies.set('auth-token', data.token, {
+    
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 3600, // 1 hora
       path: '/',
-    });
+    };
+    
+    responseObj.cookies.set('auth-token', data.token, cookieOptions);
+    responseObj.cookies.set('access_token', data.token, cookieOptions);
+    responseObj.cookies.set('refresh_token', data.token, cookieOptions);
+
+    console.log('[IMPERSONATE] Cookies atualizados com novo token');
 
     return responseObj;
   } catch (error) {
