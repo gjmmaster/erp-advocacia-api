@@ -33,6 +33,7 @@
     
     (println "Target user ID:" target-user-id)
     (println "Impersonator ID:" impersonator-id)
+    (println "Impersonator email:" impersonator-email)
     (println "Impersonator role:" impersonator-role)
     
     ;; Validar que é super-admin
