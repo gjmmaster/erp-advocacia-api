@@ -8,7 +8,7 @@ import CreateTenantModal from '@/components/CreateTenantModal';
 import EditTenantModal from '@/components/EditTenantModal';
 import TenantCreatedModal from '@/components/TenantCreatedModal';
 import type { Tenant } from '@/types/tenant';
-import styles from './dashboard-modern.module.css';
+import styles from './dashboard.module.css';
 
 export default function SuperAdminDashboardPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
