@@ -1,7 +1,8 @@
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import TenantDashboardClient from './TenantDashboardClient';
+import DashboardLayout from '@/components/tenant/DashboardLayout';
+import DashboardStats from '@/components/tenant/DashboardStats';
 
 export default async function TenantDashboardPage() {
   const session = await getSession();
@@ -28,12 +29,16 @@ export default async function TenantDashboardPage() {
   console.log('[DASHBOARD] Impersonator Email:', impersonatorEmail);
 
   return (
-    <TenantDashboardClient
-      session={session as any}
+    <DashboardLayout 
+      user={session as any} 
       tenantName={tenantName}
-      tenantId={tenantId}
       impersonating={impersonating}
       impersonatorEmail={impersonatorEmail}
-    />
+    >
+      <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '24px', color: '#1a202c' }}>
+        Dashboard
+      </h1>
+      <DashboardStats tenantId={tenantId} />
+    </DashboardLayout>
   );
 }
