@@ -84,6 +84,10 @@
 (defn stop-impersonation-handler
   "Handler para parar impersonation e voltar para super admin"
   [{:keys [identity db-repo] :as request}]
+  (println "=== STOP IMPERSONATION HANDLER CHAMADO ===")
+  (println "Identity:" identity)
+  (println "DB-repo presente:" (boolean db-repo))
+  
   (let [impersonating? (:impersonating identity)
         impersonator-id (:impersonator-id identity)
         target-user-id (:user-id identity)
@@ -92,31 +96,43 @@
                        (get-in request [:headers "x-real-ip"])
                        (:remote-addr request))]
     
+    (println "Impersonating?:" impersonating?)
+    (println "Impersonator ID:" impersonator-id)
+    
     ;; Validar que está em modo impersonation
     (if (not impersonating?)
-      (response/status (response/response {:error "Not in impersonation mode"}) 400)
+      (do
+        (println "ERRO: Não está em modo impersonation!")
+        (response/status (response/response {:error "Not in impersonation mode"}) 400))
       
       ;; Buscar dados do super admin
-      (if-let [admin-user (p/find-by-id db-repo impersonator-id)]
-        (let [jwt-claims {:user-id (:id admin-user)
-                         :email (:email admin-user)
-                         :role "super-admin"
-                         :exp (-> (java.time.Instant/now)
-                                  (.plusSeconds 3600)
-                                  (.getEpochSecond))}
-              token (jwt/sign jwt-claims config/jwt-secret)]
+      (do
+        (println "Buscando super admin com ID:" impersonator-id)
+        (if-let [admin-user (p/find-by-id db-repo impersonator-id)]
+          (do
+            (println "Super admin encontrado:" admin-user)
+            (let [jwt-claims {:user-id (:id admin-user)
+                             :email (:email admin-user)
+                             :role "super-admin"
+                             :exp (-> (java.time.Instant/now)
+                                      (.plusSeconds 3600)
+                                      (.getEpochSecond))}
+                  token (jwt/sign jwt-claims config/jwt-secret)]
+              
+              ;; Log do evento
+              (log-impersonation-event "IMPERSONATE_STOP"
+                                      impersonator-id
+                                      target-user-id
+                                      tenant-id
+                                      ip-address)
+              
+              (println "Token do super admin gerado com sucesso")
+              (response/response {:token token
+                                 :user {:id (:id admin-user)
+                                       :email (:email admin-user)
+                                       :role "super-admin"}})))
           
-          ;; Log do evento
-          (log-impersonation-event "IMPERSONATE_STOP"
-                                  impersonator-id
-                                  target-user-id
-                                  tenant-id
-                                  ip-address)
-          
-          (response/response {:token token
-                             :user {:id (:id admin-user)
-                                   :email (:email admin-user)
-                                   :role "super-admin"}}))
-        
-        ;; Admin não encontrado (não deveria acontecer)
-        (response/status (response/response {:error "Admin user not found"}) 404)))))
+          ;; Admin não encontrado (não deveria acontecer)
+          (do
+            (println "ERRO: Super admin não encontrado!")
+            (response/status (response/response {:error "Admin user not found"}) 404)))))))

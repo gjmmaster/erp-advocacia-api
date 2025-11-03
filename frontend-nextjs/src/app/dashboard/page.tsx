@@ -22,7 +22,11 @@ export default async function TenantDashboardPage() {
 
   // Verificar se está em modo impersonation
   const impersonating = session.impersonating === true;
-  const impersonatorEmail = session['impersonator-email'];
+  const impersonatorEmail = session['impersonator-email'] || session.impersonatorEmail;
+
+  console.log('[DASHBOARD] Session:', session);
+  console.log('[DASHBOARD] Impersonating:', impersonating);
+  console.log('[DASHBOARD] Impersonator Email:', impersonatorEmail);
 
   return (
     <DashboardLayout 
