@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import TenantsTable from '@/components/TenantsTable';
+import { DashboardLayout, StatCard } from '@/components';
+import { TenantsTableModern } from '@/components/TenantsTableModern';
 import CreateTenantModal from '@/components/CreateTenantModal';
 import EditTenantModal from '@/components/EditTenantModal';
 import TenantCreatedModal from '@/components/TenantCreatedModal';
 import type { Tenant } from '@/types/tenant';
-import styles from './dashboard.module.css';
+import styles from './dashboard-modern.module.css';
 
 export default function SuperAdminDashboardPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -25,6 +26,11 @@ export default function SuperAdminDashboardPage() {
   } | null>(null);
   const [impersonating, setImpersonating] = useState(false);
   const router = useRouter();
+
+  const navItems = [
+    { href: '/super-admin/dashboard', icon: 'fas fa-chart-line', label: 'Dashboard' },
+    { href: '/super-admin/tenants', icon: 'fas fa-building', label: 'Tenants' },
+  ];
 
   const fetchTenants = async () => {
     try {
@@ -74,7 +80,6 @@ export default function SuperAdminDashboardPage() {
 
     setImpersonating(true);
     try {
-      // Buscar o user_id do master user do tenant
       const masterUserResponse = await fetch(`/api/admin/tenants/${tenant.id}/master-user`);
       
       if (!masterUserResponse.ok) {
@@ -83,7 +88,6 @@ export default function SuperAdminDashboardPage() {
 
       const masterUser = await masterUserResponse.json();
       
-      // Iniciar impersonation com o user_id correto
       const response = await fetch(`/api/admin/impersonate/${masterUser.id}`, {
         method: 'POST',
       });
@@ -93,13 +97,7 @@ export default function SuperAdminDashboardPage() {
         throw new Error(error.error || 'Falha ao iniciar impersonation');
       }
 
-      const data = await response.json();
-      console.log('Impersonation iniciado com sucesso:', data);
-
-      // Aguardar um pouco para garantir que o cookie foi definido
       await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Redirecionar para dashboard do tenant
       window.location.href = '/dashboard';
     } catch (err) {
       alert(`❌ Erro: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
@@ -147,53 +145,73 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
+  const activeTenants = tenants.filter(t => t.is_active !== false).length;
+  const inactiveTenants = tenants.length - activeTenants;
+
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.title}>🏛️ Super Admin Dashboard</h1>
-          <button onClick={handleLogout} className={styles.logoutButton}>
-            🚪 Sair
-          </button>
+    <DashboardLayout
+      navItems={navItems}
+      userName="Admin"
+      userRole="Super Administrador"
+      onLogout={handleLogout}
+    >
+      <div className={styles.pageHeader}>
+        <div>
+          <h2 className={styles.pageTitle}>Gerenciamento de Tenants</h2>
+          <p className={styles.pageSubtitle}>Gerencie escritórios de advocacia e seus acessos</p>
         </div>
-      </header>
+        <button className={styles.btnPrimary} onClick={() => setCreateModalOpen(true)}>
+          <i className="fas fa-plus"></i>
+          <span>Adicionar Novo Tenant</span>
+        </button>
+      </div>
 
-      <main className={styles.main}>
-        <div className={styles.actions}>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className={styles.createButton}
-          >
-            ➕ Provisionar Novo Escritório
-          </button>
+      <div className={styles.statsGrid}>
+        <StatCard
+          icon="fas fa-building"
+          value={tenants.length}
+          label="Total de Tenants"
+          color="blue"
+        />
+        <StatCard
+          icon="fas fa-check-circle"
+          value={activeTenants}
+          label="Ativos"
+          color="green"
+        />
+        <StatCard
+          icon="fas fa-pause-circle"
+          value={inactiveTenants}
+          label="Inativos"
+          color="orange"
+        />
+      </div>
+
+      {error && (
+        <div className={styles.error}>
+          <i className="fas fa-exclamation-triangle"></i>
+          <span>{error}</span>
         </div>
+      )}
 
-        {error && (
-          <div className={styles.error}>
-            <span>⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-            <p>Carregando escritórios...</p>
-          </div>
-        ) : impersonating ? (
-          <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-            <p>Iniciando impersonation...</p>
-          </div>
-        ) : (
-          <TenantsTable
-            tenants={tenants}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onImpersonate={handleImpersonate}
-          />
-        )}
-      </main>
+      {loading ? (
+        <div className={styles.loading}>
+          <div className={styles.spinner}></div>
+          <p>Carregando escritórios...</p>
+        </div>
+      ) : impersonating ? (
+        <div className={styles.loading}>
+          <div className={styles.spinner}></div>
+          <p>Iniciando impersonation...</p>
+        </div>
+      ) : (
+        <TenantsTableModern
+          tenants={tenants}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onImpersonate={handleImpersonate}
+        />
+      )}
 
       <CreateTenantModal
         isOpen={isCreateModalOpen}
@@ -233,6 +251,6 @@ export default function SuperAdminDashboardPage() {
           emailSent={createdTenant.emailSent}
         />
       )}
-    </div>
+    </DashboardLayout>
   );
 }
