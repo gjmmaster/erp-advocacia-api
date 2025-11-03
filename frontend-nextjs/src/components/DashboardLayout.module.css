@@ -1,0 +1,48 @@
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-navy) 0%, #0f1729 50%, var(--primary-navy) 100%);
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.contentArea {
+  flex: 1;
+  padding: 32px;
+  background: rgba(15, 23, 41, 0.3);
+}
+
+/* Mobile Styles */
+@media (max-width: 1023px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .contentArea {
+    padding: 16px;
+  }
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .contentArea {
+    padding: 24px;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .mainContent {
+    margin-left: 260px;
+  }
+}

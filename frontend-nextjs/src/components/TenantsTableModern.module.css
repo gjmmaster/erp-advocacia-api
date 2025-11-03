@@ -1,0 +1,326 @@
+.tableCard {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md-glass);
+}
+
+.tableHeader {
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tableTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tableTitle i {
+  color: var(--primary-cyan);
+}
+
+.filterSelect {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+.filterSelect:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tableContainer {
+  overflow-x: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dataTable thead {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dataTable th {
+  padding: 16px 32px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.dataTable tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: var(--transition);
+}
+
+.dataTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dataTable td {
+  padding: 20px 32px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.tenantName {
+  font-weight: 600;
+}
+
+.tenantSubdomain {
+  color: var(--primary-cyan);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.tenantEmail {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnAccessAs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(6, 182, 212, 0.2));
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 8px;
+  color: var(--primary-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btnAccessAs:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(6, 182, 212, 0.3));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btnAccessAs:active {
+  transform: translateY(0);
+}
+
+.btnAccessAs i {
+  font-size: 11px;
+}
+
+.actionBtn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.actionBtn:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(6, 182, 212, 0.2));
+  color: var(--primary-cyan);
+  transform: scale(1.1);
+}
+
+.actionBtnDanger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Mobile Cards */
+.tenantsCards {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.tenantCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: var(--transition);
+}
+
+.tenantCard:active {
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(0.98);
+}
+
+.tenantCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.tenantCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.tenantCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tenantCardRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tenantCardLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tenantCardValue {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.tenantCardSubdomain {
+  color: var(--primary-cyan);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.tenantCardEmail {
+  color: var(--text-secondary);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.tenantCardFooter {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tenantCardAction {
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.tenantCardAction:active {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(6, 182, 212, 0.3));
+  color: var(--primary-cyan);
+  transform: scale(0.95);
+}
+
+/* Mobile Styles */
+@media (max-width: 767px) {
+  .tableHeader {
+    padding: 20px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .tableTitle {
+    font-size: 16px;
+  }
+
+  .filterSelect {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .dataTable {
+    display: none;
+  }
+
+  .tenantsCards {
+    display: flex;
+  }
+
+  .actionsGroup {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .btnAccessAs {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tableHeader {
+    padding: 24px;
+  }
+
+  .dataTable th,
+  .dataTable td {
+    padding: 16px 24px;
+    font-size: 13px;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .tenantsCards {
+    display: none;
+  }
+
+  .dataTable {
+    display: table;
+  }
+}

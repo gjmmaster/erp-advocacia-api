@@ -1,0 +1,94 @@
+.formGroup {
+  position: relative;
+  margin-bottom: var(--space-16);
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.formControl {
+  display: block;
+  width: 100%;
+  padding: var(--space-8) var(--space-12);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.formControl--with-icon {
+  padding-left: 48px;
+}
+
+.formControl--with-suffix {
+  padding-right: 120px;
+}
+
+.formControl:focus {
+  border-color: var(--color-primary);
+  outline: var(--focus-outline);
+}
+
+.formControl--error {
+  border-color: var(--color-error);
+}
+
+.formLabel {
+  position: absolute;
+  left: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
+  pointer-events: none;
+  transition: var(--transition);
+}
+
+.formControl:focus + .formLabel,
+.formControl:not(:placeholder-shown) + .formLabel {
+  top: -8px;
+  left: 12px;
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 0 var(--space-8);
+}
+
+.inputIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inputSuffix {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.errorMessage {
+  display: block;
+  margin-top: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+}
