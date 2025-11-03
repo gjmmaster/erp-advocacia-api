@@ -60,16 +60,16 @@ export const TenantsTableModern: React.FC<TenantsTableModernProps> = ({
                 </td>
                 <td>
                   <StatusBadge
-                    status={tenant.is_active ? 'active' : 'inactive'}
+                    status={tenant.is_active !== false ? 'active' : 'inactive'}
                     icon={
                       <i
                         className={
-                          tenant.is_active ? 'fas fa-check-circle' : 'fas fa-pause-circle'
+                          tenant.is_active !== false ? 'fas fa-check-circle' : 'fas fa-pause-circle'
                         }
                       ></i>
                     }
                   >
-                    {tenant.is_active ? 'Ativo' : 'Inativo'}
+                    {tenant.is_active !== false ? 'Ativo' : 'Inativo'}
                   </StatusBadge>
                 </td>
                 <td>
@@ -129,16 +129,16 @@ export const TenantsTableModern: React.FC<TenantsTableModernProps> = ({
 
             <div className={styles.tenantCardFooter}>
               <StatusBadge
-                status={tenant.is_active ? 'active' : 'inactive'}
+                status={tenant.is_active !== false ? 'active' : 'inactive'}
                 icon={
                   <i
                     className={
-                      tenant.is_active ? 'fas fa-check-circle' : 'fas fa-pause-circle'
+                      tenant.is_active !== false ? 'fas fa-check-circle' : 'fas fa-pause-circle'
                     }
                   ></i>
                 }
               >
-                {tenant.is_active ? 'Ativo' : 'Inativo'}
+                {tenant.is_active !== false ? 'Ativo' : 'Inativo'}
               </StatusBadge>
 
               <div className={styles.actionsGroup}>

@@ -145,7 +145,7 @@ export default function SuperAdminDashboardPage() {
     }
   };
 
-  const activeTenants = tenants.filter(t => t.is_active).length;
+  const activeTenants = tenants.filter(t => t.is_active !== false).length;
   const inactiveTenants = tenants.length - activeTenants;
 
   return (

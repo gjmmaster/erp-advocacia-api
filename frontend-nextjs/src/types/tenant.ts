@@ -4,6 +4,8 @@ export interface Tenant {
   subdomain: string;
   operator_limit: number;
   created_at: string;
+  is_active?: boolean;
+  email?: string;
 }
 
 export interface CreateTenantPayload {
