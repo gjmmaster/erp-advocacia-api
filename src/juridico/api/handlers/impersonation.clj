@@ -25,7 +25,6 @@
   
   (let [target-user-id (parse-long (:user-id path-params))
         impersonator-id (:user-id identity)
-        impersonator-email (:email identity)
         impersonator-role (:role identity)
         ip-address (or (get-in request [:headers "x-forwarded-for"])
                        (get-in request [:headers "x-real-ip"])
@@ -33,8 +32,13 @@
     
     (println "Target user ID:" target-user-id)
     (println "Impersonator ID:" impersonator-id)
-    (println "Impersonator email:" impersonator-email)
     (println "Impersonator role:" impersonator-role)
+    
+    ;; Buscar email do impersonator se não estiver no token
+    (let [impersonator-email (or (:email identity)
+                                 (when-let [admin-user (p/find-by-id db-repo impersonator-id)]
+                                   (:email admin-user)))]
+      (println "Impersonator email:" impersonator-email)
     
     ;; Validar que é super-admin
     (if (not= impersonator-role "super-admin")
@@ -80,7 +84,7 @@
           ;; Usuário não encontrado
           (do
             (println "ERRO: Usuário não encontrado no banco!")
-            (response/status (response/response {:error "User not found"}) 404)))))))
+            (response/status (response/response {:error "User not found"}) 404))))))))
 
 (defn stop-impersonation-handler
   "Handler para parar impersonation e voltar para super admin"
