@@ -17,20 +17,29 @@ export default function ImpersonationBanner({ targetEmail }: ImpersonationBanner
 
     setLoading(true);
     try {
+      console.log('[BANNER] Parando impersonation...');
       const response = await fetch('/api/admin/stop-impersonate', {
         method: 'POST',
       });
 
+      console.log('[BANNER] Resposta:', response.status);
+
       if (response.ok) {
-        // Redirecionar para dashboard do super admin
-        router.push('/admin/dashboard');
-        router.refresh();
+        const data = await response.json();
+        console.log('[BANNER] Dados recebidos:', data);
+        
+        // Aguardar um pouco para garantir que os cookies foram atualizados
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Redirecionar para dashboard do super admin com reload completo
+        window.location.href = '/super-admin/dashboard';
       } else {
         const error = await response.json();
+        console.error('[BANNER] Erro:', error);
         alert(`Erro: ${error.error || 'Falha ao parar impersonation'}`);
       }
     } catch (error) {
-      console.error('Erro ao parar impersonation:', error);
+      console.error('[BANNER] Erro ao parar impersonation:', error);
       alert('Erro ao parar impersonation');
     } finally {
       setLoading(false);
