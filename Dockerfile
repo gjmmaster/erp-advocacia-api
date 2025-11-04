@@ -13,7 +13,7 @@ COPY src ./src
 RUN lein uberjar
 
 # --- Estágio Final de Execução ---
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre-jammy
 WORKDIR /app
 
 # Criar um usuário e grupo não-root para executar a aplicação
