@@ -7,6 +7,89 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [Unreleased] - 2025-11-04 - EM DESENVOLVIMENTO 🚧
+
+### 🏗️ Gestão de Processos Jurídicos (Fase 1 - Backend Core)
+
+#### Adicionado - Database
+- **Tabela `clientes`**: Clientes dos escritórios de advocacia
+  - 10 campos com soft delete
+  - Índices: tenant_id, cpf_cnpj único por tenant
+  - FK para tenants com CASCADE
+  - Migration: `004_create_clientes_table.sql`
+
+- **Tabela `processos`**: Processos jurídicos completos
+  - 20 campos com auditoria completa (created_by, updated_by, deleted_by)
+  - 7 índices otimizados (tenant, cliente, status, número, deleted, created_at)
+  - Constraint UNIQUE (tenant_id, numero_processo)
+  - Soft delete
+
+- **Tabela `processo_documentos`**: Documentos anexados aos processos
+  - 9 campos para metadados de arquivos
+  - Suporte para PDF, DOC, DOCX, JPG, PNG
+  - 3 índices (processo_id, deleted_at)
+  - FK para processos com CASCADE
+
+- **Tabela `processo_historico`**: Auditoria imutável de alterações
+  - 8 campos para timeline de eventos
+  - 3 índices (processo_id, created_at DESC)
+  - FK para processos com CASCADE
+  - Migration: `005_create_processos_tables.sql`
+
+#### Adicionado - Backend Protocols
+- **ProcessoRepository**: 9 funções para CRUD de processos
+  - Listagem com paginação e filtros
+  - Busca full-text
+  - Soft delete com auditoria
+  - Validação de duplicatas
+
+- **DocumentoRepository**: 5 funções para gestão de documentos
+  - Upload e download de arquivos
+  - Soft delete
+  - Contagem por processo
+
+- **HistoricoRepository**: 3 funções para auditoria
+  - Registro imutável de alterações
+  - Timeline de eventos
+  - Contagem de registros
+
+- **ClienteRepository**: 8 funções para gestão de clientes
+  - CRUD completo
+  - Busca e validação de CPF/CNPJ
+  - Soft delete
+
+#### Adicionado - Documentação
+- `docs/DATABASE_SCHEMA.md` atualizado com:
+  - Diagrama de relacionamentos expandido
+  - Documentação completa de 4 novas tabelas
+  - Índices, constraints e regras de negócio
+  
+- `PROGRESSO_GESTAO_PROCESSOS.md`: Documento de progresso
+  - 3/28 tasks completas (10.7%)
+  - Estatísticas e próximos passos
+  - Guia de aplicação das migrations
+
+- Spec completa em `.kiro/specs/gestao-processos/`:
+  - `requirements.md`: 10 requisitos funcionais em formato EARS
+  - `design.md`: Arquitetura completa (backend + frontend)
+  - `tasks.md`: 30 tarefas organizadas em 5 fases
+
+#### Scripts de Migration
+- `run_migration_clientes.sh`: Script para aplicar tabela clientes
+- `run_migration_processos.sh`: Script para aplicar tabelas de processos
+  - Validação de pré-requisitos
+  - Verificação de tabela clientes
+  - Rollback automático em caso de erro
+
+#### Pendente (27 tasks)
+- Task 4-6: Implementação dos repositories (PostgreSQL)
+- Task 7-11: Handlers e rotas do backend
+- Task 12: API routes do Next.js (BFF)
+- Task 13-27: Interface frontend completa
+- Task 28: Documentação de deploy
+
+---
+
 ## [1.0.0] - 2025-11-03 - VERSÃO ESTÁVEL 🎉
 
 ### 🎨 Design System Completo

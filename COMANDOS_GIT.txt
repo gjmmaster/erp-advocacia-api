@@ -1,0 +1,43 @@
+# Comandos Git - Copiar e Colar
+
+# 1. Verificar status
+git status
+
+# 2. Adicionar todos os arquivos
+git add .
+
+# 3. Fazer commit
+git commit -m "feat: add database schema and protocols for processo management (tasks 1-3)
+
+- Add clientes table migration (004)
+- Add processos, processo_documentos, processo_historico tables (005)
+- Add 4 new protocols: ProcessoRepository, DocumentoRepository, HistoricoRepository, ClienteRepository
+- Add complete database schema documentation
+- Add gestao-processos spec (requirements, design, tasks)
+- Update CHANGELOG with progress
+
+Tasks completed: 1-3/30 (10%)
+Phase: Backend Core - Database & Protocols"
+
+# 4. Push para repositório
+git push
+
+# ============================================
+# Se precisar especificar branch:
+# ============================================
+
+# Push para main
+git push origin main
+
+# OU push para master
+git push origin master
+
+# ============================================
+# Verificar após push:
+# ============================================
+
+# Ver último commit
+git log -1
+
+# Ver arquivos do último commit
+git show --name-only
