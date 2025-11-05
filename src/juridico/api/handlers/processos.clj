@@ -10,16 +10,24 @@
 
 (defn remove-namespaces
   "Remove namespaces das chaves de um mapa ou coleção de mapas.
-   Exemplo: {:clientes/id 1 :clientes/nome 'João'} -> {:id 1 :nome 'João'}"
+   Converte IDs grandes para strings para evitar perda de precisão no JavaScript.
+   Exemplo: {:clientes/id 1 :clientes/nome 'João'} -> {:id \"1\" :nome 'João'}"
   [data]
   (walk/postwalk
     (fn [x]
       (if (map? x)
         (into {} (map (fn [[k v]]
-                       [(if (keyword? k)
-                          (keyword (name k))
-                          k)
-                        v])
+                       (let [key-name (if (keyword? k) (keyword (name k)) k)
+                             ;; Converter IDs grandes para strings
+                             value (if (and (or (= key-name :id)
+                                              (= key-name :cliente_id)
+                                              (= key-name :processo_id)
+                                              (= key-name :tenant_id)
+                                              (= key-name :user_id))
+                                          (number? v))
+                                    (str v)
+                                    v)]
+                         [key-name value]))
                      x))
         x))
     data))
