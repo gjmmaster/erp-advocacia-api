@@ -67,7 +67,7 @@ export default function NovoProcessoPage() {
       // Preparar dados
       const payload: any = {
         numero_processo: formData.numero_processo,
-        cliente_id: parseInt(formData.cliente_id),
+        cliente_id: formData.cliente_id, // Manter como string para evitar perda de precisão
         tipo: formData.tipo,
         status: formData.status,
       };
