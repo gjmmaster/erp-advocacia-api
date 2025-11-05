@@ -1,7 +1,9 @@
 (ns juridico.api.db.postgres
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
-            [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository]]
+            [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository
+                                                ProcessoRepository DocumentoRepository
+                                                HistoricoRepository ClienteRepository]]
             [environ.core :refer [env]]
             [buddy.hashers :as hashers]
             [buddy.core.nonce :as nonce]
@@ -287,7 +289,325 @@
                        :role (:users/role result)
                        :tenant_id (:users/tenant_id result)}]
           (println "User map retornado:" user-map)
-          user-map)))))
+          user-map))))
+
+  ;; ============================================
+  ;; Implementação do ProcessoRepository
+  ;; ============================================
+
+  ProcessoRepository
+
+  (find-all-processos [this tenant-id opts]
+    (let [{:keys [page per-page status tipo cliente-id search]} opts
+          page (or page 1)
+          per-page (or per-page 20)
+          offset (* (dec page) per-page)
+          base-query "SELECT p.*, c.nome as cliente_nome 
+                      FROM processos p 
+                      LEFT JOIN clientes c ON p.cliente_id = c.id 
+                      WHERE p.tenant_id = ? AND p.deleted_at IS NULL"
+          conditions []
+          params [tenant-id]]
+      
+      ;; Adiciona filtros dinamicamente
+      (let [[query params] (cond-> [base-query params]
+                             status
+                             (fn [[q p]] [(str q " AND p.status = ?") (conj p status)])
+                             
+                             tipo
+                             (fn [[q p]] [(str q " AND p.tipo = ?") (conj p tipo)])
+                             
+                             cliente-id
+                             (fn [[q p]] [(str q " AND p.cliente_id = ?") (conj p cliente-id)])
+                             
+                             search
+                             (fn [[q p]] [(str q " AND (p.numero_processo ILIKE ? OR p.descricao ILIKE ?)")
+                                         (conj p (str "%" search "%") (str "%" search "%"))]))]
+        
+        ;; Query de contagem
+        (let [count-query (str/replace query #"SELECT p\.\*, c\.nome as cliente_nome" "SELECT COUNT(*)")
+              total (:count (jdbc/execute-one! db-conn (into [count-query] (rest params))))
+              
+              ;; Query de dados com paginação
+              final-query (str query " ORDER BY p.created_at DESC LIMIT ? OFFSET ?")
+              processos (jdbc/execute! db-conn (into [final-query] (concat (rest params) [per-page offset])))]
+          
+          {:processos processos
+           :total total
+           :page page
+           :per-page per-page}))))
+
+  (find-processo-by-id [this tenant-id processo-id]
+    (jdbc/execute-one! db-conn
+      ["SELECT p.*, c.nome as cliente_nome 
+        FROM processos p 
+        LEFT JOIN clientes c ON p.cliente_id = c.id 
+        WHERE p.id = ? AND p.tenant_id = ? AND p.deleted_at IS NULL"
+       processo-id tenant-id]))
+
+  (find-processo-by-numero [this tenant-id numero]
+    (jdbc/execute-one! db-conn
+      ["SELECT * FROM processos 
+        WHERE tenant_id = ? AND numero_processo = ? AND deleted_at IS NULL"
+       tenant-id numero]))
+
+  (create-processo! [this processo-data]
+    (jdbc/with-transaction [tx db-conn]
+      (let [result (sql/insert! tx :processos processo-data {:return-keys true})
+            processo-id (:processos/id result)]
+        
+        ;; Adiciona entrada no histórico
+        (sql/insert! tx :processo_historico
+          {:processo_id processo-id
+           :user_id (:created_by processo-data)
+           :acao "criacao"
+           :campo_alterado nil
+           :valor_anterior nil
+           :valor_novo "Processo criado"})
+        
+        result)))
+
+  (update-processo! [this tenant-id processo-id updates user-id]
+    (jdbc/with-transaction [tx db-conn]
+      ;; Busca valores anteriores para histórico
+      (let [old-processo (jdbc/execute-one! tx
+                           ["SELECT * FROM processos WHERE id = ? AND tenant_id = ?"
+                            processo-id tenant-id])
+            
+            ;; Atualiza processo
+            updated (sql/update! tx :processos
+                      (assoc updates :updated_by user-id :updated_at (java.time.Instant/now))
+                      {:id processo-id :tenant_id tenant-id})]
+        
+        ;; Registra alterações no histórico
+        (doseq [[campo novo-valor] updates]
+          (let [campo-str (name campo)
+                valor-anterior (get old-processo (keyword (str "processos/" campo-str)))]
+            (when (not= valor-anterior novo-valor)
+              (sql/insert! tx :processo_historico
+                {:processo_id processo-id
+                 :user_id user-id
+                 :acao "edicao"
+                 :campo_alterado campo-str
+                 :valor_anterior (str valor-anterior)
+                 :valor_novo (str novo-valor)}))))
+        
+        updated)))
+
+  (soft-delete-processo! [this tenant-id processo-id user-id]
+    (jdbc/with-transaction [tx db-conn]
+      (let [result (sql/update! tx :processos
+                     {:deleted_at (java.time.Instant/now)
+                      :deleted_by user-id}
+                     {:id processo-id :tenant_id tenant-id})]
+        
+        ;; Registra exclusão no histórico
+        (sql/insert! tx :processo_historico
+          {:processo_id processo-id
+           :user_id user-id
+           :acao "exclusao"
+           :campo_alterado nil
+           :valor_anterior nil
+           :valor_novo "Processo excluído"})
+        
+        (pos? (:next.jdbc/update-count result)))))
+
+  (search-processos [this tenant-id query opts]
+    (let [{:keys [page per-page]} opts
+          page (or page 1)
+          per-page (or per-page 20)
+          offset (* (dec page) per-page)
+          search-term (str "%" query "%")
+          
+          ;; Query de contagem
+          count-result (jdbc/execute-one! db-conn
+                         ["SELECT COUNT(*) as count FROM processos p
+                           LEFT JOIN clientes c ON p.cliente_id = c.id
+                           WHERE p.tenant_id = ? AND p.deleted_at IS NULL
+                           AND (p.numero_processo ILIKE ? OR p.descricao ILIKE ? OR c.nome ILIKE ?)"
+                          tenant-id search-term search-term search-term])
+          
+          ;; Query de dados
+          processos (jdbc/execute! db-conn
+                      ["SELECT p.*, c.nome as cliente_nome 
+                        FROM processos p 
+                        LEFT JOIN clientes c ON p.cliente_id = c.id 
+                        WHERE p.tenant_id = ? AND p.deleted_at IS NULL
+                        AND (p.numero_processo ILIKE ? OR p.descricao ILIKE ? OR c.nome ILIKE ?)
+                        ORDER BY p.created_at DESC
+                        LIMIT ? OFFSET ?"
+                       tenant-id search-term search-term search-term per-page offset])]
+      
+      {:processos processos
+       :total (:count count-result)
+       :page page
+       :per-page per-page}))
+
+  (count-processos-by-status [this tenant-id status]
+    (let [result (jdbc/execute-one! db-conn
+                   ["SELECT COUNT(*) as count FROM processos 
+                     WHERE tenant_id = ? AND status = ? AND deleted_at IS NULL"
+                    tenant-id status])]
+      (:count result 0)))
+
+  ;; ============================================
+  ;; Implementação do DocumentoRepository
+  ;; ============================================
+
+  DocumentoRepository
+
+  (find-documentos-by-processo [this processo-id]
+    (jdbc/execute! db-conn
+      ["SELECT * FROM processo_documentos 
+        WHERE processo_id = ? AND deleted_at IS NULL 
+        ORDER BY created_at DESC"
+       processo-id]))
+
+  (find-documento-by-id [this documento-id]
+    (jdbc/execute-one! db-conn
+      ["SELECT * FROM processo_documentos 
+        WHERE id = ? AND deleted_at IS NULL"
+       documento-id]))
+
+  (create-documento! [this documento-data]
+    (sql/insert! db-conn :processo_documentos documento-data {:return-keys true}))
+
+  (soft-delete-documento! [this documento-id]
+    (let [result (sql/update! db-conn :processo_documentos
+                   {:deleted_at (java.time.Instant/now)}
+                   {:id documento-id})]
+      (pos? (:next.jdbc/update-count result))))
+
+  (count-documentos-by-processo [this processo-id]
+    (let [result (jdbc/execute-one! db-conn
+                   ["SELECT COUNT(*) as count FROM processo_documentos 
+                     WHERE processo_id = ? AND deleted_at IS NULL"
+                    processo-id])]
+      (:count result 0)))
+
+  ;; ============================================
+  ;; Implementação do HistoricoRepository
+  ;; ============================================
+
+  HistoricoRepository
+
+  (add-historico! [this historico-data]
+    (sql/insert! db-conn :processo_historico historico-data {:return-keys true}))
+
+  (find-historico-by-processo [this processo-id opts]
+    (let [{:keys [limit offset]} opts
+          limit (or limit 50)
+          offset (or offset 0)]
+      (jdbc/execute! db-conn
+        ["SELECT h.*, u.email as user_email, u.full_name as user_name
+          FROM processo_historico h
+          LEFT JOIN users u ON h.user_id = u.id
+          WHERE h.processo_id = ?
+          ORDER BY h.created_at DESC
+          LIMIT ? OFFSET ?"
+         processo-id limit offset])))
+
+  (count-historico-by-processo [this processo-id]
+    (let [result (jdbc/execute-one! db-conn
+                   ["SELECT COUNT(*) as count FROM processo_historico 
+                     WHERE processo_id = ?"
+                    processo-id])]
+      (:count result 0)))
+
+  ;; ============================================
+  ;; Implementação do ClienteRepository
+  ;; ============================================
+
+  ClienteRepository
+
+  (find-all-clientes [this tenant-id opts]
+    (let [{:keys [page per-page search]} opts
+          page (or page 1)
+          per-page (or per-page 20)
+          offset (* (dec page) per-page)
+          
+          ;; Query base
+          base-query "SELECT * FROM clientes WHERE tenant_id = ? AND deleted_at IS NULL"
+          
+          ;; Adiciona busca se fornecida
+          [query params] (if search
+                          [(str base-query " AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)")
+                           [tenant-id (str "%" search "%") (str "%" search "%") (str "%" search "%")]]
+                          [base-query [tenant-id]])
+          
+          ;; Query de contagem
+          count-query (str/replace query #"SELECT \*" "SELECT COUNT(*)")
+          total (:count (jdbc/execute-one! db-conn (into [count-query] params)))
+          
+          ;; Query de dados com paginação
+          final-query (str query " ORDER BY nome ASC LIMIT ? OFFSET ?")
+          clientes (jdbc/execute! db-conn (into [final-query] (concat params [per-page offset])))]
+      
+      {:clientes clientes
+       :total total
+       :page page
+       :per-page per-page}))
+
+  (find-cliente-by-id [this tenant-id cliente-id]
+    (jdbc/execute-one! db-conn
+      ["SELECT * FROM clientes 
+        WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL"
+       cliente-id tenant-id]))
+
+  (find-cliente-by-cpf-cnpj [this tenant-id cpf-cnpj]
+    (jdbc/execute-one! db-conn
+      ["SELECT * FROM clientes 
+        WHERE tenant_id = ? AND cpf_cnpj = ? AND deleted_at IS NULL"
+       tenant-id cpf-cnpj]))
+
+  (create-cliente! [this cliente-data]
+    (sql/insert! db-conn :clientes cliente-data {:return-keys true}))
+
+  (update-cliente! [this tenant-id cliente-id updates]
+    (sql/update! db-conn :clientes
+      (assoc updates :updated_at (java.time.Instant/now))
+      {:id cliente-id :tenant_id tenant-id}))
+
+  (soft-delete-cliente! [this tenant-id cliente-id]
+    (let [result (sql/update! db-conn :clientes
+                   {:deleted_at (java.time.Instant/now)}
+                   {:id cliente-id :tenant_id tenant-id})]
+      (pos? (:next.jdbc/update-count result))))
+
+  (search-clientes [this tenant-id query opts]
+    (let [{:keys [page per-page]} opts
+          page (or page 1)
+          per-page (or per-page 20)
+          offset (* (dec page) per-page)
+          search-term (str "%" query "%")
+          
+          ;; Query de contagem
+          count-result (jdbc/execute-one! db-conn
+                         ["SELECT COUNT(*) as count FROM clientes
+                           WHERE tenant_id = ? AND deleted_at IS NULL
+                           AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)"
+                          tenant-id search-term search-term search-term])
+          
+          ;; Query de dados
+          clientes (jdbc/execute! db-conn
+                     ["SELECT * FROM clientes 
+                       WHERE tenant_id = ? AND deleted_at IS NULL
+                       AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)
+                       ORDER BY nome ASC
+                       LIMIT ? OFFSET ?"
+                      tenant-id search-term search-term search-term per-page offset])]
+      
+      {:clientes clientes
+       :total (:count count-result)
+       :page page
+       :per-page per-page}))
+
+  (count-processos-by-cliente [this cliente-id]
+    (let [result (jdbc/execute-one! db-conn
+                   ["SELECT COUNT(*) as count FROM processos 
+                     WHERE cliente_id = ? AND deleted_at IS NULL"
+                    cliente-id])]
+      (:count result 0))))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository

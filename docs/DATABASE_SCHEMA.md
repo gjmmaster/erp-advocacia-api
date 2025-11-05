@@ -521,14 +521,40 @@ Todos os índices necessários já foram criados nas migrations. Os principais s
 
 ## Evoluções Recentes
 
-### ✅ Feature: Gestão de Processos (Implementado)
+### ✅ Feature: Force Password Change (Implementado em 30/10/2025)
 
-Tabelas criadas:
+**Alteração:** Adicionada coluna `temporary_password` na tabela `users`
+
+- Permite forçar usuários a trocarem senha no primeiro login
+- Índice parcial criado para otimizar queries
+- Usado principalmente para usuários master criados pelo super-admin
+
+### ✅ Feature: Gestão de Processos (Implementado em 05/11/2025)
+
+**Tabelas criadas:**
 
 1. **clientes** - Clientes dos escritórios de advocacia
+   - Soft delete implementado
+   - CPF/CNPJ único por tenant
+   - Vinculado a processos
+
 2. **processos** - Processos jurídicos completos
+   - Número único por tenant
+   - Status: Em Andamento, Suspenso, Arquivado, Encerrado
+   - Auditoria completa (created_by, updated_by, deleted_by)
+   - Soft delete implementado
+
 3. **processo_documentos** - Documentos anexados aos processos
+   - Metadados de arquivos (nome, tipo, tamanho)
+   - Caminho para storage (filesystem ou S3)
+   - Soft delete implementado
+
 4. **processo_historico** - Auditoria de alterações
+   - Registro imutável de todas as mudanças
+   - Armazena valores anterior e novo
+   - Timeline completa de eventos
+
+**Impacto:** Sistema agora suporta gestão completa de clientes e processos jurídicos com auditoria.
 
 Veja: `.kiro/specs/gestao-processos/` para detalhes completos.
 
@@ -548,6 +574,16 @@ Veja: `.kiro/specs/gestao-processos/` para detalhes completos.
 
 ---
 
-**Última Atualização:** 04/11/2025  
-**Versão do Schema:** 1.0  
+## Histórico de Alterações
+
+| Data       | Versão | Alteração                                                    |
+|------------|--------|--------------------------------------------------------------|
+| 05/11/2025 | 1.2    | Adicionadas tabelas de gestão de processos (clientes, processos, processo_documentos, processo_historico) |
+| 30/10/2025 | 1.1    | Adicionada coluna temporary_password na tabela users         |
+| 29/10/2025 | 1.0    | Schema inicial (tenants, users, legal_cases)                 |
+
+---
+
+**Última Atualização:** 05/11/2025  
+**Versão do Schema:** 1.2  
 **Mantido por:** Equipe de Desenvolvimento

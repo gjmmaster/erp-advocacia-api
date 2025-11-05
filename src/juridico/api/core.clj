@@ -5,7 +5,8 @@
             [muuntaja.core :as m]
             [ring.util.response :as response]
             [juridico.api.handlers :as h]
-            [juridico.api.handlers.password :as pwd]  ;; ⭐ NOVO
+            [juridico.api.handlers.password :as pwd]
+            [juridico.api.handlers.processos :as processos]  ;; ⭐ NOVO
             [juridico.api.middleware :as mw]
             [juridico.api.rate-limit :as rl]
             [ring.middleware.cors :as cors])
@@ -63,13 +64,49 @@
     ["/login" {:post {:handler h/login-handler}}]]
    ["/api"
     {:middleware [mw/wrap-jwt-authentication]}
+    
+    ;; Rotas antigas de processos (manter compatibilidade)
     ["/processos" {:get {:handler h/listar-processos-handler}
                   :post {:handler h/criar-processo-handler}}]
     ["/processos/:id" {:get {:handler h/obter-processo-handler}
                        :put {:handler h/atualizar-processo-handler}
                        :delete {:handler h/deletar-processo-handler}}]
+    
+    ;; Novas rotas de gestão de processos
+    ["/tenant"
+     {:middleware [mw/wrap-public-db-repo]}
+     
+     ;; Processos
+     ["/processos"
+      ["" {:get {:handler processos/list-processos-handler}
+           :post {:handler processos/create-processo-handler}}]
+      ["/search" {:get {:handler processos/search-processos-handler}}]
+      ["/:id" {:get {:handler processos/get-processo-handler}
+               :put {:handler processos/update-processo-handler}
+               :delete {:handler processos/delete-processo-handler}}]
+      
+      ;; Documentos de um processo
+      ["/:processo-id/documentos"
+       ["" {:get {:handler processos/list-documentos-handler}
+            :post {:handler processos/create-documento-handler}}]
+       ["/:documento-id" {:delete {:handler processos/delete-documento-handler}}]]
+      
+      ;; Histórico de um processo
+      ["/:processo-id/historico"
+       {:get {:handler processos/get-historico-handler}}]]
+     
+     ;; Clientes
+     ["/clientes"
+      ["" {:get {:handler processos/list-clientes-handler}
+           :post {:handler processos/create-cliente-handler}}]
+      ["/search" {:get {:handler processos/search-clientes-handler}}]
+      ["/:id" {:get {:handler processos/get-cliente-handler}
+               :put {:handler processos/update-cliente-handler}
+               :delete {:handler processos/delete-cliente-handler}}]]]
+    
     ["/dashboard"
      ["/stats/:tenant-id" {:get {:handler h/get-dashboard-stats-handler}}]]
+    
     ["/operadores"
      {:middleware [mw/wrap-master-role-authorization]
       :get {:handler h/listar-operadores-handler}

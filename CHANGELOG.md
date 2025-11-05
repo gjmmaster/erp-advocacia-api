@@ -9,7 +9,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased] - 2025-11-04 - EM DESENVOLVIMENTO 🚧
 
-### 🏗️ Gestão de Processos Jurídicos (Fase 1 - Backend Core)
+### 🏗️ Gestão de Processos Jurídicos (Fase 1 + 2 - Backend Completo) ✅
 
 #### Adicionado - Database
 - **Tabela `clientes`**: Clientes dos escritórios de advocacia
@@ -81,9 +81,115 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Verificação de tabela clientes
   - Rollback automático em caso de erro
 
-#### Pendente (27 tasks)
-- Task 4-6: Implementação dos repositories (PostgreSQL)
-- Task 7-11: Handlers e rotas do backend
+#### Adicionado - Backend Repositories (Tasks 4-6)
+- **ProcessoRepository**: 9 funções implementadas
+  - Listagem com paginação e filtros dinâmicos
+  - Busca full-text em múltiplos campos
+  - Criação com registro automático no histórico
+  - Atualização com auditoria completa de alterações
+  - Soft delete com registro no histórico
+  - Validação de duplicatas por número
+  - Estatísticas por status
+
+- **DocumentoRepository**: 5 funções implementadas
+  - Listagem de documentos por processo
+  - Criação de metadados de documentos
+  - Soft delete de documentos
+  - Contagem de documentos por processo
+
+- **HistoricoRepository**: 3 funções implementadas
+  - Inserção imutável de registros de histórico
+  - Timeline de alterações com JOIN de usuários
+  - Contagem de registros
+
+- **ClienteRepository**: 8 funções implementadas
+  - CRUD completo de clientes
+  - Busca em múltiplos campos (nome, CPF/CNPJ, email)
+  - Validação de duplicatas por CPF/CNPJ
+  - Contagem de processos por cliente
+  - Paginação e filtros
+
+**Total:** 25 funções implementadas em 4 repositories
+
+#### Adicionado - Backend Handlers (Tasks 7-9)
+- **Arquivo criado:** `src/juridico/api/handlers/processos.clj`
+
+**Handlers de Processos (6):**
+- `list-processos-handler` - Listagem com paginação e filtros
+- `get-processo-handler` - Detalhes de um processo
+- `create-processo-handler` - Criação com validações
+- `update-processo-handler` - Atualização com auditoria
+- `delete-processo-handler` - Soft delete
+- `search-processos-handler` - Busca full-text
+
+**Handlers de Documentos (3):**
+- `list-documentos-handler` - Lista documentos de um processo
+- `create-documento-handler` - Registra metadados
+- `delete-documento-handler` - Soft delete
+
+**Handlers de Histórico (1):**
+- `get-historico-handler` - Timeline de alterações
+
+**Handlers de Clientes (6):**
+- `list-clientes-handler` - Listagem com paginação
+- `get-cliente-handler` - Detalhes de um cliente
+- `create-cliente-handler` - Criação com validações
+- `update-cliente-handler` - Atualização
+- `delete-cliente-handler` - Soft delete com validação
+- `search-clientes-handler` - Busca
+
+**Total:** 16 handlers implementados
+
+**Validações implementadas:**
+- Campos obrigatórios (nome, número, tipo, cliente)
+- Duplicatas (número de processo, CPF/CNPJ)
+- Permissões de tenant (isolamento multi-tenant)
+- Validação de relacionamentos
+- Tamanho mínimo de busca (2 caracteres)
+- Tratamento de erros (404, 400, 409)
+
+#### Adicionado - Backend Routes (Task 11)
+- **Arquivo modificado:** `src/juridico/api/core.clj`
+
+**15 endpoints REST criados:**
+
+Processos:
+- `GET /api/tenant/processos` - Lista com filtros
+- `POST /api/tenant/processos` - Criar
+- `GET /api/tenant/processos/search` - Buscar
+- `GET /api/tenant/processos/:id` - Detalhes
+- `PUT /api/tenant/processos/:id` - Atualizar
+- `DELETE /api/tenant/processos/:id` - Deletar
+
+Documentos:
+- `GET /api/tenant/processos/:processo-id/documentos` - Listar
+- `POST /api/tenant/processos/:processo-id/documentos` - Criar
+- `DELETE /api/tenant/processos/:processo-id/documentos/:documento-id` - Deletar
+
+Histórico:
+- `GET /api/tenant/processos/:processo-id/historico` - Timeline
+
+Clientes:
+- `GET /api/tenant/clientes` - Lista
+- `POST /api/tenant/clientes` - Criar
+- `GET /api/tenant/clientes/search` - Buscar
+- `GET /api/tenant/clientes/:id` - Detalhes
+- `PUT /api/tenant/clientes/:id` - Atualizar
+- `DELETE /api/tenant/clientes/:id` - Deletar
+
+**Middleware aplicado:**
+- JWT authentication em todas as rotas
+- Tenant validation automática
+- Rate limiting
+- CORS configurado
+- JSON parsing automático
+
+#### Adicionado - Documentação
+- `RESUMO_SESSAO_BACKEND_PROCESSOS.md` - Resumo completo da implementação
+- `GUIA_APLICAR_MIGRATIONS.md` - Guia passo a passo para aplicar migrations
+- `PROGRESSO_GESTAO_PROCESSOS.md` atualizado - 11/28 tasks completas (39%)
+
+#### Pendente (17 tasks)
 - Task 12: API routes do Next.js (BFF)
 - Task 13-27: Interface frontend completa
 - Task 28: Documentação de deploy
