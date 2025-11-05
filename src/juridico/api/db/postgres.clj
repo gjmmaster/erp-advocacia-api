@@ -551,6 +551,77 @@
   (find-cliente-by-id [this tenant-id cliente-id]
     (jdbc/execute-one! db-conn
       ["SELECT * FROM clientes 
+       WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL"
+       cliente-id tenant-id]))
+
+  (find-cliente-by-cpf-cnpj [this tenant-id cpf-cnpj]
+    (jdbc/execute-one! db-conn
+      ["SELECT * FROM clientes 
+       WHERE cpf_cnpj = ? AND tenant_id = ? AND deleted_at IS NULL"
+       cpf-cnpj tenant-id]))
+
+  (create-cliente! [this cliente-data]
+    (let [result (jdbc/execute-one! db-conn
+                   ["INSERT INTO clientes (tenant_id, nome, cpf_cnpj, email, telefone, endereco, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+                     RETURNING *"
+                    (:tenant_id cliente-data)
+                    (:nome cliente-data)
+                    (:cpf_cnpj cliente-data)
+                    (:email cliente-data)
+                    (:telefone cliente-data)
+                    (:endereco cliente-data)])]
+      result))
+
+  (update-cliente! [this tenant-id cliente-id updates]
+    (let [set-clause (str/join ", " (map #(str (name %) " = ?") (keys updates)))
+          values (concat (vals updates) [cliente-id tenant-id])
+          query (str "UPDATE clientes SET " set-clause ", updated_at = NOW() 
+                      WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL
+                      RETURNING *")]
+      (jdbc/execute-one! db-conn (into [query] values))))
+
+  (soft-delete-cliente! [this tenant-id cliente-id]
+    (jdbc/execute-one! db-conn
+      ["UPDATE clientes SET deleted_at = NOW() 
+        WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL
+        RETURNING *"
+       cliente-id tenant-id]))
+
+  (count-processos-by-cliente [this cliente-id]
+    (let [result (jdbc/execute-one! db-conn
+                   ["SELECT COUNT(*) as count FROM processos 
+                     WHERE cliente_id = ? AND deleted_at IS NULL"
+                    cliente-id])]
+      (:count result 0)))
+
+  (search-clientes [this tenant-id query opts]
+    (let [{:keys [page per-page]} opts
+          page (or page 1)
+          per-page (or per-page 20)
+          offset (* (dec page) per-page)
+          search-term (str "%" query "%")
+          
+          count-result (jdbc/execute-one! db-conn
+                         ["SELECT COUNT(*) as count FROM clientes 
+                           WHERE tenant_id = ? AND deleted_at IS NULL
+                           AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)"
+                          tenant-id search-term search-term search-term])
+          
+          clientes (jdbc/execute! db-conn
+                     ["SELECT * FROM clientes 
+                       WHERE tenant_id = ? AND deleted_at IS NULL
+                       AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)
+                       ORDER BY nome ASC
+                       LIMIT ? OFFSET ?"
+                      tenant-id search-term search-term search-term per-page offset])]
+      
+      {:clientes clientes
+       :total (:count count-result 0)
+       :page page
+       :per-page per-page})))
+
+
         WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL"
        cliente-id tenant-id]))
 
