@@ -66,11 +66,18 @@
 (defn create-processo-handler
   "Cria novo processo."
   [{:keys [db-repo identity body-params]}]
+  (println "=== [HANDLER] create-processo-handler INICIADO ===")
+  (println "[HANDLER] body-params recebido:" body-params)
+  
   (let [tenant-id (:tenant-id identity)
         user-id (:user-id identity)
         
         ;; Validar campos obrigatórios
         {:keys [numero_processo cliente_id tipo]} body-params]
+    
+    (println "[HANDLER] numero_processo:" numero_processo)
+    (println "[HANDLER] cliente_id ORIGINAL:" cliente_id "tipo:" (type cliente_id))
+    (println "[HANDLER] tipo:" tipo)
     
     (cond
       (nil? numero_processo)
@@ -87,13 +94,24 @@
       {:status 409 :body {:error "Número de processo já cadastrado"}}
       
       :else
-      (let [processo-data (assoc body-params
-                            :tenant_id tenant-id
-                            :created_by user-id
-                            :status (or (:status body-params) "Em Andamento"))
-            result (p/create-processo! db-repo processo-data)]
+      (let [;; Converter cliente_id para Long se vier como string
+            cliente-id-long (if (string? cliente_id)
+                             (Long/parseLong cliente_id)
+                             cliente_id)
+            _ (println "[HANDLER] cliente_id CONVERTIDO:" cliente-id-long "tipo:" (type cliente-id-long))
+            
+            processo-data (-> body-params
+                            (assoc :tenant_id tenant-id
+                                   :created_by user-id
+                                   :cliente_id cliente-id-long
+                                   :status (or (:status body-params) "Em Andamento")))
+            _ (println "[HANDLER] processo-data preparado:" processo-data)
+            
+            result (p/create-processo! db-repo processo-data)
+            cleaned-result (remove-namespaces result)]
+        (println "[HANDLER] ✅ Processo criado com sucesso!")
         {:status 201
-         :body result}))))
+         :body cleaned-result}))))
 
 (defn update-processo-handler
   "Atualiza processo existente."
