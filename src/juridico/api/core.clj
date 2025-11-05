@@ -80,7 +80,6 @@
      ["/processos"
       ["" {:get {:handler processos/list-processos-handler}
            :post {:handler processos/create-processo-handler}}]
-      ["/search" {:get {:handler processos/search-processos-handler}}]
       ["/:id" {:get {:handler processos/get-processo-handler}
                :put {:handler processos/update-processo-handler}
                :delete {:handler processos/delete-processo-handler}}]
@@ -99,7 +98,6 @@
      ["/clientes"
       ["" {:get {:handler processos/list-clientes-handler}
            :post {:handler processos/create-cliente-handler}}]
-      ["/search" {:get {:handler processos/search-clientes-handler}}]
       ["/:id" {:get {:handler processos/get-cliente-handler}
                :put {:handler processos/update-cliente-handler}
                :delete {:handler processos/delete-cliente-handler}}]]]
