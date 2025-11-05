@@ -621,65 +621,6 @@
        :page page
        :per-page per-page})))
 
-
-        WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL"
-       cliente-id tenant-id]))
-
-  (find-cliente-by-cpf-cnpj [this tenant-id cpf-cnpj]
-    (jdbc/execute-one! db-conn
-      ["SELECT * FROM clientes 
-        WHERE tenant_id = ? AND cpf_cnpj = ? AND deleted_at IS NULL"
-       tenant-id cpf-cnpj]))
-
-  (create-cliente! [this cliente-data]
-    (sql/insert! db-conn :clientes cliente-data {:return-keys true}))
-
-  (update-cliente! [this tenant-id cliente-id updates]
-    (sql/update! db-conn :clientes
-      (assoc updates :updated_at (java.time.Instant/now))
-      {:id cliente-id :tenant_id tenant-id}))
-
-  (soft-delete-cliente! [this tenant-id cliente-id]
-    (let [result (sql/update! db-conn :clientes
-                   {:deleted_at (java.time.Instant/now)}
-                   {:id cliente-id :tenant_id tenant-id})]
-      (pos? (:next.jdbc/update-count result))))
-
-  (search-clientes [this tenant-id query opts]
-    (let [{:keys [page per-page]} opts
-          page (or page 1)
-          per-page (or per-page 20)
-          offset (* (dec page) per-page)
-          search-term (str "%" query "%")
-          
-          ;; Query de contagem
-          count-result (jdbc/execute-one! db-conn
-                         ["SELECT COUNT(*) as count FROM clientes
-                           WHERE tenant_id = ? AND deleted_at IS NULL
-                           AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)"
-                          tenant-id search-term search-term search-term])
-          
-          ;; Query de dados
-          clientes (jdbc/execute! db-conn
-                     ["SELECT * FROM clientes 
-                       WHERE tenant_id = ? AND deleted_at IS NULL
-                       AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)
-                       ORDER BY nome ASC
-                       LIMIT ? OFFSET ?"
-                      tenant-id search-term search-term search-term per-page offset])]
-      
-      {:clientes clientes
-       :total (:count count-result)
-       :page page
-       :per-page per-page}))
-
-  (count-processos-by-cliente [this cliente-id]
-    (let [result (jdbc/execute-one! db-conn
-                   ["SELECT COUNT(*) as count FROM processos 
-                     WHERE cliente_id = ? AND deleted_at IS NULL"
-                    cliente-id])]
-      (:count result 0))))
-
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
   ([] (->PostgresRepository @datasource nil))
