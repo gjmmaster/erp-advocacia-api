@@ -198,13 +198,31 @@
 (defn list-clientes-handler
   "Lista clientes com paginação."
   [{:keys [db-repo identity query-params]}]
+  (println "=== [HANDLER] list-clientes-handler INICIADO ===")
+  (println "[HANDLER] identity:" identity)
+  (println "[HANDLER] query-params:" query-params)
+  
   (let [tenant-id (:tenant-id identity)
         opts {:page (Integer/parseInt (get query-params "page" "1"))
               :per-page (Integer/parseInt (get query-params "per-page" "20"))
-              :search (get query-params "search")}
-        result (p/find-all-clientes db-repo tenant-id opts)]
-    {:status 200
-     :body result}))
+              :search (get query-params "search")}]
+    
+    (println "[HANDLER] tenant-id:" tenant-id)
+    (println "[HANDLER] opts:" opts)
+    
+    (try
+      (let [result (p/find-all-clientes db-repo tenant-id opts)]
+        (println "[HANDLER] ✅ Clientes listados com sucesso")
+        (println "[HANDLER] Total encontrado:" (:total result))
+        {:status 200
+         :body result})
+      (catch Exception e
+        (println "[HANDLER] ❌ EXCEÇÃO ao listar clientes:")
+        (println "[HANDLER] Mensagem:" (.getMessage e))
+        (.printStackTrace e)
+        {:status 500
+         :body {:error "Erro ao listar clientes"
+                :message (.getMessage e)}}))))
 
 (defn get-cliente-handler
   "Retorna detalhes de um cliente."
@@ -220,22 +238,48 @@
 (defn create-cliente-handler
   "Cria novo cliente."
   [{:keys [db-repo identity body-params]}]
+  (println "=== [HANDLER] create-cliente-handler INICIADO ===")
+  (println "[HANDLER] identity:" identity)
+  (println "[HANDLER] body-params:" body-params)
+  
   (let [tenant-id (:tenant-id identity)
         {:keys [nome cpf_cnpj]} body-params]
     
+    (println "[HANDLER] tenant-id extraído:" tenant-id)
+    (println "[HANDLER] nome:" nome)
+    (println "[HANDLER] cpf_cnpj:" cpf_cnpj)
+    
     (cond
       (nil? nome)
-      {:status 400 :body {:error "Nome é obrigatório"}}
+      (do
+        (println "[HANDLER] ❌ ERRO: Nome é obrigatório")
+        {:status 400 :body {:error "Nome é obrigatório"}})
       
       ;; Verificar se CPF/CNPJ já existe (se fornecido)
       (and cpf_cnpj (p/find-cliente-by-cpf-cnpj db-repo tenant-id cpf_cnpj))
-      {:status 409 :body {:error "CPF/CNPJ já cadastrado"}}
+      (do
+        (println "[HANDLER] ❌ ERRO: CPF/CNPJ já cadastrado")
+        {:status 409 :body {:error "CPF/CNPJ já cadastrado"}})
       
       :else
-      (let [cliente-data (assoc body-params :tenant_id tenant-id)
-            result (p/create-cliente! db-repo cliente-data)]
-        {:status 201
-         :body result}))))
+      (do
+        (println "[HANDLER] ✅ Validações OK, criando cliente...")
+        (let [cliente-data (assoc body-params :tenant_id tenant-id)]
+          (println "[HANDLER] cliente-data preparado:" cliente-data)
+          (try
+            (let [result (p/create-cliente! db-repo cliente-data)]
+              (println "[HANDLER] ✅ Cliente criado com sucesso!")
+              (println "[HANDLER] result:" result)
+              {:status 201
+               :body result})
+            (catch Exception e
+              (println "[HANDLER] ❌ EXCEÇÃO ao criar cliente:")
+              (println "[HANDLER] Mensagem:" (.getMessage e))
+              (println "[HANDLER] Stack trace:")
+              (.printStackTrace e)
+              {:status 500
+               :body {:error "Erro ao criar cliente"
+                      :message (.getMessage e)}})))))))
 
 (defn update-cliente-handler
   "Atualiza cliente existente."

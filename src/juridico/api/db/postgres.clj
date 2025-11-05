@@ -521,32 +521,54 @@
   ClienteRepository
 
   (find-all-clientes [this tenant-id opts]
+    (println "=== [DB] find-all-clientes INICIADO ===")
+    (println "[DB] tenant-id:" tenant-id)
+    (println "[DB] opts:" opts)
+    
     (let [{:keys [page per-page search]} opts
           page (or page 1)
           per-page (or per-page 20)
-          offset (* (dec page) per-page)
-          
-          ;; Query base
-          base-query "SELECT * FROM clientes WHERE tenant_id = ? AND deleted_at IS NULL"
-          
-          ;; Adiciona busca se fornecida
-          [query params] (if search
-                          [(str base-query " AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)")
-                           [tenant-id (str "%" search "%") (str "%" search "%") (str "%" search "%")]]
-                          [base-query [tenant-id]])
-          
-          ;; Query de contagem
-          count-query (str/replace query #"SELECT \*" "SELECT COUNT(*)")
-          total (:count (jdbc/execute-one! db-conn (into [count-query] params)))
-          
-          ;; Query de dados com paginação
-          final-query (str query " ORDER BY nome ASC LIMIT ? OFFSET ?")
-          clientes (jdbc/execute! db-conn (into [final-query] (concat params [per-page offset])))]
+          offset (* (dec page) per-page)]
       
-      {:clientes clientes
-       :total total
-       :page page
-       :per-page per-page}))
+      (println "[DB] page:" page "per-page:" per-page "offset:" offset)
+      
+      (try
+        (let [;; Query base
+              base-query "SELECT * FROM clientes WHERE tenant_id = ? AND deleted_at IS NULL"
+              
+              ;; Adiciona busca se fornecida
+              [query params] (if search
+                              (do
+                                (println "[DB] Aplicando filtro de busca:" search)
+                                [(str base-query " AND (nome ILIKE ? OR cpf_cnpj ILIKE ? OR email ILIKE ?)")
+                                 [tenant-id (str "%" search "%") (str "%" search "%") (str "%" search "%")]])
+                              (do
+                                (println "[DB] Sem filtro de busca")
+                                [base-query [tenant-id]]))
+              
+              ;; Query de contagem
+              count-query (str/replace query #"SELECT \*" "SELECT COUNT(*)")
+              _ (println "[DB] Executando COUNT query...")
+              total (:count (jdbc/execute-one! db-conn (into [count-query] params)))
+              _ (println "[DB] Total de clientes:" total)
+              
+              ;; Query de dados com paginação
+              final-query (str query " ORDER BY nome ASC LIMIT ? OFFSET ?")
+              _ (println "[DB] Executando SELECT query...")
+              clientes (jdbc/execute! db-conn (into [final-query] (concat params [per-page offset])))]
+          
+          (println "[DB] ✅ Query executada com sucesso!")
+          (println "[DB] Clientes retornados:" (count clientes))
+          
+          {:clientes clientes
+           :total total
+           :page page
+           :per-page per-page})
+        (catch Exception e
+          (println "[DB] ❌ EXCEÇÃO ao buscar clientes:")
+          (println "[DB] Mensagem:" (.getMessage e))
+          (.printStackTrace e)
+          (throw e)))))
 
   (find-cliente-by-id [this tenant-id cliente-id]
     (jdbc/execute-one! db-conn
@@ -561,17 +583,33 @@
        cpf-cnpj tenant-id]))
 
   (create-cliente! [this cliente-data]
-    (let [result (jdbc/execute-one! db-conn
-                   ["INSERT INTO clientes (tenant_id, nome, cpf_cnpj, email, telefone, endereco, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-                     RETURNING *"
-                    (:tenant_id cliente-data)
-                    (:nome cliente-data)
-                    (:cpf_cnpj cliente-data)
-                    (:email cliente-data)
-                    (:telefone cliente-data)
-                    (:endereco cliente-data)])]
-      result))
+    (println "=== [DB] create-cliente! INICIADO ===")
+    (println "[DB] cliente-data recebido:" cliente-data)
+    (println "[DB] tenant_id:" (:tenant_id cliente-data))
+    (println "[DB] nome:" (:nome cliente-data))
+    (println "[DB] cpf_cnpj:" (:cpf_cnpj cliente-data))
+    (println "[DB] email:" (:email cliente-data))
+    
+    (try
+      (let [result (jdbc/execute-one! db-conn
+                     ["INSERT INTO clientes (tenant_id, nome, cpf_cnpj, email, telefone, endereco, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+                       RETURNING *"
+                      (:tenant_id cliente-data)
+                      (:nome cliente-data)
+                      (:cpf_cnpj cliente-data)
+                      (:email cliente-data)
+                      (:telefone cliente-data)
+                      (:endereco cliente-data)])]
+        (println "[DB] ✅ INSERT executado com sucesso!")
+        (println "[DB] Cliente criado com ID:" (:clientes/id result))
+        result)
+      (catch Exception e
+        (println "[DB] ❌ EXCEÇÃO no INSERT:")
+        (println "[DB] Mensagem:" (.getMessage e))
+        (println "[DB] Causa:" (.getCause e))
+        (.printStackTrace e)
+        (throw e))))
 
   (update-cliente! [this tenant-id cliente-id updates]
     (let [set-clause (str/join ", " (map #(str (name %) " = ?") (keys updates)))

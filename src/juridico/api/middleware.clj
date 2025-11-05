@@ -37,27 +37,59 @@
   "Middleware que valida o token JWT e injeta o repositório com escopo e a identidade do usuário."
   [handler]
   (fn [request]
+    (println "=== [MIDDLEWARE] wrap-jwt-authentication INICIADO ===")
+    (println "[MIDDLEWARE] URI:" (:uri request))
+    (println "[MIDDLEWARE] Method:" (:request-method request))
+    
     (try
       (if-let [token (extract-token request)]
-        (let [claims (jwt/unsign token config/jwt-secret)
-              tenant-id (:tenant-id claims)
-              role (:role claims)]
-          ;; Super admin não tem tenant-id, então criamos repo público
-          (if (or tenant-id (= role "super-admin"))
-            (let [repo (if tenant-id
-                         (db/create-repository tenant-id)
-                         (db/create-repository)) ; Repo público para super admin
-                  request' (-> request
-                               (assoc :db-repo repo)
-                               (assoc :identity claims))]
-              (handler request'))
-            {:status 401
-             :headers {"Content-Type" "application/json"}
-             :body "{\"error\": \"Token inválido: tenant-id não encontrado nas claims.\"}"}))
-        {:status 401
-         :headers {"Content-Type" "application/json"}
-         :body "{\"error\": \"Token de autorização não fornecido no header 'Authorization'.\"}"})
-      (catch Exception _
+        (do
+          (println "[MIDDLEWARE] ✅ Token encontrado:" (subs token 0 (min 20 (count token))) "...")
+          (try
+            (let [claims (jwt/unsign token config/jwt-secret)
+                  tenant-id (:tenant-id claims)
+                  role (:role claims)]
+              
+              (println "[MIDDLEWARE] ✅ Token decodificado com sucesso")
+              (println "[MIDDLEWARE] Claims:" claims)
+              (println "[MIDDLEWARE] tenant-id:" tenant-id)
+              (println "[MIDDLEWARE] role:" role)
+              
+              ;; Super admin não tem tenant-id, então criamos repo público
+              (if (or tenant-id (= role "super-admin"))
+                (let [repo (if tenant-id
+                             (do
+                               (println "[MIDDLEWARE] Criando repo com tenant-id:" tenant-id)
+                               (db/create-repository tenant-id))
+                             (do
+                               (println "[MIDDLEWARE] Criando repo público (super-admin)")
+                               (db/create-repository))) ; Repo público para super admin
+                      request' (-> request
+                                   (assoc :db-repo repo)
+                                   (assoc :identity claims))]
+                  (println "[MIDDLEWARE] ✅ Request preparado, chamando handler...")
+                  (handler request'))
+                (do
+                  (println "[MIDDLEWARE] ❌ Token inválido: sem tenant-id e não é super-admin")
+                  {:status 401
+                   :headers {"Content-Type" "application/json"}
+                   :body "{\"error\": \"Token inválido: tenant-id não encontrado nas claims.\"}"})))
+            (catch Exception e
+              (println "[MIDDLEWARE] ❌ EXCEÇÃO ao decodificar token:")
+              (println "[MIDDLEWARE] Mensagem:" (.getMessage e))
+              (.printStackTrace e)
+              {:status 401
+               :headers {"Content-Type" "application/json"}
+               :body "{\"error\": \"Token inválido ou expirado.\"}"})))
+        (do
+          (println "[MIDDLEWARE] ❌ Token não encontrado no header Authorization")
+          {:status 401
+           :headers {"Content-Type" "application/json"}
+           :body "{\"error\": \"Token de autorização não fornecido no header 'Authorization'.\"}"})
+      (catch Exception e
+        (println "[MIDDLEWARE] ❌ EXCEÇÃO geral:")
+        (println "[MIDDLEWARE] Mensagem:" (.getMessage e))
+        (.printStackTrace e)
         {:status 401
          :headers {"Content-Type" "application/json"}
          :body "{\"error\": \"Token inválido ou expirado.\"}"}))))
