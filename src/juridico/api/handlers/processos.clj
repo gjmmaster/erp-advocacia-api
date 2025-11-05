@@ -1,7 +1,28 @@
 (ns juridico.api.handlers.processos
   (:require [juridico.api.db.protocols :as p]
             [clojure.spec.alpha :as s]
-            [ring.util.response :as response]))
+            [ring.util.response :as response]
+            [clojure.walk :as walk]))
+
+;; ============================================
+;; Helper Functions
+;; ============================================
+
+(defn remove-namespaces
+  "Remove namespaces das chaves de um mapa ou coleção de mapas.
+   Exemplo: {:clientes/id 1 :clientes/nome 'João'} -> {:id 1 :nome 'João'}"
+  [data]
+  (walk/postwalk
+    (fn [x]
+      (if (map? x)
+        (into {} (map (fn [[k v]]
+                       [(if (keyword? k)
+                          (keyword (name k))
+                          k)
+                        v])
+                     x))
+        x))
+    data))
 
 ;; ============================================
 ;; Handlers de Processos
@@ -211,11 +232,13 @@
     (println "[HANDLER] opts:" opts)
     
     (try
-      (let [result (p/find-all-clientes db-repo tenant-id opts)]
+      (let [result (p/find-all-clientes db-repo tenant-id opts)
+            cleaned-result (update result :clientes #(map remove-namespaces %))]
         (println "[HANDLER] ✅ Clientes listados com sucesso")
         (println "[HANDLER] Total encontrado:" (:total result))
+        (println "[HANDLER] Clientes após remover namespaces:" (:clientes cleaned-result))
         {:status 200
-         :body result})
+         :body cleaned-result})
       (catch Exception e
         (println "[HANDLER] ❌ EXCEÇÃO ao listar clientes:")
         (println "[HANDLER] Mensagem:" (.getMessage e))
@@ -231,7 +254,7 @@
         cliente-id (Long/parseLong (:id path-params))]
     (if-let [cliente (p/find-cliente-by-id db-repo tenant-id cliente-id)]
       {:status 200
-       :body cliente}
+       :body (remove-namespaces cliente)}
       {:status 404
        :body {:error "Cliente não encontrado"}})))
 
@@ -267,11 +290,13 @@
         (let [cliente-data (assoc body-params :tenant_id tenant-id)]
           (println "[HANDLER] cliente-data preparado:" cliente-data)
           (try
-            (let [result (p/create-cliente! db-repo cliente-data)]
+            (let [result (p/create-cliente! db-repo cliente-data)
+                  cleaned-result (remove-namespaces result)]
               (println "[HANDLER] ✅ Cliente criado com sucesso!")
-              (println "[HANDLER] result:" result)
+              (println "[HANDLER] result original:" result)
+              (println "[HANDLER] result limpo:" cleaned-result)
               {:status 201
-               :body result})
+               :body cleaned-result})
             (catch Exception e
               (println "[HANDLER] ❌ EXCEÇÃO ao criar cliente:")
               (println "[HANDLER] Mensagem:" (.getMessage e))
