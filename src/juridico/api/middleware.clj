@@ -85,7 +85,7 @@
           (println "[MIDDLEWARE] ❌ Token não encontrado no header Authorization")
           {:status 401
            :headers {"Content-Type" "application/json"}
-           :body "{\"error\": \"Token de autorização não fornecido no header 'Authorization'.\"}"})
+           :body "{\"error\": \"Token de autorização não fornecido no header 'Authorization'.\"}"}))
       (catch Exception e
         (println "[MIDDLEWARE] ❌ EXCEÇÃO geral:")
         (println "[MIDDLEWARE] Mensagem:" (.getMessage e))
