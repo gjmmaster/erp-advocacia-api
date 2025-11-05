@@ -59,6 +59,13 @@ export async function middleware(request: NextRequest) {
   console.log('[MIDDLEWARE] Requisição para:', pathname);
   console.log('[MIDDLEWARE] Hostname:', hostname);
 
+  // ⭐ IMPORTANTE: Deixar API routes passarem sem interferência
+  // O middleware não deve bloquear API routes, apenas páginas
+  if (pathname.startsWith('/api/')) {
+    console.log('[MIDDLEWARE] API route - deixando passar');
+    return NextResponse.next();
+  }
+
   // Extrair subdomínio
   const subdomain = extractSubdomain(hostname);
   console.log('[MIDDLEWARE] Subdomínio extraído:', subdomain);
@@ -66,11 +73,8 @@ export async function middleware(request: NextRequest) {
   // Rotas públicas (sem autenticação necessária)
   const publicPaths = [
     '/super-admin/login', 
-    '/api/auth/login',
     '/login',              // Login de tenants (auto-descoberta)
-    '/api/tenant/login',   // API route de login de tenants
     '/change-password',    // Página de troca de senha temporária
-    '/api/auth/change-password'  // API route de troca de senha
   ];
   
   if (publicPaths.some(path => pathname.startsWith(path))) {
@@ -137,15 +141,12 @@ export async function middleware(request: NextRequest) {
     }
     
     // Se está tentando acessar rotas do super admin, valida autenticação
-    if (pathname.startsWith('/super-admin') || pathname.startsWith('/api/admin')) {
+    if (pathname.startsWith('/super-admin')) {
       const accessToken = request.cookies.get('access_token')?.value;
       console.log('[MIDDLEWARE] Access token presente:', accessToken ? 'SIM' : 'NÃO');
 
       if (!accessToken) {
         console.log('[MIDDLEWARE] Sem token, redirecionando para login');
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-        }
         return NextResponse.redirect(new URL('/super-admin/login', request.url));
       }
 
@@ -161,29 +162,14 @@ export async function middleware(request: NextRequest) {
         const role = payload.role as string;
         const impersonating = payload.impersonating as boolean;
         
-        // ⭐ NOVO: Bloquear rotas admin durante impersonation (exceto stop-impersonate)
+        // ⭐ NOVO: Bloquear rotas admin durante impersonation
         if (impersonating === true) {
-          console.log('[MIDDLEWARE] Em modo impersonation');
-          
-          // Permitir apenas stop-impersonate
-          if (pathname === '/api/admin/stop-impersonate') {
-            console.log('[MIDDLEWARE] Permitindo stop-impersonate');
-            return NextResponse.next();
-          }
-          
-          // Bloquear todas as outras rotas admin
-          console.log('[MIDDLEWARE] Bloqueando rota admin durante impersonation');
-          if (pathname.startsWith('/api/')) {
-            return NextResponse.json({ error: 'Acesso negado durante impersonation' }, { status: 403 });
-          }
+          console.log('[MIDDLEWARE] Em modo impersonation - bloqueando acesso ao super-admin');
           return NextResponse.redirect(new URL('/dashboard', request.url));
         }
         
         if (role !== 'super-admin' && role !== 'superadmin') {
           console.error('[MIDDLEWARE] Role inválida:', role);
-          if (pathname.startsWith('/api/')) {
-            return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-          }
           return NextResponse.redirect(new URL('/super-admin/login', request.url));
         }
 
@@ -191,11 +177,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
       } catch (error) {
         console.error('[MIDDLEWARE] Erro ao verificar token:', error);
-        
-        // Token inválido, redireciona para login
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-        }
         return NextResponse.redirect(new URL('/super-admin/login', request.url));
       }
     }
