@@ -40,11 +40,15 @@ export default function ClientesPage() {
       }
 
       const data = await response.json();
+      console.log('[CLIENTES PAGE] Dados recebidos do backend:', data);
+      console.log('[CLIENTES PAGE] data.clientes:', data.clientes);
+      console.log('[CLIENTES PAGE] Tipo de data.clientes:', typeof data.clientes, Array.isArray(data.clientes));
+      
       setClientes(data.clientes || []);
       setTotal(data.total || 0);
     } catch (err) {
       setError('Erro ao carregar clientes');
-      console.error(err);
+      console.error('[CLIENTES PAGE] Erro:', err);
     } finally {
       setLoading(false);
     }
