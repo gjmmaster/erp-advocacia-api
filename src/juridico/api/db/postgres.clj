@@ -326,11 +326,11 @@
         
         ;; Query de contagem
         (let [count-query (str/replace query #"SELECT p\.\*, c\.nome as cliente_nome" "SELECT COUNT(*)")
-              total (:count (jdbc/execute-one! db-conn (into [count-query] (rest params))))
+              total (:count (jdbc/execute-one! db-conn (into [count-query] params)))
               
               ;; Query de dados com paginação
               final-query (str query " ORDER BY p.created_at DESC LIMIT ? OFFSET ?")
-              processos (jdbc/execute! db-conn (into [final-query] (concat (rest params) [per-page offset])))]
+              processos (jdbc/execute! db-conn (into [final-query] (concat params [per-page offset])))]
           
           {:processos processos
            :total total
