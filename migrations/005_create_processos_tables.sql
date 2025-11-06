@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS processos (
   numero_processo VARCHAR(50) NOT NULL,
   cliente_id BIGINT NOT NULL REFERENCES clientes(id),
   tipo VARCHAR(100) NOT NULL,
-  vara_tribunal VARCHAR(200),
+  vara VARCHAR(200),
   comarca VARCHAR(100),
   uf VARCHAR(2),
   status VARCHAR(50) DEFAULT 'Em Andamento',

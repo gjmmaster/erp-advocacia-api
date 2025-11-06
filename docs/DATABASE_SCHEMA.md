@@ -249,7 +249,7 @@ Armazena informações sobre processos jurídicos gerenciados pelos escritórios
 | numero_processo    | VARCHAR(50)    | NOT NULL | -                    | Número do processo judicial              |
 | cliente_id         | INT8           | NOT NULL | -                    | FK para clientes - cliente do processo   |
 | tipo               | VARCHAR(100)   | NOT NULL | -                    | Tipo do processo (Cível, Trabalhista...) |
-| vara_tribunal      | VARCHAR(200)   | NULL     | -                    | Vara ou tribunal do processo             |
+| vara               | VARCHAR(200)   | NULL     | -                    | Vara ou tribunal do processo             |
 | comarca            | VARCHAR(100)   | NULL     | -                    | Comarca do processo                      |
 | uf                 | VARCHAR(2)     | NULL     | -                    | Estado (UF)                              |
 | status             | VARCHAR(50)    | NULL     | 'Em Andamento'       | Status do processo                       |
