@@ -48,9 +48,10 @@
               :cliente-id (when-let [cid (get query-params "cliente-id")]
                            (Long/parseLong cid))
               :search (get query-params "search")}
-        result (p/find-all-processos db-repo tenant-id opts)]
+        result (p/find-all-processos db-repo tenant-id opts)
+        cleaned-result (update result :processos #(map remove-namespaces %))]
     {:status 200
-     :body result}))
+     :body cleaned-result}))
 
 (defn get-processo-handler
   "Retorna detalhes de um processo específico."
@@ -59,7 +60,7 @@
         processo-id (Long/parseLong (:id path-params))]
     (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
       {:status 200
-       :body processo}
+       :body (remove-namespaces processo)}
       {:status 404
        :body {:error "Processo não encontrado"}})))
 

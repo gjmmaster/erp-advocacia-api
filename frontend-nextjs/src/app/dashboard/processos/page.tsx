@@ -206,8 +206,8 @@ export default function ProcessosPage() {
                     <td>{processo.cliente_nome}</td>
                     <td>{processo.tipo}</td>
                     <td>
-                      <span className={`${styles.badge} ${styles[`badge${processo.status.replace(/\s/g, '')}`]}`}>
-                        {processo.status}
+                      <span className={`${styles.badge} ${styles[`badge${(processo.status || '').replace(/\s/g, '')}`]}`}>
+                        {processo.status || 'N/A'}
                       </span>
                     </td>
                     <td>{formatCurrency(processo.valor_causa)}</td>
