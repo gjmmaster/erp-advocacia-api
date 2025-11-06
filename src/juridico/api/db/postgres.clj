@@ -376,7 +376,7 @@
             
             ;; Atualiza processo
             updated (sql/update! tx :processos
-                      (assoc updates :updated_by user-id :updated_at (java.time.Instant/now))
+                      (assoc updates :updated_by user-id :updated_at (java.sql.Timestamp. (System/currentTimeMillis)))
                       {:id processo-id :tenant_id tenant-id})]
         
         ;; Registra alterações no histórico
@@ -397,7 +397,7 @@
   (soft-delete-processo! [this tenant-id processo-id user-id]
     (jdbc/with-transaction [tx db-conn]
       (let [result (sql/update! tx :processos
-                     {:deleted_at (java.time.Instant/now)
+                     {:deleted_at (java.sql.Timestamp. (System/currentTimeMillis))
                       :deleted_by user-id}
                      {:id processo-id :tenant_id tenant-id})]
         
