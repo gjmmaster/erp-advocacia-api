@@ -23,10 +23,11 @@ export default function ProcessosPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     loadProcessos();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, showArchived]);
 
   const loadProcessos = async () => {
     try {
@@ -35,6 +36,7 @@ export default function ProcessosPage() {
       params.append('page', page.toString());
       params.append('per-page', '20');
       if (statusFilter) params.append('status', statusFilter);
+      if (showArchived) params.append('include_archived', 'true');
 
       const response = await fetch(`/api/tenant/processos?${params.toString()}`);
       
@@ -172,6 +174,16 @@ export default function ProcessosPage() {
           <option value="Arquivado">Arquivado</option>
           <option value="Finalizado">Finalizado</option>
         </select>
+
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+            className={styles.checkbox}
+          />
+          <span>Mostrar Arquivados</span>
+        </label>
       </div>
 
       {processos.length === 0 ? (

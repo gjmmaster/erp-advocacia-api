@@ -1,0 +1,118 @@
+.container {
+  margin-bottom: 1.5rem;
+}
+
+.dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-secondary);
+}
+
+.dropzone:hover {
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+}
+
+.dropzone.active {
+  border-color: var(--primary);
+  background: rgba(79, 70, 229, 0.05);
+}
+
+.dropzone.uploading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-secondary);
+}
+
+.mainText {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.link {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.subText {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.uploadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.uploadingState p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .dropzone {
+    padding: 1.5rem 1rem;
+  }
+
+  .icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mainText {
+    font-size: 0.9rem;
+  }
+
+  .subText {
+    font-size: 0.8rem;
+  }
+}

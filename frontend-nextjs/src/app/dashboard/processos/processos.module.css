@@ -298,3 +298,34 @@
     gap: 1rem;
   }
 }
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.checkboxLabel:hover {
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.checkboxLabel span {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
