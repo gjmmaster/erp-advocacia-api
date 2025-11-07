@@ -7,7 +7,38 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [Unreleased] - 2025-11-04 - EM DESENVOLVIMENTO 🚧
+## [Unreleased] - 2025-11-07 - EM DESENVOLVIMENTO 🚧
+
+### 🏗️ Gestão de Processos Jurídicos (75% Completo) ✅
+
+#### Adicionado - Frontend Clientes (07/11/2025)
+- **Página de Detalhes do Cliente** (`/dashboard/clientes/[id]`)
+  - Visualização completa dos dados do cliente
+  - Lista de processos vinculados com badges de status
+  - Cards clicáveis para navegar aos processos
+  - Botões de editar e deletar
+  - Validação: não permite deletar cliente com processos
+  - Loading states e tratamento de erros
+  - Design responsivo (desktop, tablet, mobile)
+
+- **Página de Edição do Cliente** (`/dashboard/clientes/[id]/editar`)
+  - Formulário pré-preenchido com dados atuais
+  - Validação de campos obrigatórios (nome)
+  - Loading state durante submit
+  - Redirecionamento após salvar
+  - Tratamento de erros da API
+  - Botão cancelar com navegação
+
+- **Arquivos criados:**
+  - `frontend-nextjs/src/app/dashboard/clientes/[id]/page.tsx`
+  - `frontend-nextjs/src/app/dashboard/clientes/[id]/detalhes.module.css`
+  - `frontend-nextjs/src/app/dashboard/clientes/[id]/editar/page.tsx`
+  - `frontend-nextjs/src/app/dashboard/clientes/[id]/editar/editar.module.css`
+
+- **Documentação:**
+  - `SESSAO_07_11_2025.md` - Resumo da sessão
+
+**Progresso:** 21/28 tasks completas (75%)
 
 ### 🏗️ Gestão de Processos Jurídicos (Fase 1 + 2 - Backend Completo) ✅
 
@@ -189,10 +220,13 @@ Clientes:
 - `GUIA_APLICAR_MIGRATIONS.md` - Guia passo a passo para aplicar migrations
 - `PROGRESSO_GESTAO_PROCESSOS.md` atualizado - 11/28 tasks completas (39%)
 
-#### Pendente (17 tasks)
-- Task 12: API routes do Next.js (BFF)
-- Task 13-27: Interface frontend completa
+#### Pendente (7 tasks)
+- Task 18: Seção de documentos (upload, download, delete)
+- Task 19: Timeline de histórico
+- Task 23: Filtro de arquivados
+- Task 25: Controle de permissões no frontend
 - Task 28: Documentação de deploy
+- Task 29-30: Testes (opcionais)
 
 ---
 
