@@ -1,8 +1,10 @@
 (ns juridico.api.handlers.processos
   (:require [juridico.api.db.protocols :as p]
+            [juridico.api.storage.r2 :as r2]
             [clojure.spec.alpha :as s]
             [ring.util.response :as response]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [clojure.tools.logging :as log]))
 
 ;; ============================================
 ;; Helper Functions
@@ -174,46 +176,137 @@
       {:status 404
        :body {:error "Processo não encontrado"}})))
 
-(defn create-documento-handler
-  "Registra novo documento (metadados).
-   O upload do arquivo deve ser feito separadamente."
-  [{:keys [db-repo identity path-params body-params]}]
+(defn upload-documento-handler
+  "Faz upload de arquivo para R2 e registra metadados no banco."
+  [{:keys [db-repo identity path-params multipart-params]}]
   (let [tenant-id (:tenant-id identity)
         user-id (:user-id identity)
-        processo-id (Long/parseLong (:processo-id path-params))]
-    
-    ;; Verificar se processo existe
-    (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
-      (let [{:keys [nome_arquivo tipo_arquivo tamanho_bytes caminho_storage]} body-params]
+        processo-id (Long/parseLong (:processo-id path-params))
         
-        (cond
-          (nil? nome_arquivo)
-          {:status 400 :body {:error "Nome do arquivo é obrigatório"}}
-          
-          (nil? caminho_storage)
-          {:status 400 :body {:error "Caminho de storage é obrigatório"}}
-          
-          :else
-          (let [documento-data {:processo_id processo-id
-                               :nome_arquivo nome_arquivo
-                               :tipo_arquivo tipo_arquivo
-                               :tamanho_bytes tamanho_bytes
-                               :caminho_storage caminho_storage
+        ;; Extrair arquivo do multipart
+        file-data (get multipart-params "file")
+        file-name (when file-data (:filename file-data))
+        file-bytes (when file-data (:bytes file-data))
+        content-type (when file-data (:content-type file-data))
+        file-size (when file-bytes (count file-bytes))]
+    
+    (log/info "Upload request" {:tenant-id tenant-id 
+                                 :processo-id processo-id 
+                                 :file-name file-name
+                                 :file-size file-size})
+    
+    ;; Validações
+    (cond
+      (not file-data)
+      {:status 400
+       :body {:error "Nenhum arquivo enviado"}}
+      
+      (> file-size (* 10 1024 1024))
+      {:status 400
+       :body {:error "Arquivo muito grande (máx. 10MB)"}}
+      
+      (not (re-matches #".*\.(pdf|doc|docx|jpg|jpeg|png)$" 
+                       (clojure.string/lower-case file-name)))
+      {:status 400
+       :body {:error "Tipo de arquivo não permitido. Use PDF, DOC, DOCX, JPG ou PNG"}}
+      
+      :else
+      ;; Verificar se processo existe e pertence ao tenant
+      (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
+        (try
+          ;; Upload para R2
+          (let [r2-key (r2/upload-file! 
+                         tenant-id 
+                         processo-id 
+                         file-name 
+                         file-bytes 
+                         content-type)
+                
+                ;; Salvar metadados no banco
+                documento-data {:processo_id processo-id
+                               :nome_arquivo file-name
+                               :tipo_arquivo content-type
+                               :tamanho_bytes file-size
+                               :caminho_storage r2-key
                                :uploaded_by user-id}
+                
                 result (p/create-documento! db-repo documento-data)]
+            
+            (log/info "Upload successful" {:r2-key r2-key :documento-id (:id result)})
+            
             {:status 201
-             :body result})))
+             :body (remove-namespaces result)})
+          
+          (catch Exception e
+            (log/error e "Upload failed")
+            {:status 500
+             :body {:error "Erro ao fazer upload"
+                    :message (.getMessage e)}}))
+        
+        {:status 404
+         :body {:error "Processo não encontrado"}}))))
+
+(defn download-documento-handler
+  "Gera URL temporária para download do R2."
+  [{:keys [db-repo identity path-params]}]
+  (let [tenant-id (:tenant-id identity)
+        processo-id (Long/parseLong (:processo-id path-params))
+        documento-id (Long/parseLong (:documento-id path-params))]
+    
+    (log/info "Download request" {:tenant-id tenant-id 
+                                   :processo-id processo-id
+                                   :documento-id documento-id})
+    
+    ;; Buscar documento e validar acesso
+    (if-let [documentos (seq (p/find-documentos-by-processo db-repo processo-id))]
+      (if-let [documento (first (filter #(= (str (:id %)) (str documento-id)) documentos))]
+        (try
+          (let [download-url (r2/get-presigned-url (:caminho_storage documento))]
+            {:status 200
+             :body {:download_url download-url
+                    :nome_arquivo (:nome_arquivo documento)}})
+          
+          (catch Exception e
+            (log/error e "Failed to generate download URL")
+            {:status 500
+             :body {:error "Erro ao gerar link de download"}}))
+        
+        {:status 404
+         :body {:error "Documento não encontrado"}})
+      
       {:status 404
-       :body {:error "Processo não encontrado"}})))
+       :body {:error "Documento não encontrado"}})))
 
 (defn delete-documento-handler
-  "Soft delete de documento."
+  "Soft delete de documento e remove do R2."
   [{:keys [db-repo identity path-params]}]
-  (let [documento-id (Long/parseLong (:documento-id path-params))]
+  (let [tenant-id (:tenant-id identity)
+        processo-id (Long/parseLong (:processo-id path-params))
+        documento-id (Long/parseLong (:documento-id path-params))]
     
-    ;; TODO: Validar que documento pertence a processo do tenant
-    (if (p/soft-delete-documento! db-repo documento-id)
-      {:status 204}
+    (log/info "Delete request" {:tenant-id tenant-id 
+                                 :processo-id processo-id
+                                 :documento-id documento-id})
+    
+    ;; Buscar documento para pegar o caminho no R2
+    (if-let [documentos (seq (p/find-documentos-by-processo db-repo processo-id))]
+      (if-let [documento (first (filter #(= (str (:id %)) (str documento-id)) documentos))]
+        (do
+          ;; Tentar deletar do R2 (não crítico se falhar)
+          (try
+            (r2/delete-file! (:caminho_storage documento))
+            (catch Exception e
+              (log/warn e "Failed to delete file from R2")))
+          
+          ;; Soft delete no banco (crítico)
+          (if (p/soft-delete-documento! db-repo documento-id)
+            {:status 204}
+            {:status 500
+             :body {:error "Erro ao deletar documento"}}))
+        
+        {:status 404
+         :body {:error "Documento não encontrado"}})
+      
       {:status 404
        :body {:error "Documento não encontrado"}})))
 

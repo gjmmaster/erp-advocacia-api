@@ -87,8 +87,9 @@
       ;; Documentos de um processo
       ["/:processo-id/documentos"
        ["" {:get {:handler processos/list-documentos-handler}
-            :post {:handler processos/create-documento-handler}}]
-       ["/:documento-id" {:delete {:handler processos/delete-documento-handler}}]]
+            :post {:handler processos/upload-documento-handler}}]
+       ["/:documento-id" {:get {:handler processos/download-documento-handler}
+                          :delete {:handler processos/delete-documento-handler}}]]
       
       ;; Histórico de um processo
       ["/:processo-id/historico"

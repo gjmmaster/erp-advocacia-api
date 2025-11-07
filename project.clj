@@ -16,7 +16,9 @@
                  [org.postgresql/postgresql "42.7.3"]
                  [cheshire "5.12.0"]
                  [environ "1.2.0"]
-                 [ring-cors "0.1.13"]]
+                 [ring-cors "0.1.13"]
+                 [amazonica "0.3.163"]  ; AWS SDK for Cloudflare R2
+                 [org.clojure/tools.logging "1.2.4"]]
   :main juridico.api.core
   :repl-options {:init-ns juridico.api.core}
   :test-paths ["test"]
