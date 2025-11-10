@@ -180,10 +180,11 @@
       (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
         (do
           (println "[HANDLER] ✅ Processo encontrado")
-          (let [documentos (p/find-documentos-by-processo db-repo processo-id)]
+          (let [documentos (p/find-documentos-by-processo db-repo processo-id)
+                cleaned-documentos (map remove-namespaces documentos)]
             (println "[HANDLER] ✅ Documentos listados:" (count documentos))
             {:status 200
-             :body documentos}))
+             :body cleaned-documentos}))
         (do
           (println "[HANDLER] ❌ Processo não encontrado")
           {:status 404
@@ -357,11 +358,12 @@
         (do
           (println "[HANDLER] ✅ Processo encontrado")
           (let [historico (p/find-historico-by-processo db-repo processo-id opts)
-                total (p/count-historico-by-processo db-repo processo-id)]
+                total (p/count-historico-by-processo db-repo processo-id)
+                cleaned-historico (map remove-namespaces historico)]
             (println "[HANDLER] ✅ Histórico listado:" (count historico) "registros")
             (println "[HANDLER] Total de registros:" total)
             {:status 200
-             :body {:historico historico
+             :body {:historico cleaned-historico
                     :total total}}))
         (do
           (println "[HANDLER] ❌ Processo não encontrado")
