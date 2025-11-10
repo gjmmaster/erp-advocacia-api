@@ -1,113 +1,88 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server'
+import { getToken } from '@/lib/auth'
+import api from '@/lib/api' // Importação 'default' está correta agora
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
-
+// GET handler para listar documentos
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } },
 ) {
+  const token = await getToken(request) // Importação 'getToken' está correta agora
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('access_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const response = await fetch(`${BACKEND_URL}/api/tenant/processos/${params.id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    // --- CORREÇÃO ---
+    // Adicionado o prefixo /api de volta
+    const apiResponse = await api.get(
+      `/api/tenant/processos/${params.id}/documentos`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching processo:', error);
+    )
+    return NextResponse.json(apiResponse.data)
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+      {
+        error: 'Erro ao buscar documentos',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+// POST handler para upload de documento
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
 ) {
-  try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('access_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-
-    const response = await fetch(`${BACKEND_URL}/api/tenant/processos/${params.id}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error updating processo:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
-}
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('access_token')?.value;
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const descricao = formData.get('descricao') as string
+    const dataCriacao = formData.get('data-criacao') as string
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!file) {
+      return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 })
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/tenant/processos/${params.id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    const backendFormData = new FormData()
+    backendFormData.append('file', file, file.name)
+    backendFormData.append('descricao', descricao || '')
+    backendFormData.append('data-criacao', dataCriacao)
+
+    // --- CORREÇÃO ---
+    // Adicionado o prefixo /api de volta
+    const apiResponse = await api.post(
+      `/api/tenant/processos/${params.id}/documentos`,
+      backendFormData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Content-Type é tratado automaticamente pelo lib/api.ts corrigido
+        },
       },
-    });
+    )
 
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
-    }
-
-    return NextResponse.json({ message: 'Processo deletado com sucesso' });
-  } catch (error) {
-    console.error('Error deleting processo:', error);
+    return NextResponse.json(apiResponse.data, { status: 201 })
+  } catch (error: any) {
+    // O log "Erro ao salvar documento: undefined" vem daqui
+    console.error('Erro ao salvar documento:', error.response?.data, error.message)
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+      {
+        error: 'Erro ao salvar documento',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
 }
