@@ -205,8 +205,9 @@
   (println "[HANDLER] multipart-params:" (:multipart-params request))
   (println "[HANDLER] params:" (:params request))
   (println "[HANDLER] body-params:" (:body-params request))
+  (println "[HANDLER] body:" (:body request))
   
-  (let [{:keys [db-repo identity path-params multipart-params params body-params]} request
+  (let [{:keys [db-repo identity path-params multipart-params params body-params body]} request
         tenant-id (:tenant-id identity)
         user-id (:user-id identity)
         processo-id (Long/parseLong (:processo-id path-params))
@@ -214,15 +215,48 @@
         ;; Tentar extrair arquivo de diferentes lugares
         file-data (or (get multipart-params "file")
                      (get params "file")
-                     (get body-params "file"))
-        file-name (when file-data (:filename file-data))
-        file-bytes (when file-data (:bytes file-data))
-        content-type (when file-data (:content-type file-data))
-        file-size (when file-bytes (count file-bytes))]
+                     (get body-params "file")
+                     (get body "file"))
+        _ (println "[HANDLER] file-data RAW:" file-data)
+        _ (println "[HANDLER] file-data type:" (type file-data))
+        _ (when file-data (println "[HANDLER] file-data keys:" (keys file-data)))
+        
+        ;; Tentar diferentes formas de acessar os dados do arquivo
+        file-name (or (:filename file-data)
+                     (:name file-data)
+                     (when (map? file-data) (get file-data :filename))
+                     (when (map? file-data) (get file-data "filename")))
+        
+        file-bytes (or (:bytes file-data)
+                      (:tempfile file-data)
+                      (:content file-data)
+                      (when (map? file-data) (get file-data :bytes))
+                      (when (map? file-data) (get file-data "bytes")))
+        
+        ;; Se file-bytes for um File/InputStream, ler os bytes
+        file-bytes (if (instance? java.io.File file-bytes)
+                    (with-open [in (clojure.java.io/input-stream file-bytes)]
+                      (let [baos (java.io.ByteArrayOutputStream.)]
+                        (clojure.java.io/copy in baos)
+                        (.toByteArray baos)))
+                    file-bytes)
+        
+        content-type (or (:content-type file-data)
+                        (when (map? file-data) (get file-data :content-type))
+                        (when (map? file-data) (get file-data "content-type"))
+                        "application/octet-stream")
+        
+        file-size (when file-bytes 
+                   (if (bytes? file-bytes)
+                     (count file-bytes)
+                     (when (instance? java.io.File file-bytes)
+                       (.length file-bytes))))]
     
     (println "[HANDLER] file-data:" file-data)
     (println "[HANDLER] file-name:" file-name)
+    (println "[HANDLER] file-bytes type:" (type file-bytes))
     (println "[HANDLER] file-size:" file-size)
+    (println "[HANDLER] content-type:" content-type)
     
     (log/info "Upload request" {:tenant-id tenant-id 
                                  :processo-id processo-id 
