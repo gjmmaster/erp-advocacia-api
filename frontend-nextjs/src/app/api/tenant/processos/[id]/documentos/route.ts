@@ -21,7 +21,7 @@ export async function GET(
         },
       },
     )
-    return NextResponse.json(apiResponse.data)
+    return NextResponse.json(apiResponse)
   } catch (error: any) {
     return NextResponse.json(
       {
@@ -75,7 +75,7 @@ export async function POST(
       },
     )
 
-    return NextResponse.json(apiResponse.data, { status: 201 })
+    return NextResponse.json(apiResponse, { status: 201 })
   } catch (error: any) {
     console.error('Erro ao salvar documento:', error.response?.data)
     return NextResponse.json(

@@ -50,6 +50,8 @@ export default function DocumentUpload({ processoId, onUploadComplete }: Props) 
       // Criar FormData para enviar o arquivo
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('descricao', ''); // Descrição vazia por padrão
+      formData.append('data-criacao', new Date().toISOString().split('T')[0]); // Data atual no formato YYYY-MM-DD
 
       const response = await fetch(`/api/tenant/processos/${processoId}/documentos`, {
         method: 'POST',
