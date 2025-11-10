@@ -2,6 +2,7 @@
   (:require [ring.adapter.jetty :as jetty]
             [reitit.ring :as ring]
             [reitit.ring.middleware.muuntaja :as muuntaja]
+            [reitit.ring.middleware.multipart :as multipart]
             [muuntaja.core :as m]
             [ring.util.response :as response]
             [juridico.api.handlers :as h]
@@ -134,7 +135,8 @@
        (ring/router
         api-routes
         {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}})
+                :middleware [muuntaja/format-middleware
+                            multipart/multipart-middleware]}})  ;; ⭐ Adicionar multipart
        (ring/create-default-handler
         {:not-found not-found-handler}))
       ;; CORS é essencial para permitir que o frontend (em outro domínio) acesse a API

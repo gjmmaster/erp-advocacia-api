@@ -199,17 +199,30 @@
 
 (defn upload-documento-handler
   "Faz upload de arquivo para R2 e registra metadados no banco."
-  [{:keys [db-repo identity path-params multipart-params]}]
-  (let [tenant-id (:tenant-id identity)
+  [request]
+  (println "=== [HANDLER] upload-documento-handler INICIADO ===")
+  (println "[HANDLER] Request keys:" (keys request))
+  (println "[HANDLER] multipart-params:" (:multipart-params request))
+  (println "[HANDLER] params:" (:params request))
+  (println "[HANDLER] body-params:" (:body-params request))
+  
+  (let [{:keys [db-repo identity path-params multipart-params params body-params]} request
+        tenant-id (:tenant-id identity)
         user-id (:user-id identity)
         processo-id (Long/parseLong (:processo-id path-params))
         
-        ;; Extrair arquivo do multipart
-        file-data (get multipart-params "file")
+        ;; Tentar extrair arquivo de diferentes lugares
+        file-data (or (get multipart-params "file")
+                     (get params "file")
+                     (get body-params "file"))
         file-name (when file-data (:filename file-data))
         file-bytes (when file-data (:bytes file-data))
         content-type (when file-data (:content-type file-data))
         file-size (when file-bytes (count file-bytes))]
+    
+    (println "[HANDLER] file-data:" file-data)
+    (println "[HANDLER] file-name:" file-name)
+    (println "[HANDLER] file-size:" file-size)
     
     (log/info "Upload request" {:tenant-id tenant-id 
                                  :processo-id processo-id 
