@@ -165,16 +165,36 @@
 (defn list-documentos-handler
   "Lista documentos de um processo."
   [{:keys [db-repo identity path-params]}]
-  (let [tenant-id (:tenant-id identity)
-        processo-id (Long/parseLong (:processo-id path-params))]
-    
-    ;; Verificar se processo existe e pertence ao tenant
-    (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
-      (let [documentos (p/find-documentos-by-processo db-repo processo-id)]
-        {:status 200
-         :body documentos})
-      {:status 404
-       :body {:error "Processo não encontrado"}})))
+  (println "=== [HANDLER] list-documentos-handler INICIADO ===")
+  (println "[HANDLER] path-params:" path-params)
+  (println "[HANDLER] identity:" identity)
+  
+  (try
+    (let [tenant-id (:tenant-id identity)
+          processo-id (Long/parseLong (:processo-id path-params))]
+      
+      (println "[HANDLER] tenant-id:" tenant-id)
+      (println "[HANDLER] processo-id:" processo-id)
+      
+      ;; Verificar se processo existe e pertence ao tenant
+      (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
+        (do
+          (println "[HANDLER] ✅ Processo encontrado")
+          (let [documentos (p/find-documentos-by-processo db-repo processo-id)]
+            (println "[HANDLER] ✅ Documentos listados:" (count documentos))
+            {:status 200
+             :body documentos}))
+        (do
+          (println "[HANDLER] ❌ Processo não encontrado")
+          {:status 404
+           :body {:error "Processo não encontrado"}})))
+    (catch Exception e
+      (println "[HANDLER] ❌ EXCEÇÃO ao listar documentos:")
+      (println "[HANDLER] Mensagem:" (.getMessage e))
+      (.printStackTrace e)
+      {:status 500
+       :body {:error "Erro ao listar documentos"
+              :message (.getMessage e)}})))
 
 (defn upload-documento-handler
   "Faz upload de arquivo para R2 e registra metadados no banco."
@@ -317,20 +337,43 @@
 (defn get-historico-handler
   "Retorna histórico de alterações de um processo."
   [{:keys [db-repo identity path-params query-params]}]
-  (let [tenant-id (:tenant-id identity)
-        processo-id (Long/parseLong (:processo-id path-params))
-        opts {:limit (Integer/parseInt (get query-params "limit" "50"))
-              :offset (Integer/parseInt (get query-params "offset" "0"))}]
-    
-    ;; Verificar se processo existe
-    (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
-      (let [historico (p/find-historico-by-processo db-repo processo-id opts)
-            total (p/count-historico-by-processo db-repo processo-id)]
-        {:status 200
-         :body {:historico historico
-                :total total}})
-      {:status 404
-       :body {:error "Processo não encontrado"}})))
+  (println "=== [HANDLER] get-historico-handler INICIADO ===")
+  (println "[HANDLER] path-params:" path-params)
+  (println "[HANDLER] query-params:" query-params)
+  (println "[HANDLER] identity:" identity)
+  
+  (try
+    (let [tenant-id (:tenant-id identity)
+          processo-id (Long/parseLong (:processo-id path-params))
+          opts {:limit (Integer/parseInt (get query-params "limit" "50"))
+                :offset (Integer/parseInt (get query-params "offset" "0"))}]
+      
+      (println "[HANDLER] tenant-id:" tenant-id)
+      (println "[HANDLER] processo-id:" processo-id)
+      (println "[HANDLER] opts:" opts)
+      
+      ;; Verificar se processo existe
+      (if-let [processo (p/find-processo-by-id db-repo tenant-id processo-id)]
+        (do
+          (println "[HANDLER] ✅ Processo encontrado")
+          (let [historico (p/find-historico-by-processo db-repo processo-id opts)
+                total (p/count-historico-by-processo db-repo processo-id)]
+            (println "[HANDLER] ✅ Histórico listado:" (count historico) "registros")
+            (println "[HANDLER] Total de registros:" total)
+            {:status 200
+             :body {:historico historico
+                    :total total}}))
+        (do
+          (println "[HANDLER] ❌ Processo não encontrado")
+          {:status 404
+           :body {:error "Processo não encontrado"}})))
+    (catch Exception e
+      (println "[HANDLER] ❌ EXCEÇÃO ao buscar histórico:")
+      (println "[HANDLER] Mensagem:" (.getMessage e))
+      (.printStackTrace e)
+      {:status 500
+       :body {:error "Erro ao buscar histórico"
+              :message (.getMessage e)}})))
 
 ;; ============================================
 ;; Handlers de Clientes
