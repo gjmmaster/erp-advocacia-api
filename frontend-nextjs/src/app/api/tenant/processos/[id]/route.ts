@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server'
 import { getToken } from '@/lib/auth'
-import api from '@/lib/api' // Importação 'default' está correta agora
+import api from '@/lib/api' // Importação 'default'
 
 // GET handler para listar documentos
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const token = await getToken(request) // Importação 'getToken' está correta agora
+  const token = await getToken(request)
   if (!token) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
   try {
-    // --- CORREÇÃO ---
-    // Adicionado o prefixo /api de volta
+    // --- GARANTA QUE ESTA LINHA ESTÁ CORRETA ---
     const apiResponse = await api.get(
       `/api/tenant/processos/${params.id}/documentos`,
       {
@@ -60,8 +59,7 @@ export async function POST(
     backendFormData.append('descricao', descricao || '')
     backendFormData.append('data-criacao', dataCriacao)
 
-    // --- CORREÇÃO ---
-    // Adicionado o prefixo /api de volta
+    // --- GARANTA QUE ESTA LINHA ESTÁ CORRETA ---
     const apiResponse = await api.post(
       `/api/tenant/processos/${params.id}/documentos`,
       backendFormData,
@@ -75,8 +73,11 @@ export async function POST(
 
     return NextResponse.json(apiResponse.data, { status: 201 })
   } catch (error: any) {
-    // O log "Erro ao salvar documento: undefined" vem daqui
-    console.error('Erro ao salvar documento:', error.response?.data, error.message)
+    console.error(
+      'Erro ao salvar documento:',
+      error.response?.data,
+      error.message,
+    )
     return NextResponse.json(
       {
         error: 'Erro ao salvar documento',
