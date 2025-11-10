@@ -53,22 +53,24 @@ export async function POST(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    const body = await request.json();
+    // Obter FormData do request
+    const formData = await request.formData();
 
+    // Repassar FormData para o backend
     const response = await fetch(
       `${BACKEND_URL}/api/tenant/processos/${params.id}/documentos`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          // Não definir Content-Type - deixar o fetch definir com boundary correto
         },
-        body: JSON.stringify(body),
+        body: formData,
       }
     );
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ error: 'Erro ao fazer upload' }));
       return NextResponse.json(error, { status: response.status });
     }
 

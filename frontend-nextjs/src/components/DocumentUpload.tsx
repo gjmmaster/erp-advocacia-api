@@ -47,22 +47,18 @@ export default function DocumentUpload({ processoId, onUploadComplete }: Props) 
     try {
       setUploading(true);
 
-      // Criar metadados do documento
-      const documentData = {
-        nome_arquivo: file.name,
-        tipo_arquivo: file.type,
-        tamanho_bytes: file.size,
-        caminho_storage: `/uploads/${processoId}/${Date.now()}_${file.name}`,
-      };
+      // Criar FormData para enviar o arquivo
+      const formData = new FormData();
+      formData.append('file', file);
 
       const response = await fetch(`/api/tenant/processos/${processoId}/documentos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(documentData),
+        body: formData, // Não definir Content-Type - o browser define automaticamente com boundary
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao fazer upload do documento');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao fazer upload do documento');
       }
 
       alert('Documento enviado com sucesso!');
