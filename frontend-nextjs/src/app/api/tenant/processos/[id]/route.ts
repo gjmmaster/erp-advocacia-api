@@ -21,7 +21,7 @@ export async function GET(
         },
       },
     )
-    return NextResponse.json(apiResponse.data)
+    return NextResponse.json(apiResponse)
   } catch (error: any) {
     return NextResponse.json(
       {
@@ -56,7 +56,7 @@ export async function PUT(
       },
     )
 
-    return NextResponse.json(apiResponse.data)
+    return NextResponse.json(apiResponse)
   } catch (error: any) {
     console.error('Erro ao atualizar processo:', error.response?.data)
     return NextResponse.json(
@@ -80,7 +80,7 @@ export async function DELETE(
   }
 
   try {
-    const apiResponse = await api.delete(
+    const apiResponse = await api.del(
       `/api/tenant/processos/${params.id}`,
       {
         headers: {
@@ -89,7 +89,7 @@ export async function DELETE(
       },
     )
 
-    return NextResponse.json(apiResponse.data)
+    return NextResponse.json(apiResponse)
   } catch (error: any) {
     console.error('Erro ao deletar processo:', error.response?.data)
     return NextResponse.json(
