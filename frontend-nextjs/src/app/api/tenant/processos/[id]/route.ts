@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getToken } from '@/lib/auth'
 import api from '@/lib/api' // Importação 'default'
 
-// GET handler para listar documentos
+// GET handler para buscar um processo específico
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
@@ -13,9 +13,8 @@ export async function GET(
   }
 
   try {
-    // --- GARANTA QUE ESTA LINHA ESTÁ CORRETA ---
     const apiResponse = await api.get(
-      `/api/tenant/processos/${params.id}/documentos`,
+      `/api/tenant/processos/${params.id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -26,7 +25,7 @@ export async function GET(
   } catch (error: any) {
     return NextResponse.json(
       {
-        error: 'Erro ao buscar documentos',
+        error: 'Erro ao buscar processo',
         details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 },
@@ -34,8 +33,8 @@ export async function GET(
   }
 }
 
-// POST handler para upload de documento
-export async function POST(
+// PUT handler para atualizar um processo
+export async function PUT(
   request: Request,
   { params }: { params: { id: string } },
 ) {
@@ -45,42 +44,57 @@ export async function POST(
   }
 
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    const descricao = formData.get('descricao') as string
-    const dataCriacao = formData.get('data-criacao') as string
+    const body = await request.json()
 
-    if (!file) {
-      return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 })
-    }
-
-    const backendFormData = new FormData()
-    backendFormData.append('file', file, file.name)
-    backendFormData.append('descricao', descricao || '')
-    backendFormData.append('data-criacao', dataCriacao)
-
-    // --- GARANTA QUE ESTA LINHA ESTÁ CORRETA ---
-    const apiResponse = await api.post(
-      `/api/tenant/processos/${params.id}/documentos`,
-      backendFormData,
+    const apiResponse = await api.put(
+      `/api/tenant/processos/${params.id}`,
+      body,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          // Content-Type é tratado automaticamente pelo lib/api.ts corrigido
         },
       },
     )
 
-    return NextResponse.json(apiResponse.data, { status: 201 })
+    return NextResponse.json(apiResponse.data)
   } catch (error: any) {
-    console.error(
-      'Erro ao salvar documento:',
-      error.response?.data,
-      error.message,
-    )
+    console.error('Erro ao atualizar processo:', error.response?.data)
     return NextResponse.json(
       {
-        error: 'Erro ao salvar documento',
+        error: 'Erro ao atualizar processo',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
+  }
+}
+
+// DELETE handler para deletar um processo
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  try {
+    const apiResponse = await api.delete(
+      `/api/tenant/processos/${params.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+
+    return NextResponse.json(apiResponse.data)
+  } catch (error: any) {
+    console.error('Erro ao deletar processo:', error.response?.data)
+    return NextResponse.json(
+      {
+        error: 'Erro ao deletar processo',
         details: error.response?.data || error.message,
       },
       { status: error.response?.status || 500 },
