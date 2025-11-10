@@ -1,86 +1,89 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server'
+import { getToken } from '@/lib/auth'
+import api from '@/lib/api'
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
-
+// GET handler para listar documentos
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } },
 ) {
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
-    const cookieStore = cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
-    const response = await fetch(
-      `${BACKEND_URL}/api/tenant/processos/${params.id}/documentos`,
+    const apiResponse = await api.get(
+      `/tenant/processos/${params.id}/documentos`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching documentos:', error);
+      },
+    )
+    return NextResponse.json(apiResponse.data)
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Erro ao buscar documentos' },
-      { status: 500 }
-    );
+      {
+        error: 'Erro ao buscar documentos',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
 }
 
+// POST handler para upload de documento
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: { id: string } },
 ) {
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
   try {
-    const cookieStore = cookies();
-    const accessToken = cookieStore.get('access_token')?.value;
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const descricao = formData.get('descricao') as string
+    const dataCriacao = formData.get('data-criacao') as string // Vem como string 'YYYY-MM-DD'
 
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    if (!file) {
+      return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 })
     }
 
-    // Obter FormData do request
-    const formData = await request.formData();
+    // Criar um novo FormData para enviar ao backend Clojure
+    const backendFormData = new FormData()
+    backendFormData.append('file', file, file.name)
+    backendFormData.append('descricao', descricao || '')
 
-    // Repassar FormData para o backend
-    const response = await fetch(
-      `${BACKEND_URL}/api/tenant/processos/${params.id}/documentos`,
+    // O backend espera 'data-criacao' no formato 'YYYY-MM-DD'
+    // O FormData do navegador já envia nesse formato se o input for type="date"
+    backendFormData.append('data-criacao', dataCriacao)
+
+    const apiResponse = await api.post(
+      `/tenant/processos/${params.id}/documentos`,
+      backendFormData,
       {
-        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // Não definir Content-Type - deixar o fetch definir com boundary correto
+          Authorization: `Bearer ${token}`,
+          // CORREÇÃO: A linha 'Content-Type' foi removida.
+          // O Axios/Fetch definirá o cabeçalho multipart/form-data
+          // corretamente, incluindo o 'boundary' necessário.
         },
-        body: formData,
-      }
-    );
+      },
+    )
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Erro ao fazer upload' }));
-      return NextResponse.json(error, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error('Error creating documento:', error);
+    return NextResponse.json(apiResponse.data, { status: 201 })
+  } catch (error: any) {
+    console.error('Erro ao salvar documento:', error.response?.data)
     return NextResponse.json(
-      { error: 'Erro ao criar documento' },
-      { status: 500 }
-    );
+      {
+        error: 'Erro ao salvar documento',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
 }
