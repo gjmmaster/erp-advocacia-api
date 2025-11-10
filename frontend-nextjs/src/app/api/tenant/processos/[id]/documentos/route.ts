@@ -1,170 +1,89 @@
-import { SignJWT, jwtVerify } from 'jose'
-import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import { getToken } from '@/lib/auth'
+import api from '@/lib/api'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'chave-padrao-para-desenvolvimento-segura',
-)
+// GET handler para listar documentos
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
-const ACCESS_TOKEN_EXPIRY = 15 * 60 // 15 minutos
-const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 // 7 dias
-
-export interface TokenPayload {
-  email: string
-  role: string
-  'tenant-id'?: string
-  type?: 'access' | 'refresh'
-  exp?: number
-  // Impersonation fields
-  impersonating?: boolean
-  'impersonator-id'?: number
-  'impersonator-email'?: string
-  // Temporary password fields
-  'temporary-password'?: boolean
-  'requires-password-change'?: boolean
-}
-
-/**
- * Cria um token JWT
- */
-export async function createToken(
-  payload: TokenPayload,
-  expiresIn: number = ACCESS_TOKEN_EXPIRY,
-): Promise<string> {
-  const token = await new SignJWT(payload as any)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(Math.floor(Date.now() / 1000) + expiresIn)
-    .sign(JWT_SECRET)
-
-  return token
-}
-
-/**
- * Verifica e decodifica um token JWT
- */
-export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
-    return payload as unknown as TokenPayload
-  } catch (error) {
-    console.error('Token verification failed:', error)
-    return null
+    const apiResponse = await api.get(
+      `/tenant/processos/${params.id}/documentos`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+    return NextResponse.json(apiResponse.data)
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        error: 'Erro ao buscar documentos',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
 }
 
-/**
- * Obtém a sessão atual dos cookies
- */
-export async function getSession(): Promise<TokenPayload | null> {
-  console.log('[AUTH] getSession chamado')
-  const cookieStore = cookies()
-  const accessToken = cookieStore.get('access_token')?.value
-  console.log('[AUTH] Access token presente:', accessToken ? 'SIM' : 'NÃO')
-
-  if (!accessToken) {
-    console.log('[AUTH] Sem access token, retornando null')
-    return null
+// POST handler para upload de documento
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const token = await getToken(request)
+  if (!token) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  console.log('[AUTH] Verificando token...')
-  const result = await verifyToken(accessToken)
-  console.log('[AUTH] Token verificado:', result ? 'VÁLIDO' : 'INVÁLIDO')
-  console.log('[AUTH] Role do token:', result?.role)
-  return result
-}
+  try {
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const descricao = formData.get('descricao') as string
+    const dataCriacao = formData.get('data-criacao') as string // Vem como string 'YYYY-MM-DD'
 
-/**
- * Define os cookies de sessão
- */
-export async function setSession(backendToken: string) {
-  console.log('[AUTH] setSession chamado')
-  console.log('[AUTH] NODE_ENV:', process.env.NODE_ENV)
-  console.log(
-    '[AUTH] Token recebido (primeiros 20 chars):',
-    backendToken.substring(0, 20),
-  )
+    if (!file) {
+      return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 })
+    }
 
-  const cookieStore = cookies()
+    // Criar um novo FormData para enviar ao backend Clojure
+    const backendFormData = new FormData()
+    backendFormData.append('file', file, file.name)
+    backendFormData.append('descricao', descricao || '')
 
-  // Usa o token do backend DIRETAMENTE como access_token
-  // Não recria o token para evitar problemas de JWT_SECRET
-  console.log('[AUTH] Definindo access_token cookie')
-  cookieStore.set('access_token', backendToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: ACCESS_TOKEN_EXPIRY,
-    path: '/',
-  })
+    // O backend espera 'data-criacao' no formato 'YYYY-MM-DD'
+    // O FormData do navegador já envia nesse formato se o input for type="date"
+    backendFormData.append('data-criacao', dataCriacao)
 
-  console.log('[AUTH] Definindo refresh_token cookie')
-  // Usa o mesmo token como refresh_token por enquanto
-  cookieStore.set('refresh_token', backendToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: REFRESH_TOKEN_EXPIRY,
-    path: '/',
-  })
+    const apiResponse = await api.post(
+      `/tenant/processos/${params.id}/documentos`,
+      backendFormData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // CORREÇÃO: A linha 'Content-Type' foi removida.
+          // O Axios/Fetch definirá o cabeçalho multipart/form-data
+          // corretamente, incluindo o 'boundary' necessário.
+        },
+      },
+    )
 
-  console.log('[AUTH] Cookies definidos com sucesso')
-}
-
-/**
- * Limpa a sessão (logout)
- */
-export async function clearSession() {
-  const cookieStore = cookies()
-  cookieStore.delete('access_token')
-  cookieStore.delete('refresh_token')
-}
-
-/**
- * Renova o access token usando o refresh token
- */
-export async function refreshSession(): Promise<boolean> {
-  const cookieStore = cookies()
-  const refreshToken = cookieStore.get('refresh_token')?.value
-
-  if (!refreshToken) {
-    return false
+    return NextResponse.json(apiResponse.data, { status: 201 })
+  } catch (error: any) {
+    console.error('Erro ao salvar documento:', error.response?.data)
+    return NextResponse.json(
+      {
+        error: 'Erro ao salvar documento',
+        details: error.response?.data || error.message,
+      },
+      { status: error.response?.status || 500 },
+    )
   }
-
-  const payload = await verifyToken(refreshToken)
-
-  if (!payload || (payload as any).type !== 'refresh') {
-    return false
-  }
-
-  // Remove o campo 'type' do payload
-  const { type, ...userPayload } = payload as any
-
-  // Cria novo access token
-  const newAccessToken = await createToken(userPayload, ACCESS_TOKEN_EXPIRY)
-
-  cookieStore.set('access_token', newAccessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: ACCESS_TOKEN_EXPIRY,
-    path: '/',
-  })
-
-  return true
 }
-
-// --- INÍCIO DA CORREÇÃO ---
-// Adiciona a função 'getToken' que estava faltando para os Route Handlers
-/**
- * Obtém o token de acesso (string) do cookie
- * Usado em Route Handlers (BFF) para pegar o token e repassar ao backend.
- * É 'async' para corresponder à chamada 'await getToken(request)' nos route handlers.
- */
-export async function getToken(request: Request): Promise<string | undefined> {
-  // O parâmetro 'request' é ignorado para usar a função 'cookies()' do next/headers,
-  // que é a forma padrão de acessar cookies em Route Handlers.
-  const cookieStore = cookies()
-  return cookieStore.get('access_token')?.value
-}
-// --- FIM DA CORREÇÃO ---
-// (A chave '}' extra que estava aqui foi removida)
