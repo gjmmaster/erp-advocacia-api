@@ -88,7 +88,8 @@
       ;; Documentos de um processo
       ["/:processo-id/documentos"
        ["" {:get {:handler processos/list-documentos-handler}
-            :post {:handler processos/upload-documento-handler}}]
+            :post {:handler processos/upload-documento-handler
+                   :middleware [multipart/multipart-middleware]}}]  ;; ⭐ Multipart apenas no POST
        ["/:documento-id" {:get {:handler processos/download-documento-handler}
                           :delete {:handler processos/delete-documento-handler}}]]
       
@@ -135,8 +136,7 @@
        (ring/router
         api-routes
         {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware
-                            multipart/multipart-middleware]}})  ;; ⭐ Adicionar multipart
+                :middleware [muuntaja/format-middleware]}})  ;; Multipart aplicado por rota
        (ring/create-default-handler
         {:not-found not-found-handler}))
       ;; CORS é essencial para permitir que o frontend (em outro domínio) acesse a API
