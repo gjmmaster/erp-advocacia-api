@@ -14,7 +14,7 @@ export async function GET(
 
   try {
     const apiResponse = await api.get(
-      `/tenant/processos/${params.id}/documentos`,
+      `/api/tenant/processos/${params.id}/documentos`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ export async function POST(
     backendFormData.append('data-criacao', dataCriacao)
 
     const apiResponse = await api.post(
-      `/tenant/processos/${params.id}/documentos`,
+      `/api/tenant/processos/${params.id}/documentos`,
       backendFormData,
       {
         headers: {
