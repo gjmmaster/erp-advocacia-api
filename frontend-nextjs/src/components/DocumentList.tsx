@@ -53,9 +53,23 @@ export default function DocumentList({ documentos, processoId, onDelete }: Props
     try {
       setDeleting(documentoId);
 
+      // Pegar o token
+      const tokenResponse = await fetch('/api/auth/token');
+      if (!tokenResponse.ok) {
+        throw new Error('Erro ao obter token de autenticação');
+      }
+      const { token } = await tokenResponse.json();
+
+      // Deletar direto no backend
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://erp-advocacia-api.onrender.com';
       const response = await fetch(
-        `/api/tenant/processos/${processoId}/documentos/${documentoId}`,
-        { method: 'DELETE' }
+        `${backendUrl}/api/tenant/processos/${processoId}/documentos/${documentoId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) {
@@ -72,10 +86,38 @@ export default function DocumentList({ documentos, processoId, onDelete }: Props
     }
   };
 
-  const handleDownload = (documento: Documento) => {
-    // Por enquanto, apenas mostra alerta
-    // Em produção, implementar download real do storage
-    alert(`Download de "${documento.nome_arquivo}" será implementado em breve.`);
+  const handleDownload = async (documento: Documento) => {
+    try {
+      // Pegar o token
+      const tokenResponse = await fetch('/api/auth/token');
+      if (!tokenResponse.ok) {
+        throw new Error('Erro ao obter token de autenticação');
+      }
+      const { token } = await tokenResponse.json();
+
+      // Buscar URL de download do backend
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://erp-advocacia-api.onrender.com';
+      const response = await fetch(
+        `${backendUrl}/api/tenant/processos/${processoId}/documentos/${documento.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar link de download');
+      }
+
+      const data = await response.json();
+      
+      // Abrir URL de download em nova aba
+      window.open(data.download_url, '_blank');
+    } catch (err) {
+      alert('Erro ao baixar documento');
+      console.error(err);
+    }
   };
 
   if (documentos.length === 0) {
