@@ -220,9 +220,7 @@
         
         ;; Tentar extrair arquivo de diferentes lugares
         file-data (or (get multipart-params "file")
-                     (get params "file")
-                     (get body-params "file")
-                     (get body "file"))
+                     (get params "file"))
         _ (println "[HANDLER] file-data RAW:" file-data)
         _ (println "[HANDLER] file-data type:" (type file-data))
         _ (when file-data (println "[HANDLER] file-data keys:" (keys file-data)))
