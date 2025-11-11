@@ -360,27 +360,47 @@
                                  :processo-id processo-id
                                  :documento-id documento-id})
     
-    ;; Buscar documento para pegar o caminho no R2
-    (if-let [documentos (seq (p/find-documentos-by-processo db-repo processo-id))]
-      (if-let [documento (first (filter #(= (str (:id %)) (str documento-id)) documentos))]
+    (try
+      ;; Buscar documento para pegar o caminho no R2
+      (if-let [documentos (seq (p/find-documentos-by-processo db-repo processo-id))]
         (do
-          ;; Tentar deletar do R2 (não crítico se falhar)
-          (try
-            (r2/delete-file! (:caminho_storage documento))
-            (catch Exception e
-              (log/warn e "Failed to delete file from R2")))
-          
-          ;; Soft delete no banco (crítico)
-          (if (p/soft-delete-documento! db-repo documento-id)
-            {:status 204}
-            {:status 500
-             :body {:error "Erro ao deletar documento"}}))
+          (log/info "Documentos encontrados:" (count documentos))
+          (if-let [documento (first (filter #(= (str (:id %)) (str documento-id)) documentos))]
+            (do
+              (log/info "Documento encontrado para deletar:" (:nome_arquivo documento))
+              ;; Tentar deletar do R2 (não crítico se falhar)
+              (try
+                (log/info "Deletando do R2:" (:caminho_storage documento))
+                (r2/delete-file! (:caminho_storage documento))
+                (log/info "Arquivo deletado do R2 com sucesso")
+                (catch Exception e
+                  (log/warn e "Failed to delete file from R2")))
+              
+              ;; Soft delete no banco (crítico)
+              (log/info "Fazendo soft delete no banco...")
+              (if (p/soft-delete-documento! db-repo documento-id)
+                (do
+                  (log/info "Documento deletado com sucesso")
+                  {:status 204})
+                (do
+                  (log/error "Falha ao deletar documento no banco")
+                  {:status 500
+                   :body {:error "Erro ao deletar documento"}})))
+            
+            (do
+              (log/warn "Documento não encontrado na lista")
+              {:status 404
+               :body {:error "Documento não encontrado"}})))
         
-        {:status 404
-         :body {:error "Documento não encontrado"}})
-      
-      {:status 404
-       :body {:error "Documento não encontrado"}})))
+        (do
+          (log/warn "Nenhum documento encontrado para o processo")
+          {:status 404
+           :body {:error "Documento não encontrado"}}))
+      (catch Exception e
+        (log/error e "Erro ao deletar documento")
+        {:status 500
+         :body {:error "Erro ao deletar documento"
+                :message (.getMessage e)}}))))
 
 ;; ============================================
 ;; Handlers de Histórico
