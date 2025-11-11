@@ -202,6 +202,8 @@
   [request]
   (println "=== [HANDLER] upload-documento-handler INICIADO ===")
   (println "[HANDLER] Request keys:" (keys request))
+  (println "[HANDLER] Headers:" (:headers request))
+  (println "[HANDLER] Content-Type:" (get-in request [:headers "content-type"]))
   (println "[HANDLER] multipart-params:" (:multipart-params request))
   (println "[HANDLER] params:" (:params request))
   (println "[HANDLER] body-params:" (:body-params request))
