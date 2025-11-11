@@ -3,6 +3,7 @@
             [juridico.api.storage.r2 :as r2]
             [clojure.spec.alpha :as s]
             [ring.util.response :as response]
+            [ring.middleware.multipart-params :as multipart]
             [clojure.walk :as walk]
             [clojure.tools.logging :as log]))
 
@@ -204,12 +205,15 @@
   (println "[HANDLER] Request keys:" (keys request))
   (println "[HANDLER] Headers:" (:headers request))
   (println "[HANDLER] Content-Type:" (get-in request [:headers "content-type"]))
-  (println "[HANDLER] multipart-params:" (:multipart-params request))
-  (println "[HANDLER] params:" (:params request))
-  (println "[HANDLER] body-params:" (:body-params request))
-  (println "[HANDLER] body:" (:body request))
   
-  (let [{:keys [db-repo identity path-params multipart-params params body-params body]} request
+  ;; Parsear multipart manualmente usando ring
+  (let [parsed-request (ring.middleware.multipart-params/multipart-params-request request {})
+        _ (println "[HANDLER] Parsed multipart-params:" (:multipart-params parsed-request))
+        _ (println "[HANDLER] Parsed params:" (:params parsed-request))
+        
+        {:keys [db-repo identity path-params]} request
+        multipart-params (:multipart-params parsed-request)
+        params (:params parsed-request)
         tenant-id (:tenant-id identity)
         user-id (:user-id identity)
         processo-id (Long/parseLong (:processo-id path-params))
