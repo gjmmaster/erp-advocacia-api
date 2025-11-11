@@ -64,7 +64,8 @@
    ["/auth" {:middleware [mw/wrap-public-db-repo mw/wrap-tenant-context]}
     ["/login" {:post {:handler h/login-handler}}]]
    ["/api"
-    {:middleware [mw/wrap-jwt-authentication]}
+    {:middleware [multipart/multipart-middleware  ;; ⭐ Multipart ANTES de JWT
+                  mw/wrap-jwt-authentication]}
     
     ;; Rotas antigas de processos (manter compatibilidade)
     ["/processos" {:get {:handler h/listar-processos-handler}
@@ -88,8 +89,7 @@
       ;; Documentos de um processo
       ["/:processo-id/documentos"
        ["" {:get {:handler processos/list-documentos-handler}
-            :post {:handler processos/upload-documento-handler
-                   :middleware [multipart/multipart-middleware]}}]  ;; ⭐ Multipart apenas no POST
+            :post {:handler processos/upload-documento-handler}}]
        ["/:documento-id" {:get {:handler processos/download-documento-handler}
                           :delete {:handler processos/delete-documento-handler}}]]
       
