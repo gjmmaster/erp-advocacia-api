@@ -136,7 +136,8 @@
        (ring/router
         api-routes
         {:data {:muuntaja m/instance
-                :middleware [muuntaja/format-middleware]}})  ;; Multipart aplicado por rota
+                :middleware [multipart/multipart-middleware  ;; ⭐ Multipart PRIMEIRO
+                            muuntaja/format-middleware]}})
        (ring/create-default-handler
         {:not-found not-found-handler}))
       ;; CORS é essencial para permitir que o frontend (em outro domínio) acesse a API
