@@ -31,13 +31,18 @@ export async function fetchBackend(
       ...(!isFormData && { 'Content-Type': 'application/json' }),
     }
 
+    // Log dos headers que serão enviados
+    const finalHeaders = {
+      ...defaultHeaders,
+      ...fetchOptions.headers,
+    }
+    console.log('[API] Headers sendo enviados:', finalHeaders)
+    console.log('[API] Body type:', fetchOptions.body?.constructor?.name)
+
     const response = await fetch(url, {
       ...fetchOptions,
       signal: controller.signal,
-      headers: {
-        ...defaultHeaders, // Aplica os padrões
-        ...fetchOptions.headers, // Permite sobrescrever (ex: Authorization)
-      },
+      headers: finalHeaders,
     })
 
     clearTimeout(timeoutId)
