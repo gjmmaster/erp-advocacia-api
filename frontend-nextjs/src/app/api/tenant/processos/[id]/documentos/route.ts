@@ -65,10 +65,9 @@ export async function POST(
     backendFormData.append('data-criacao', dataCriacao)
 
     console.log('[BFF] Enviando para backend Clojure...')
-    console.log('[BFF] FormData entries:')
-    for (const [key, value] of backendFormData.entries()) {
-      console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
-    }
+    console.log('[BFF] FormData has file:', backendFormData.has('file'))
+    console.log('[BFF] FormData has descricao:', backendFormData.has('descricao'))
+    console.log('[BFF] FormData has data-criacao:', backendFormData.has('data-criacao'))
 
     const apiResponse = await api.post(
       `/api/tenant/processos/${params.id}/documentos`,
