@@ -85,11 +85,18 @@ export async function post<T = any>(
   const isFormData = data instanceof FormData
   const body = isFormData ? data : JSON.stringify(data)
 
+  console.log('[API.POST] endpoint:', endpoint)
+  console.log('[API.POST] isFormData:', isFormData)
+  console.log('[API.POST] body type:', body?.constructor?.name)
+
   const response = await fetchBackend(endpoint, {
     ...options,
     method: 'POST',
     body: body, // Passa o body (JSON stringified ou FormData)
   })
+
+  console.log('[API.POST] response status:', response.status)
+  console.log('[API.POST] response headers:', Object.fromEntries(response.headers.entries()))
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }))

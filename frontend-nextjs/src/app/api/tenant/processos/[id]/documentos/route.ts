@@ -44,10 +44,15 @@ export async function POST(
   }
 
   try {
+    console.log('[BFF] Recebendo upload request')
     const formData = await request.formData()
     const file = formData.get('file') as File
     const descricao = formData.get('descricao') as string
-    const dataCriacao = formData.get('data-criacao') as string // Vem como string 'YYYY-MM-DD'
+    const dataCriacao = formData.get('data-criacao') as string
+
+    console.log('[BFF] File recebido:', file?.name, file?.size, file?.type)
+    console.log('[BFF] Descricao:', descricao)
+    console.log('[BFF] Data criacao:', dataCriacao)
 
     if (!file) {
       return NextResponse.json({ error: 'Arquivo é obrigatório' }, { status: 400 })
@@ -57,10 +62,13 @@ export async function POST(
     const backendFormData = new FormData()
     backendFormData.append('file', file, file.name)
     backendFormData.append('descricao', descricao || '')
-
-    // O backend espera 'data-criacao' no formato 'YYYY-MM-DD'
-    // O FormData do navegador já envia nesse formato se o input for type="date"
     backendFormData.append('data-criacao', dataCriacao)
+
+    console.log('[BFF] Enviando para backend Clojure...')
+    console.log('[BFF] FormData entries:')
+    for (const [key, value] of backendFormData.entries()) {
+      console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
+    }
 
     const apiResponse = await api.post(
       `/api/tenant/processos/${params.id}/documentos`,
@@ -68,13 +76,11 @@ export async function POST(
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          // CORREÇÃO: A linha 'Content-Type' foi removida.
-          // O Axios/Fetch definirá o cabeçalho multipart/form-data
-          // corretamente, incluindo o 'boundary' necessário.
         },
       },
     )
 
+    console.log('[BFF] Resposta do backend:', apiResponse)
     return NextResponse.json(apiResponse, { status: 201 })
   } catch (error: any) {
     console.error('Erro ao salvar documento:', error.response?.data)
