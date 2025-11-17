@@ -4,4 +4,7 @@ export { DashboardHeader } from './DashboardHeader';
 export { DashboardLayout } from './DashboardLayout';
 export { StatCard } from './StatCard';
 export { default as ImpersonationBanner } from './ImpersonationBanner';
+export { default as DocumentUpload } from './DocumentUpload';
+export { default as DocumentList } from './DocumentList';
+export { default as HistoricoTimeline } from './HistoricoTimeline';
 export * from './ui';

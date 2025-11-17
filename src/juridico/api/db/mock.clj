@@ -1,7 +1,8 @@
 (ns juridico.api.db.mock
-  (:require [juridico.api.db.protocols :refer [AuthRepository ProcessoRepository 
-                                                 DocumentoRepository HistoricoRepository 
-                                                 ClienteRepository ProcessosRepository]]
+  (:require [juridico.api.db.protocols :refer [AuthRepository ProcessoRepository
+                                                 DocumentoRepository HistoricoRepository
+                                                 ClienteRepository ProcessosRepository
+                                                 UserRepository]]
             [juridico.api.db.seed :as seed]
             [buddy.hashers :as hashers]
             [buddy.core.nonce :as nonce]
@@ -888,11 +889,92 @@
                               (vals (:processo_historico @db-atom))))]
       (log-operation "✅ Total de entradas:" count)
       count))
-  
+
+  ;; ============================================
+  ;; UserRepository Implementation
+  ;; ============================================
+
+  UserRepository
+
+  (list-users-by-tenant [this tenant-id]
+    (log-operation "📋 Listando usuários do tenant:" tenant-id)
+    (let [users (->> (:users @db-atom)
+                     vals
+                     (filter #(= (:tenant_id %) tenant-id))
+                     (filter #(nil? (:deleted_at %)))
+                     vec)]
+      (log-operation "✅ Retornando" (count users) "usuários")
+      users))
+
+  (get-user-by-id [this user-id]
+    (log-operation "🔍 Buscando usuário por ID:" user-id)
+    (let [user (get (:users @db-atom) user-id)]
+      (if (and user (nil? (:deleted_at user)))
+        (do
+          (log-operation "✅ Usuário encontrado")
+          user)
+        (do
+          (log-operation "❌ Usuário não encontrado")
+          nil))))
+
+  (create-user [this user-data]
+    (log-operation "➕ Criando usuário:" (:email user-data))
+    (let [existing-user (->> (:users @db-atom)
+                             vals
+                             (filter #(= (:email %) (:email user-data)))
+                             first)]
+      (when existing-user
+        (throw (ex-info "Email já cadastrado"
+                        {:type :duplicate-email
+                         :email (:email user-data)}))))
+    (let [user-id (next-id! db-atom :user-id)
+          new-user (-> user-data
+                      (assoc :id user-id)
+                      (assoc :deleted_at nil)
+                      add-timestamps)]
+      (swap! db-atom assoc-in [:users user-id] new-user)
+      (log-operation "✅ Usuário criado com ID:" user-id)
+      new-user))
+
+  (update-user [this user-id updates]
+    (log-operation "✏️ Atualizando usuário:" user-id)
+    (let [user (get (:users @db-atom) user-id)]
+      (if user
+        (let [updated-user (-> user
+                              (merge updates)
+                              update-timestamp)]
+          (swap! db-atom assoc-in [:users user-id] updated-user)
+          (log-operation "✅ Usuário atualizado")
+          updated-user)
+        (do
+          (log-operation "❌ Usuário não encontrado")
+          nil))))
+
+  (soft-delete-user [this user-id]
+    (log-operation "🗑️ Desativando usuário:" user-id)
+    (let [user (get (:users @db-atom) user-id)]
+      (if user
+        (let [updated-user (-> user
+                              (assoc :active false)
+                              (assoc :deleted_at (java.time.Instant/now))
+                              update-timestamp)]
+          (swap! db-atom assoc-in [:users user-id] updated-user)
+          (log-operation "✅ Usuário desativado")
+          true)
+        (do
+          (log-operation "❌ Usuário não encontrado")
+          false))))
+
+  (generate-temp-password [this]
+    (let [chars "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
+          password (apply str (repeatedly 12 #(rand-nth chars)))]
+      (log-operation "🔑 Senha temporária gerada")
+      password))
+
   ;; ============================================
   ;; ProcessosRepository Implementation (Legacy)
   ;; ============================================
-  
+
   ProcessosRepository
   
   (listar-processos [this]

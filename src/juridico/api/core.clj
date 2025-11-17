@@ -8,6 +8,7 @@
             [juridico.api.handlers :as h]
             [juridico.api.handlers.password :as pwd]
             [juridico.api.handlers.processos :as processos]  ;; ⭐ NOVO
+            [juridico.api.handlers.users :as users]  ;; ⭐ NOVO
             [juridico.api.middleware :as mw]
             [juridico.api.rate-limit :as rl]
             [ring.middleware.cors :as cors])
@@ -103,7 +104,16 @@
            :post {:handler processos/create-cliente-handler}}]
       ["/:id" {:get {:handler processos/get-cliente-handler}
                :put {:handler processos/update-cliente-handler}
-               :delete {:handler processos/delete-cliente-handler}}]]]
+               :delete {:handler processos/delete-cliente-handler}}]]
+
+     ;; Usuários
+     ["/users"
+      ["" {:get {:handler users/list-users-handler}
+           :post {:handler users/create-user-handler}}]
+      ["/:id" {:get {:handler users/get-user-handler}
+               :put {:handler users/update-user-handler}
+               :delete {:handler users/delete-user-handler}}]
+      ["/:id/reset-password" {:post {:handler users/reset-user-password-handler}}]]]]
     
     ["/dashboard"
      ["/stats/:tenant-id" {:get {:handler h/get-dashboard-stats-handler}}]]

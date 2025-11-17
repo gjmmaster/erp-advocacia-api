@@ -234,3 +234,33 @@
   (count-processos-by-cliente [this cliente-id]
     "Conta processos de um cliente.
      Retorna número inteiro."))
+
+(defprotocol UserRepository
+  "Define o contrato para operações com usuários.
+  Todas as operações são isoladas por tenant."
+
+  (list-users-by-tenant [this tenant-id]
+    "Lista todos os usuários de um tenant.
+     Retorna lista de usuários.")
+
+  (get-user-by-id [this user-id]
+    "Busca usuário por ID.
+     Retorna o usuário ou nil.")
+
+  (create-user [this user-data]
+    "Cria novo usuário.
+     user-data: {:tenant-id :email :full-name :role :password-hash :temporary-password :requires-password-change :active}
+     Retorna o usuário criado com ID.")
+
+  (update-user [this user-id updates]
+    "Atualiza usuário existente.
+     updates: mapa com campos a atualizar
+     Retorna o usuário atualizado.")
+
+  (soft-delete-user [this user-id]
+    "Desativa um usuário (soft delete).
+     Retorna true se desativado com sucesso.")
+
+  (generate-temp-password [this]
+    "Gera uma senha temporária aleatória.
+     Retorna string com a senha."))

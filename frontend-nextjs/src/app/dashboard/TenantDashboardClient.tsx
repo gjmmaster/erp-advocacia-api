@@ -32,7 +32,7 @@ export default function TenantDashboardClient({
     { href: '/dashboard', icon: 'fas fa-chart-line', label: 'Dashboard' },
     { href: '/dashboard/processos', icon: 'fas fa-folder', label: 'Processos' },
     { href: '/dashboard/clientes', icon: 'fas fa-users', label: 'Clientes' },
-    { href: '/dashboard/operadores', icon: 'fas fa-user-tie', label: 'Operadores' },
+    { href: '/dashboard/usuarios', icon: 'fas fa-user-tie', label: 'Usuários' },
     { href: '/dashboard/perfil', icon: 'fas fa-user-circle', label: 'Perfil' }
   ];
 
