@@ -13,6 +13,14 @@
 /.nrepl-port
 /classes/
 
+# Environment Variables (Local Development)
+.env.development
+.env.local
+.env.*.local
+frontend-nextjs/.env.local
+frontend-nextjs/.env.development.local
+frontend-nextjs/.env.production.local
+
 # Editor
 .idea/
 *.iml

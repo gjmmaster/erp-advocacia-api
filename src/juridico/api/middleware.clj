@@ -1,5 +1,5 @@
 (ns juridico.api.middleware
-  (:require [juridico.api.db.postgres :as db]
+  (:require [juridico.api.db.core :as db]
             [juridico.api.db.protocols :as p]
             [buddy.sign.jwt :as jwt]
             [clojure.string :as str]

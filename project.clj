@@ -22,4 +22,8 @@
   :main juridico.api.core
   :repl-options {:init-ns juridico.api.core}
   :test-paths ["test"]
-  :profiles {:test {:dependencies [[ring/ring-mock "0.4.0"]]}})
+  :profiles {:dev {:env {:database-url "postgresql://localhost:5432/juridico_dev"
+                         :jwt-secret "chave-padrao-para-desenvolvimento-segura"
+                         :port "3000"
+                         :environment "development"}}
+             :test {:dependencies [[ring/ring-mock "0.4.0"]]}})

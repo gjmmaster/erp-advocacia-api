@@ -2,6 +2,33 @@
 
 Sistema completo de gerenciamento jurídico com arquitetura multi-tenant, autenticação segura e painel administrativo.
 
+---
+
+## 🚀 Quick Start
+
+### Desenvolvimento Local (1 comando)
+
+```bash
+# Windows
+.\dev-full.ps1
+
+# Linux/Mac
+./dev-full.sh
+```
+
+Acesse: http://localhost:3001
+
+### 📚 Documentação
+
+Toda a documentação está organizada na pasta [docs/](./docs/):
+
+- 📖 [Guias de Desenvolvimento](./docs/guias/)
+- 🚀 [Deploy e Produção](./docs/deploy/)
+- 🔧 [Troubleshooting](./docs/troubleshooting/)
+- 📝 [Histórico de Sessões](./docs/historico/)
+
+---
+
 ## 🎯 Status do Projeto
 
 **Versão:** 1.0.0  
@@ -111,56 +138,69 @@ Sistema completo de gerenciamento jurídico com arquitetura multi-tenant, autent
 
 ---
 
-## 📚 Documentação
+## 📚 Documentação Completa
 
-### Documentos Principais
-- [SETUP.md](./docs/SETUP.md) - Guia de instalação e configuração
-- [API.md](./docs/API.md) - Documentação da API
-- [DEPLOY.md](./docs/DEPLOY.md) - Guia de deploy
-- [SECURITY.md](./docs/SECURITY.md) - Práticas de segurança
+Toda a documentação está organizada em [docs/](./docs/):
 
-### Specs (Planejamento de Features)
-- [Impersonation e Reset de Senha](./.kiro/specs/impersonation-password-reset/) - Próxima feature planejada
-- [Tenant Authentication](./.kiro/specs/tenant-authentication/) - Feature implementada
+### 📖 Guias
+- [Desenvolvimento Local](./docs/guias/GUIA_DESENVOLVIMENTO_LOCAL.md)
+- [Setup Inicial](./docs/guias/SETUP_INICIAL.md)
+- [Configuração de Ambiente](./docs/guias/CONFIGURACAO_AMBIENTE.md)
+- [Upload de Arquivos](./docs/guias/GUIA_UPLOAD_ARQUIVOS.md)
+- [Cloudflare R2](./docs/guias/GUIA_UPLOAD_CLOUDFLARE_R2.md)
+- [Aplicar Migrations](./docs/guias/GUIA_APLICAR_MIGRATIONS.md)
+- [Rollback](./docs/guias/COMO_FAZER_ROLLBACK.md)
+- [Logs e Debug](./docs/guias/COMO_USAR_LOGS_DEBUG.md)
+
+### 🚀 Deploy
+- [Checklist de Deploy](./docs/deploy/CHECKLIST_DEPLOY.md)
+- [Comandos de Deploy](./docs/deploy/COMANDOS_DEPLOY.md)
+- [Build Frontend](./docs/deploy/BUILD_FRONTEND.md)
+
+### 🔧 Troubleshooting
+- [Correção de Erros](./docs/troubleshooting/)
+
+### 🏗️ Arquitetura
+- [Database Schema](./docs/DATABASE_SCHEMA.md)
+- [Índice de Segurança](./docs/SECURITY_INDEX.md)
+
+### 📋 Specs (Planejamento)
+- [Force Password Change](./.kiro/specs/force-password-change/) - ✅ Implementado
+- [Admin Impersonation](./.kiro/specs/admin-impersonation/) - ✅ Implementado
+- [Gestão de Processos](./.kiro/specs/gestao-processos/) - ✅ Implementado
+- [Dev Mode Mock](./.kiro/specs/dev-mode-mock-repository/) - ✅ Implementado
 
 ---
 
 ## 🛠️ Desenvolvimento Local
 
-### Pré-requisitos
-- Java 11+
-- Leiningen
-- Node.js 18+
-- PostgreSQL
+### Primeira Vez?
 
-### Backend
+Leia o [Guia de Setup Inicial](./docs/guias/SETUP_INICIAL.md)
+
+### Já Configurou?
+
+Use os scripts de desenvolvimento:
+
 ```bash
-# Instalar dependências
-lein deps
+# Modo completo (backend + frontend + banco)
+.\dev-full.ps1      # Windows
+./dev-full.sh       # Linux/Mac
 
-# Configurar variáveis de ambiente
-export DATABASE_URL="postgresql://..."
-export JWT_SECRET="sua-chave-secreta"
-
-# Rodar servidor
-lein run
+# Modo mock (sem banco de dados)
+.\dev-full-mock.ps1 # Windows
+./dev-full-mock.sh  # Linux/Mac
 ```
 
-### Frontend
-```bash
-cd frontend-nextjs
+Acesse: http://localhost:3001
 
-# Instalar dependências
-npm install
+### Configuração
 
-# Configurar variáveis de ambiente
-# Criar arquivo .env.local com:
-# BACKEND_URL=http://localhost:3000
-# JWT_SECRET=sua-chave-secreta
+O projeto usa configurações automáticas:
+- **Dev:** `.env.development` (backend) + `frontend-nextjs/.env.development`
+- **Prod:** Variáveis do Render + `frontend-nextjs/.env.production`
 
-# Rodar servidor de desenvolvimento
-npm run dev
-```
+Ver [Configuração de Ambiente](./docs/guias/CONFIGURACAO_AMBIENTE.md) para detalhes.
 
 ---
 
@@ -181,17 +221,9 @@ npm test
 
 ## 📦 Deploy
 
-### Backend (Render)
-1. Conectar repositório GitHub
-2. Configurar variáveis de ambiente
-3. Deploy automático no push para `main`
+Deploy automático no Render.com via push para `main`.
 
-### Frontend (Render)
-1. Conectar repositório GitHub
-2. Configurar variáveis de ambiente
-3. Deploy automático no push para `main`
-
-Ver [DEPLOY.md](./docs/DEPLOY.md) para detalhes completos.
+Ver [Checklist de Deploy](./docs/deploy/CHECKLIST_DEPLOY.md) para detalhes completos.
 
 ---
 
