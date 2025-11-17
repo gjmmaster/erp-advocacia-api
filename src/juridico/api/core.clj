@@ -113,8 +113,8 @@
       ["/:id" {:get {:handler users/get-user-handler}
                :put {:handler users/update-user-handler}
                :delete {:handler users/delete-user-handler}}]
-      ["/:id/reset-password" {:post {:handler users/reset-user-password-handler}}]]]]
-    
+      ["/:id/reset-password" {:post {:handler users/reset-user-password-handler}}]]]
+
     ["/dashboard"
      ["/stats/:tenant-id" {:get {:handler h/get-dashboard-stats-handler}}]]
     

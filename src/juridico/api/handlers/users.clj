@@ -8,7 +8,7 @@
   "Lista todos os usuários do tenant"
   [{:keys [db-repo tenant-id]}]
   (try
-    (let [users (db/list-users-by-tenant db-repo tenant-id)]
+    (let [users (.list-users-by-tenant db-repo tenant-id)]
       (response/response
         {:users (map #(dissoc % :password_hash) users)}))
     (catch Exception e
@@ -21,7 +21,7 @@
   [{:keys [db-repo tenant-id path-params]}]
   (try
     (let [user-id (parse-long (:id path-params))
-          user (db/get-user-by-id db-repo user-id)]
+          user (.get-user-by-id db-repo user-id)]
       (if (and user (= (:tenant_id user) tenant-id))
         (response/response
           {:user (dissoc user :password_hash)})
@@ -37,9 +37,9 @@
   [{:keys [db-repo tenant-id body-params]}]
   (try
     (let [{:keys [email full_name role]} body-params
-          temp-password (db/generate-temp-password db-repo)
+          temp-password (.generate-temp-password db-repo)
           password-hash (hashers/derive temp-password)
-          new-user (db/create-user db-repo {
+          new-user (.create-user db-repo {
                                             :tenant_id tenant-id
                                             :email (str/lower-case (str/trim email))
                                             :full_name (str/trim full_name)
@@ -71,9 +71,9 @@
   [{:keys [db-repo tenant-id path-params body-params]}]
   (try
     (let [user-id (parse-long (:id path-params))
-          existing-user (db/get-user-by-id db-repo user-id)]
+          existing-user (.get-user-by-id db-repo user-id)]
       (if (and existing-user (= (:tenant_id existing-user) tenant-id))
-        (let [updated-user (db/update-user db-repo user-id
+        (let [updated-user (.update-user db-repo user-id
                                           (select-keys body-params [:full_name :role :active]))]
           (response/response
             {:user (dissoc updated-user :password_hash)
@@ -90,10 +90,10 @@
   [{:keys [db-repo tenant-id path-params]}]
   (try
     (let [user-id (parse-long (:id path-params))
-          existing-user (db/get-user-by-id db-repo user-id)]
+          existing-user (.get-user-by-id db-repo user-id)]
       (if (and existing-user (= (:tenant_id existing-user) tenant-id))
         (do
-          (db/soft-delete-user db-repo user-id)
+          (.soft-delete-user db-repo user-id)
           (response/response
             {:message "Usuário desativado com sucesso"}))
         (-> (response/response {:error "Usuário não encontrado"})
@@ -108,11 +108,11 @@
   [{:keys [db-repo tenant-id path-params]}]
   (try
     (let [user-id (parse-long (:id path-params))
-          existing-user (db/get-user-by-id db-repo user-id)]
+          existing-user (.get-user-by-id db-repo user-id)]
       (if (and existing-user (= (:tenant_id existing-user) tenant-id))
-        (let [temp-password (db/generate-temp-password db-repo)
+        (let [temp-password (.generate-temp-password db-repo)
               password-hash (hashers/derive temp-password)]
-          (db/update-user db-repo user-id {
+          (.update-user db-repo user-id {
                                           :password_hash password-hash
                                           :temporary_password true
                                           :requires_password_change true})

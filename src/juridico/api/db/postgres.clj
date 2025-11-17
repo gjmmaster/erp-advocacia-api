@@ -3,8 +3,7 @@
             [next.jdbc.sql :as sql]
             [juridico.api.db.protocols :refer [ProcessosRepository AuthRepository
                                                 ProcessoRepository DocumentoRepository
-                                                HistoricoRepository ClienteRepository
-                                                UserRepository]]
+                                                HistoricoRepository ClienteRepository]]
             [environ.core :refer [env]]
             [buddy.hashers :as hashers]
             [buddy.core.nonce :as nonce]
@@ -659,77 +658,6 @@
        :total (:count count-result 0)
        :page page
        :per-page per-page})))
-
-  ;; ============================================
-  ;; Implementação do UserRepository
-  ;; ============================================
-
-  UserRepository
-
-  (list-users-by-tenant [this tenant-id]
-    (jdbc/execute! db-conn
-      ["SELECT id, tenant_id, email, full_name, role, active,
-        temporary_password, requires_password_change, created_at, updated_at
-        FROM users
-        WHERE tenant_id = ? AND deleted_at IS NULL
-        ORDER BY full_name ASC"
-       tenant-id]))
-
-  (get-user-by-id [this user-id]
-    (jdbc/execute-one! db-conn
-      ["SELECT id, tenant_id, email, full_name, role, active,
-        temporary_password, requires_password_change, password_hash,
-        created_at, updated_at
-        FROM users
-        WHERE id = ? AND deleted_at IS NULL"
-       user-id]))
-
-  (create-user [this user-data]
-    (let [existing (jdbc/execute-one! db-conn
-                     ["SELECT id FROM users WHERE email = ?"
-                      (:email user-data)])]
-      (when existing
-        (throw (ex-info "Email já cadastrado"
-                        {:type :duplicate-email
-                         :email (:email user-data)}))))
-    (let [result (jdbc/execute-one! db-conn
-                   ["INSERT INTO users
-                     (tenant_id, email, full_name, role, password_hash,
-                      temporary_password, requires_password_change, active)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                     RETURNING id, tenant_id, email, full_name, role, active,
-                     temporary_password, requires_password_change, created_at, updated_at"
-                    (:tenant_id user-data)
-                    (:email user-data)
-                    (:full_name user-data)
-                    (:role user-data)
-                    (:password_hash user-data)
-                    (:temporary_password user-data)
-                    (:requires_password_change user-data)
-                    (:active user-data)])]
-      result))
-
-  (update-user [this user-id updates]
-    (let [set-clauses (str/join ", "
-                        (for [k (keys updates)]
-                          (str (name k) " = ?")))
-          sql (str "UPDATE users SET " set-clauses ", updated_at = NOW()
-                    WHERE id = ? AND deleted_at IS NULL
-                    RETURNING id, tenant_id, email, full_name, role, active,
-                    temporary_password, requires_password_change, created_at, updated_at")
-          params (concat (vals updates) [user-id])]
-      (jdbc/execute-one! db-conn (into [sql] params))))
-
-  (soft-delete-user [this user-id]
-    (let [result (jdbc/execute-one! db-conn
-                   ["UPDATE users
-                     SET active = false, deleted_at = NOW(), updated_at = NOW()
-                     WHERE id = ? AND deleted_at IS NULL"
-                    user-id])]
-      (pos? (or (:next.jdbc/update-count result) 0))))
-
-  (generate-temp-password [this]
-    (generate-secure-temp-password)))
 
 ;; --- FUNÇÃO CONSTRUTora ---
 (defn create-repository
