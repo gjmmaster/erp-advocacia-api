@@ -47,26 +47,15 @@ export default function DocumentUpload({ processoId, onUploadComplete }: Props) 
     try {
       setUploading(true);
 
-      // Pegar o token de autenticação
-      const tokenResponse = await fetch('/api/auth/token');
-      if (!tokenResponse.ok) {
-        throw new Error('Erro ao obter token de autenticação');
-      }
-      const { token } = await tokenResponse.json();
-
       // Criar FormData para enviar o arquivo
       const formData = new FormData();
       formData.append('file', file);
       formData.append('descricao', ''); // Descrição vazia por padrão
       formData.append('data-criacao', new Date().toISOString().split('T')[0]); // Data atual no formato YYYY-MM-DD
 
-      // Enviar DIRETO para o backend Clojure (pulando o BFF)
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://erp-advocacia-api.onrender.com';
-      const response = await fetch(`${backendUrl}/api/tenant/processos/${processoId}/documentos`, {
+      // Enviar através do BFF (que já tem o token no cookie)
+      const response = await fetch(`/api/tenant/processos/${processoId}/documentos`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
         body: formData, // O browser define Content-Type automaticamente com boundary
       });
 

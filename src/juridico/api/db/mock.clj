@@ -132,13 +132,19 @@
   
   (encontrar-usuario-por-email [this tenant-id email]
     (log-operation "🔍 Buscando usuário por email:" email "tenant:" tenant-id)
-    (let [result (first (filter #(and (= (:tenant_id %) tenant-id)
-                                     (= (:email %) email))
-                               (vals (:users @db-atom))))]
-      (if result
-        (log-operation "✅ Usuário encontrado:" (:full_name result))
-        (log-operation "❌ Usuário não encontrado"))
-      result))
+    (let [user (first (filter #(and (= (:tenant_id %) tenant-id)
+                                   (= (:email %) email))
+                             (vals (:users @db-atom))))]
+      (when user
+        (log-operation "✅ Usuário encontrado:" (:full_name user))
+        ;; Adiciona namespaces para compatibilidade com handlers
+        {:users/id (:id user)
+         :users/email (:email user)
+         :users/password_hash (:password_hash user)
+         :users/full_name (:full_name user)
+         :users/role (:role user)
+         :users/temporary_password (:temporary_password user)
+         :users/tenant_id (:tenant_id user)})))
   
   (encontrar-usuario-por-email-global [this email]
     (log-operation "🔍 Buscando usuário por email (global):" email)
@@ -146,22 +152,34 @@
                                   (str/lower-case email))
                              (vals (:users @db-atom))))]
       (when user
-        (let [tenant (get (:tenants @db-atom) (:tenant_id user))
-              result (assoc user
-                           :tenant_name (:company_name tenant)
-                           :tenant_active (:is_active tenant))]
+        (let [tenant (get (:tenants @db-atom) (:tenant_id user))]
           (log-operation "✅ Usuário encontrado:" (:full_name user) "tenant:" (:company_name tenant))
-          result))))
+          ;; Adiciona namespaces para compatibilidade com handlers
+          {:users/id (:id user)
+           :users/email (:email user)
+           :users/password_hash (:password_hash user)
+           :users/full_name (:full_name user)
+           :users/role (:role user)
+           :users/temporary_password (:temporary_password user)
+           :users/tenant_id (:tenant_id user)
+           :tenant_name (:company_name tenant)
+           :tenant_active (:is_active tenant)}))))
   
   (encontrar-super-admin-por-email [this email]
     (log-operation "🔍 Buscando super-admin por email:" email)
-    (let [result (first (filter #(and (= (:email %) email)
-                                     (= (:role %) "super-admin"))
-                               (vals (:users @db-atom))))]
-      (if result
-        (log-operation "✅ Super-admin encontrado:" (:full_name result))
-        (log-operation "❌ Super-admin não encontrado"))
-      result))
+    (let [user (first (filter #(and (= (:email %) email)
+                                   (= (:role %) "super-admin"))
+                             (vals (:users @db-atom))))]
+      (when user
+        (log-operation "✅ Super-admin encontrado:" (:full_name user))
+        ;; Adiciona namespaces para compatibilidade com handlers
+        {:users/id (:id user)
+         :users/email (:email user)
+         :users/password_hash (:password_hash user)
+         :users/full_name (:full_name user)
+         :users/role (:role user)
+         :users/temporary_password (:temporary_password user)
+         :users/tenant_id (:tenant_id user)})))
   
   (criar-tenant-e-usuario-master [this {:keys [company_name email operator_limit]}]
     (log-operation "➕ Criando tenant e usuário master:" company_name email)

@@ -178,34 +178,34 @@
       (if-let [user (p/encontrar-usuario-por-email-global db-repo email)]
         ;; 2. Validar que tenant está ativo
         (if (:tenant_active user)
-          ;; 3. Validar senha
-          (if (hashers/check password (:users/password_hash user))
-            ;; 4. Gerar token com tenant-id e flag de senha temporária
-            (let [temporary-password (boolean (:users/temporary_password user))
-                  claims {:user-id (:users/id user)
-                          :email (:users/email user)
-                          :role (:users/role user)
-                          :tenant-id (:users/tenant_id user)
-                          :temporary-password temporary-password  ;; ⭐ NOVO
-                          :requires-password-change temporary-password  ;; ⭐ NOVO
-                          :exp (-> (java.time.Instant/now)
-                                   (.plusSeconds 3600)
-                                   (.getEpochSecond))}
-                  token (jwt/sign claims config/jwt-secret)]
-              ;; Log quando usuário faz login com senha temporária
-              (when temporary-password
-                (println "[LOGIN AUTO-DISCOVER] Usuário" email "fez login com senha temporária"))
-              {:status 200
-               :body {:message (str "Usuário " email " autenticado com sucesso.")
-                      :token token
-                      :user {:email email
-                             :role (:users/role user)
-                             :tenant-id (:users/tenant_id user)
-                             :tenant-name (:tenant_name user)}}})
-            ;; Senha incorreta
-            {:status 401 :body {:error "Credenciais inválidas."}})
-          ;; Tenant inativo
-          {:status 403 :body {:error "Escritório inativo."}})
+            ;; 3. Validar senha
+            (if (hashers/check password (:users/password_hash user))
+              ;; 4. Gerar token com tenant-id e flag de senha temporária
+              (let [temporary-password (boolean (:users/temporary_password user))
+                    claims {:user-id (:users/id user)
+                            :email (:users/email user)
+                            :role (:users/role user)
+                            :tenant-id (:users/tenant_id user)
+                            :temporary-password temporary-password  ;; ⭐ NOVO
+                            :requires-password-change temporary-password  ;; ⭐ NOVO
+                            :exp (-> (java.time.Instant/now)
+                                     (.plusSeconds 3600)
+                                     (.getEpochSecond))}
+                    token (jwt/sign claims config/jwt-secret)]
+                ;; Log quando usuário faz login com senha temporária
+                (when temporary-password
+                  (println "[LOGIN AUTO-DISCOVER] Usuário" email "fez login com senha temporária"))
+                {:status 200
+                 :body {:message (str "Usuário " email " autenticado com sucesso.")
+                        :token token
+                        :user {:email email
+                               :role (:users/role user)
+                               :tenant-id (:users/tenant_id user)
+                               :tenant-name (:tenant_name user)}}})
+              ;; Senha incorreta
+              {:status 401 :body {:error "Credenciais inválidas."}})
+            ;; Tenant inativo
+            {:status 403 :body {:error "Escritório inativo."}}))
         ;; Usuário não encontrado
         {:status 401 :body {:error "Credenciais inválidas."}}))
     ;; Validação de payload falhou

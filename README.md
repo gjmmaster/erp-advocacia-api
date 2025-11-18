@@ -146,6 +146,7 @@ Toda a documentação está organizada em [docs/](./docs/):
 - [Desenvolvimento Local](./docs/guias/GUIA_DESENVOLVIMENTO_LOCAL.md)
 - [Setup Inicial](./docs/guias/SETUP_INICIAL.md)
 - [Configuração de Ambiente](./docs/guias/CONFIGURACAO_AMBIENTE.md)
+- [Modo Dev vs Produção](./docs/MODO_DEV_VS_PROD.md) - ⭐ NOVO
 - [Upload de Arquivos](./docs/guias/GUIA_UPLOAD_ARQUIVOS.md)
 - [Cloudflare R2](./docs/guias/GUIA_UPLOAD_CLOUDFLARE_R2.md)
 - [Aplicar Migrations](./docs/guias/GUIA_APLICAR_MIGRATIONS.md)
@@ -182,17 +183,53 @@ Leia o [Guia de Setup Inicial](./docs/guias/SETUP_INICIAL.md)
 
 Use os scripts de desenvolvimento:
 
-```bash
-# Modo completo (backend + frontend + banco)
-.\dev-full.ps1      # Windows
-./dev-full.sh       # Linux/Mac
+#### Modo Recomendado (Mock - Sem Banco de Dados)
 
-# Modo mock (sem banco de dados)
-.\dev-full-mock.ps1 # Windows
-./dev-full-mock.sh  # Linux/Mac
+```bash
+# Inicia backend + frontend automaticamente
+.\dev-mock.ps1      # Windows
+./dev-mock.sh       # Linux/Mac
 ```
 
-Acesse: http://localhost:3001
+- **Backend:** http://localhost:3000 (API)
+- **Frontend:** http://localhost:3001 (Interface Web)
+- **Dados:** In-memory (não persistem entre reinícios)
+- **Ideal para:** Desenvolvimento rápido, testes de UI, prototipagem
+
+#### Modo Completo (Com Banco de Dados)
+
+```bash
+# Inicia backend + frontend + PostgreSQL
+.\dev-full.ps1      # Windows
+./dev-full.sh       # Linux/Mac
+```
+
+- **Backend:** http://localhost:3000
+- **Frontend:** http://localhost:3001
+- **Banco:** PostgreSQL via Docker
+- **Ideal para:** Testes de integração, desenvolvimento de features de banco
+
+#### Modo Backend-Only
+
+```bash
+# Apenas backend (útil para desenvolvimento de API)
+.\dev.ps1           # Windows (com banco)
+./dev.sh            # Linux/Mac (com banco)
+```
+
+### Como Parar os Serviços
+
+- **Linux/Mac:** Pressione `Ctrl+C` no terminal
+- **Windows:** Feche as janelas do PowerShell que foram abertas
+
+### Credenciais de Desenvolvimento
+
+```
+Super Admin: admin@demo.com / admin123
+Master User: master@demo.com / master123
+Operador 1:  operador1@demo.com / operador123
+Operador 2:  operador2@demo.com / operador123
+```
 
 ### Configuração
 
